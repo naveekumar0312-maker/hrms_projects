@@ -81,7 +81,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   const [sendingComment, setSendingComment] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
 
-  // Voice recording state
+  // Voice recording state for comments
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
@@ -89,6 +89,87 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<any>(null);
+
+  // Speech-to-text voice recognition for Title & Description
+  const [voiceTarget, setVoiceTarget] = useState<'title' | 'description' | null>(null);
+  const speechRecognizerRef = useRef<any>(null);
+
+  const startVoiceInput = (target: 'title' | 'description') => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
+      return;
+    }
+
+    if (voiceTarget === target) {
+      // Toggle off if currently listening
+      stopVoiceInput();
+      return;
+    }
+
+    if (speechRecognizerRef.current) {
+      try {
+        speechRecognizerRef.current.abort();
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      let initialText = target === 'title' ? title : description;
+
+      recognition.onstart = () => {
+        setVoiceTarget(target);
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (target === 'title') {
+          setTitle((initialText ? initialText + ' ' : '') + transcript);
+        } else {
+          setDescription((initialText ? initialText + ' ' : '') + transcript);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+          alert('Microphone permission denied. Please allow microphone access to use voice typing.');
+        }
+        setVoiceTarget(null);
+      };
+
+      recognition.onend = () => {
+        setVoiceTarget(null);
+      };
+
+      speechRecognizerRef.current = recognition;
+      recognition.start();
+    } catch (err: any) {
+      console.error('Failed to start speech recognition:', err);
+      setVoiceTarget(null);
+    }
+  };
+
+  const stopVoiceInput = () => {
+    if (speechRecognizerRef.current) {
+      try {
+        speechRecognizerRef.current.stop();
+      } catch (e) {
+        // ignore
+      }
+      speechRecognizerRef.current = null;
+    }
+    setVoiceTarget(null);
+  };
 
   // Time log entry state
   const [showTimeLogForm, setShowTimeLogForm] = useState(false);
@@ -551,11 +632,35 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
               {/* A. TASK INFORMATION */}
               <div className="task-form-section">
                 <div className="task-field-group">
-                  <label className="task-field-label">Task Title <span className="task-required">*</span></label>
+                  <div className="task-field-label-row">
+                    <label className="task-field-label">
+                      Task Title <span className="task-required">*</span>
+                    </label>
+                    {!isEmployee && (
+                      <button
+                        type="button"
+                        className={`task-voice-btn ${voiceTarget === 'title' ? 'recording' : ''}`}
+                        onClick={() => startVoiceInput('title')}
+                        title="Voice typing for Title"
+                      >
+                        {voiceTarget === 'title' ? (
+                          <>
+                            <span className="task-voice-dot" />
+                            <span>Listening...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Mic size={12} />
+                            <span>Voice</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     className="task-input-title-modern"
-                    placeholder="Enter task title..."
+                    placeholder="Enter task title (or use voice)..."
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     disabled={isEmployee}
@@ -564,11 +669,33 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                 </div>
 
                 <div className="task-field-group">
-                  <label className="task-field-label">Description</label>
+                  <div className="task-field-label-row">
+                    <label className="task-field-label">Description</label>
+                    {!isEmployee && (
+                      <button
+                        type="button"
+                        className={`task-voice-btn ${voiceTarget === 'description' ? 'recording' : ''}`}
+                        onClick={() => startVoiceInput('description')}
+                        title="Voice typing for Description"
+                      >
+                        {voiceTarget === 'description' ? (
+                          <>
+                            <span className="task-voice-dot" />
+                            <span>Listening...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Mic size={12} />
+                            <span>Voice</span>
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <textarea
                     className="task-textarea-modern"
                     rows={4}
-                    placeholder="Provide full context, technical specifications, and expected deliverables..."
+                    placeholder="Provide full context, technical specifications, and expected deliverables (or use voice)..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={isEmployee}

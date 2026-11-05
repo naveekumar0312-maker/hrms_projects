@@ -461,3 +461,103 @@ class TaskDashboardSummaryView(APIView):
             "overdue": qs.filter(status='OVERDUE').count(),
             "draft": qs.filter(status='DRAFT').count(),
         })
+
+
+class TranscribeAudioView(APIView):
+    """
+    Transcribes audio from audio recordings (e.g. mobile mic / web voice notes)
+    into text using SpeechRecognition and Google Speech API.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        audio_file = request.FILES.get('audio') or request.FILES.get('file')
+        if not audio_file:
+            return Response(
+                {"error": "No audio file provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            import speech_recognition as sr
+            import tempfile
+            import os
+            import subprocess
+
+            # Save uploaded audio to temporary file
+            suffix = os.path.splitext(audio_file.name)[-1] or '.m4a'
+            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+                for chunk in audio_file.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
+
+            target_wav = None
+            r = sr.Recognizer()
+
+            try:
+                # If already a valid wav file, open directly
+                if suffix.lower() == '.wav':
+                    with sr.AudioFile(tmp_path) as source:
+                        audio_data = r.record(source)
+                else:
+                    # Attempt conversion or read using pydub or audio tools if available
+                    converted = False
+                    try:
+                        from pydub import AudioSegment
+                        sound = AudioSegment.from_file(tmp_path)
+                        sound = sound.set_channels(1).set_frame_rate(16000)
+                        target_wav = tmp_path + "_converted.wav"
+                        sound.export(target_wav, format="wav")
+                        converted = True
+                    except Exception as conv_err:
+                        # Fallback: check if system ffmpeg exists
+                        target_wav = tmp_path + "_converted.wav"
+                        res = subprocess.run(
+                            ['ffmpeg', '-y', '-i', tmp_path, '-ar', '16000', '-ac', '1', target_wav],
+                            capture_output=True
+                        )
+                        converted = (res.returncode == 0)
+
+                    if converted and target_wav and os.path.exists(target_wav):
+                        with sr.AudioFile(target_wav) as source:
+                            audio_data = r.record(source)
+                    else:
+                        with sr.AudioFile(tmp_path) as source:
+                            audio_data = r.record(source)
+
+                # Recognize speech using Google's speech recognition
+                text = r.recognize_google(audio_data)
+                return Response({"text": text.strip()})
+
+            except sr.UnknownValueError:
+                return Response(
+                    {"text": "", "message": "No audible speech detected in the audio."},
+                    status=status.HTTP_200_OK
+                )
+            except sr.RequestError as e:
+                return Response(
+                    {"error": f"Speech recognition service error: {str(e)}"},
+                    status=status.HTTP_502_BAD_GATEWAY
+                )
+            except Exception as e:
+                return Response(
+                    {"error": f"Failed to process audio: {str(e)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            finally:
+                if tmp_path and os.path.exists(tmp_path):
+                    try:
+                        os.remove(tmp_path)
+                    except Exception:
+                        pass
+                if target_wav and os.path.exists(target_wav):
+                    try:
+                        os.remove(target_wav)
+                    except Exception:
+                        pass
+
+        except Exception as exc:
+            return Response(
+                {"error": str(exc)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

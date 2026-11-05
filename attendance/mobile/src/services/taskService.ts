@@ -126,3 +126,17 @@ export const getTaskComments = async (taskId: number) => {
   return Array.isArray(response.data) ? response.data : [];
 };
 
+export const transcribeAudio = async (audioUri: string, mimeType?: string, fileName?: string): Promise<string> => {
+  const formData = new FormData();
+  formData.append('audio', {
+    uri: audioUri,
+    name: fileName || 'voice_recording.wav',
+    type: mimeType || 'audio/wav',
+  } as any);
+
+  const response = await api.post('/tasks-module/tasks/transcribe-audio/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data?.text || '';
+};
+

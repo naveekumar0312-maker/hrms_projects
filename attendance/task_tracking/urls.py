@@ -7,12 +7,14 @@ from .views import (
     TaskTimeLogViewSet,
     TaskActivityListView,
     TaskDashboardSummaryView,
+    TranscribeAudioView,
 )
 
 router = DefaultRouter()
 router.register(r'tasks', TaskViewSet, basename='tasks')
 
 urlpatterns = [
+    path('tasks/transcribe-audio/', TranscribeAudioView.as_view(), name='task-transcribe-audio'),
     path('tasks/summary/', TaskDashboardSummaryView.as_view(), name='task-dashboard-summary'),
     path('tasks/<int:pk>/activities/', TaskActivityListView.as_view(), name='task-activities'),
     

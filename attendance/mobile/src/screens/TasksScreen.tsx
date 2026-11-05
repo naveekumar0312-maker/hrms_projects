@@ -49,6 +49,7 @@ import {
   getTaskComments,
   getAssignableMembers,
   createTask,
+  transcribeAudio,
   MobileTask,
   AssignedEmployee,
 } from '../services/taskService';
@@ -241,6 +242,79 @@ export const TasksScreen: React.FC = () => {
   
   // VOICE AUDIO (Safe Document/Audio Picker to support Expo Go without native ExponentAV crash)
   
+  // Voice-to-Text Speech Recognition State for Task Title & Description
+  const [voiceTypingTarget, setVoiceTypingTarget] = useState<'title' | 'description' | null>(null);
+  const [transcribing, setTranscribing] = useState(false);
+  const voiceTypingRecorder = useRef<any>(null);
+  const voiceTypingSeconds = useRef<number>(0);
+  const voiceTypingInterval = useRef<any>(null);
+
+  const startVoiceTyping = async (target: 'title' | 'description') => {
+    try {
+      const { granted } = await requestRecordingPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Microphone Permission', 'Please allow microphone access to speak and enter text.');
+        return;
+      }
+
+      if (voiceTypingTarget) {
+        await stopVoiceTyping();
+        return;
+      }
+
+      const recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      voiceTypingRecorder.current = recorder;
+      setVoiceTypingTarget(target);
+      voiceTypingSeconds.current = 0;
+
+      voiceTypingInterval.current = setInterval(() => {
+        voiceTypingSeconds.current += 1;
+      }, 1000);
+    } catch (e: any) {
+      console.log('Error starting voice typing:', e);
+      Alert.alert('Error', 'Unable to access microphone for voice typing.');
+      setVoiceTypingTarget(null);
+    }
+  };
+
+  const stopVoiceTyping = async () => {
+    const target = voiceTypingTarget;
+    if (voiceTypingInterval.current) {
+      clearInterval(voiceTypingInterval.current);
+      voiceTypingInterval.current = null;
+    }
+    setVoiceTypingTarget(null);
+
+    if (voiceTypingRecorder.current && target) {
+      try {
+        setTranscribing(true);
+        await voiceTypingRecorder.current.stop();
+        const uri = voiceTypingRecorder.current.uri;
+        voiceTypingRecorder.current = null;
+
+        if (uri) {
+          const text = await transcribeAudio(uri, 'audio/m4a', 'voice_speech.m4a');
+          if (text && text.trim()) {
+            if (target === 'title') {
+              setTitle((prev) => (prev ? prev.trim() + ' ' + text.trim() : text.trim()));
+            } else {
+              setDescription((prev) => (prev ? prev.trim() + ' ' + text.trim() : text.trim()));
+            }
+          } else {
+            Alert.alert('Voice Input', 'No clear speech detected. Please speak closer to the microphone and try again.');
+          }
+        }
+      } catch (err: any) {
+        console.error('Failed to transcribe voice:', err);
+        Alert.alert('Voice Recognition', 'Could not convert voice to text. Please check network connection.');
+      } finally {
+        setTranscribing(false);
+      }
+    }
+  };
+
   // LIVE AUDIO RECORDING VIA EXPO-AUDIO
   const [audioRecorderInstance, setAudioRecorderInstance] = useState<any>(null);
 
@@ -757,19 +831,91 @@ export const TasksScreen: React.FC = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <Text style={styles.formLabel}>Task Title *</Text>
+              <View style={styles.formLabelRow}>
+                <Text style={styles.formLabel}>Task Title *</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.voiceTypingBtn,
+                    voiceTypingTarget === 'title' && styles.voiceTypingBtnActive,
+                  ]}
+                  onPress={() => {
+                    if (voiceTypingTarget === 'title') {
+                      stopVoiceTyping();
+                    } else {
+                      startVoiceTyping('title');
+                    }
+                  }}
+                  disabled={transcribing}
+                  activeOpacity={0.8}
+                >
+                  {transcribing && voiceTypingTarget === 'title' ? (
+                    <ActivityIndicator size="small" color="#0056B3" />
+                  ) : (
+                    <>
+                      <Mic
+                        size={13}
+                        color={voiceTypingTarget === 'title' ? '#DC2626' : '#475569'}
+                      />
+                      <Text
+                        style={[
+                          styles.voiceTypingBtnText,
+                          voiceTypingTarget === 'title' && styles.voiceTypingBtnTextActive,
+                        ]}
+                      >
+                        {voiceTypingTarget === 'title' ? 'Tap to Stop' : 'Voice'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
               <TextInput
                 style={styles.formInput}
-                placeholder="Enter task title..."
+                placeholder="Enter task title (or tap Voice)..."
                 placeholderTextColor="#999999"
                 value={title}
                 onChangeText={setTitle}
               />
 
-              <Text style={styles.formLabel}>Description</Text>
+              <View style={[styles.formLabelRow, { marginTop: 6 }]}>
+                <Text style={styles.formLabel}>Description</Text>
+                <TouchableOpacity
+                  style={[
+                    styles.voiceTypingBtn,
+                    voiceTypingTarget === 'description' && styles.voiceTypingBtnActive,
+                  ]}
+                  onPress={() => {
+                    if (voiceTypingTarget === 'description') {
+                      stopVoiceTyping();
+                    } else {
+                      startVoiceTyping('description');
+                    }
+                  }}
+                  disabled={transcribing}
+                  activeOpacity={0.8}
+                >
+                  {transcribing && voiceTypingTarget === 'description' ? (
+                    <ActivityIndicator size="small" color="#0056B3" />
+                  ) : (
+                    <>
+                      <Mic
+                        size={13}
+                        color={voiceTypingTarget === 'description' ? '#DC2626' : '#475569'}
+                      />
+                      <Text
+                        style={[
+                          styles.voiceTypingBtnText,
+                          voiceTypingTarget === 'description' && styles.voiceTypingBtnTextActive,
+                        ]}
+                      >
+                        {voiceTypingTarget === 'description' ? 'Tap to Stop' : 'Voice'}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
               <TextInput
                 style={[styles.formInput, { minHeight: 70, textAlignVertical: 'top' }]}
-                placeholder="Provide full context, technical specifications, and expected deliverables..."
+                placeholder="Provide full context, technical specifications, and expected deliverables (or tap Voice)..."
                 placeholderTextColor="#999999"
                 value={description}
                 onChangeText={setDescription}
@@ -1644,8 +1790,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Comfortaa_600SemiBold',
     color: '#222222',
+  },
+  formLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginTop: 8,
     marginBottom: 4,
+  },
+  voiceTypingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  voiceTypingBtnActive: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#F87171',
+  },
+  voiceTypingBtnText: {
+    fontSize: 10,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#475569',
+  },
+  voiceTypingBtnTextActive: {
+    color: '#DC2626',
   },
   formInput: {
     backgroundColor: '#F8F9FC',
