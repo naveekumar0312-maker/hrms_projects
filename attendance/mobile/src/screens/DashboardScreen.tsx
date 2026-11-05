@@ -19,6 +19,9 @@ import {
   disableLocationSharing,
 } from '../services/locationTrackingService';
 import PersonalAlarmCard from '../components/PersonalAlarmCard';
+import * as SecureStore from 'expo-secure-store';
+import { getEmployeeTasks, MobileTask } from '../services/taskService';
+import MobileTaskDailyReminderModal from '../components/MobileTaskDailyReminderModal';
 
 
 
@@ -99,6 +102,10 @@ export default function DashboardScreen({ navigation }: any) {
   const [sharingEnabled, setSharingEnabled] = useState(false);
   const [sharingLoading, setSharingLoading] = useState(false);
   const [sharingStatusLoading, setSharingStatusLoading] = useState(false);
+
+  // Daily Task Reminder Pop-up State
+  const [assignedTasks, setAssignedTasks] = useState<MobileTask[]>([]);
+  const [showTaskReminder, setShowTaskReminder] = useState(false);
 
   const formatLocationName = (address: Location.LocationGeocodedAddress): string => {
     const parts: string[] = [];
@@ -285,9 +292,10 @@ export default function DashboardScreen({ navigation }: any) {
   const fetchData = async () => {
     try {
       setLoadingData(true);
-      const [todayData, historyData] = await Promise.all([
+      const [todayData, historyData, tasksList] = await Promise.all([
         getTodayAttendance(),
-        getHistory(1)
+        getHistory(1),
+        getEmployeeTasks().catch(() => [] as MobileTask[]),
       ]);
       
       if (todayData && todayData.status !== 'NOT_CHECKED_IN') {
@@ -300,6 +308,26 @@ export default function DashboardScreen({ navigation }: any) {
       // Filter out today from recent history visually if it's already shown above,
       // or just show the top 3.
       setRecentHistory(historyList.filter((item: any) => item.date !== todayData.date).slice(0, 3));
+
+      // Daily Task Reminder check
+      if (Array.isArray(tasksList)) {
+        const activeTasks = tasksList.filter(
+          (t) => !['COMPLETED', 'CANCELLED', 'DRAFT'].includes(t.status)
+        );
+        setAssignedTasks(activeTasks);
+
+        const todayKey = 'daily_task_reminder_' + new Date().toISOString().slice(0, 10);
+        try {
+          const seen = await SecureStore.getItemAsync(todayKey);
+          if (activeTasks.length > 0 && !seen) {
+            setShowTaskReminder(true);
+          }
+        } catch {
+          if (activeTasks.length > 0) {
+            setShowTaskReminder(true);
+          }
+        }
+      }
       
     } catch (error: any) {
       if (error?.response?.status === 401) {
@@ -1039,6 +1067,27 @@ export default function DashboardScreen({ navigation }: any) {
 
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* DAILY TASK REMINDER MODAL */}
+      <MobileTaskDailyReminderModal
+        visible={showTaskReminder}
+        tasks={assignedTasks}
+        onClose={async () => {
+          setShowTaskReminder(false);
+          const todayKey = 'daily_task_reminder_' + new Date().toISOString().slice(0, 10);
+          try {
+            await SecureStore.setItemAsync(todayKey, '1');
+          } catch {}
+        }}
+        onViewAllTasks={async () => {
+          setShowTaskReminder(false);
+          const todayKey = 'daily_task_reminder_' + new Date().toISOString().slice(0, 10);
+          try {
+            await SecureStore.setItemAsync(todayKey, '1');
+          } catch {}
+          navigation.navigate('TasksTab');
+        }}
+      />
     </View>
   );
 }

@@ -32,6 +32,9 @@ import {
 
 import { Link, useNavigate } from 'react-router-dom';
 import './Dashboard.css';
+import { TaskDailyReminderModal } from '../../components/TaskDailyReminderModal';
+import type { DailyReminderTask } from '../../components/TaskDailyReminderModal';
+import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
 
 
 const EmployeeDashboard = () => {
@@ -59,6 +62,11 @@ const EmployeeDashboard = () => {
   });
 
   const [locationStatus, setLocationStatus] = useState('-- m');
+
+  // Daily Tasks Reminder Pop-up State
+  const [assignedTasks, setAssignedTasks] = useState<DailyReminderTask[]>([]);
+  const [showTaskReminder, setShowTaskReminder] = useState(false);
+  const [activeWorkspaceTaskId, setActiveWorkspaceTaskId] = useState<number | null>(null);
 
   // Live Location Sharing state for FIELD & MARKETING employees
   const normalizedWorkType = (employee?.work_type || '').trim().toUpperCase();
@@ -256,27 +264,44 @@ const EmployeeDashboard = () => {
     try {
       setLoading(true);
 
-      const [todayRes, historyRes] = await Promise.all([
+      const [todayRes, historyRes, tasksRes] = await Promise.allSettled([
         api.get('/attendance/today/'),
         getHistory(1),
+        api.get('/tasks-module/tasks/'),
       ]);
 
-      setTodayData(todayRes.data);
+      if (todayRes.status === 'fulfilled') {
+        setTodayData(todayRes.value.data);
+        const accuracy =
+          todayRes.value.data?.check_in_accuracy ||
+          todayRes.value.data?.check_out_accuracy ||
+          todayRes.value.data?.gps_accuracy;
+        if (accuracy !== undefined && accuracy !== null) {
+          setLocationStatus(`${Math.round(Number(accuracy))} m`);
+        }
+      }
 
-      const historyList = historyRes?.results || historyRes || [];
+      if (historyRes.status === 'fulfilled') {
+        const historyList = historyRes.value?.results || historyRes.value || [];
+        setRecentHistory(historyList.slice(0, 3));
+      }
 
-      const recent = historyList.slice(0, 3);
+      if (tasksRes.status === 'fulfilled') {
+        const allTasks = Array.isArray(tasksRes.value.data) ? tasksRes.value.data : [];
+        // Only active/incomplete tasks
+        const activeTasks = allTasks.filter(
+          (t: any) => !['COMPLETED', 'CANCELLED', 'DRAFT'].includes(t.status)
+        );
+        setAssignedTasks(activeTasks);
 
-      setRecentHistory(recent);
+        // Daily login reminder check
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const reminderStorageKey = `daily_task_reminder_seen_${todayStr}`;
+        const alreadyDismissed = sessionStorage.getItem(reminderStorageKey);
 
-      // Use today's GPS accuracy if backend provides it
-      const accuracy =
-        todayRes.data?.check_in_accuracy ||
-        todayRes.data?.check_out_accuracy ||
-        todayRes.data?.gps_accuracy;
-
-      if (accuracy !== undefined && accuracy !== null) {
-        setLocationStatus(`${Math.round(Number(accuracy))} m`);
+        if (activeTasks.length > 0 && !alreadyDismissed) {
+          setShowTaskReminder(true);
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -1139,6 +1164,42 @@ const EmployeeDashboard = () => {
           />
 
         </div>
+      )}
+
+      {/* =====================================================
+          DAILY TASK REMINDER SIDEBAR POPUP
+      ===================================================== */}
+      <TaskDailyReminderModal
+        isOpen={showTaskReminder}
+        tasks={assignedTasks}
+        onClose={() => {
+          const todayStr = new Date().toISOString().slice(0, 10);
+          sessionStorage.setItem(`daily_task_reminder_seen_${todayStr}`, '1');
+          setShowTaskReminder(false);
+        }}
+        onViewTasks={() => {
+          const todayStr = new Date().toISOString().slice(0, 10);
+          sessionStorage.setItem(`daily_task_reminder_seen_${todayStr}`, '1');
+          setShowTaskReminder(false);
+          navigate('/tasks');
+        }}
+        onOpenTask={(taskId) => {
+          const todayStr = new Date().toISOString().slice(0, 10);
+          sessionStorage.setItem(`daily_task_reminder_seen_${todayStr}`, '1');
+          setShowTaskReminder(false);
+          setActiveWorkspaceTaskId(taskId);
+        }}
+      />
+
+      {/* Task Workspace Modal for quick inspection */}
+      {activeWorkspaceTaskId && (
+        <TaskWorkspaceModal
+          taskId={activeWorkspaceTaskId}
+          onClose={() => setActiveWorkspaceTaskId(null)}
+          onSaved={() => {
+            fetchDashboardData();
+          }}
+        />
       )}
 
     </div>
