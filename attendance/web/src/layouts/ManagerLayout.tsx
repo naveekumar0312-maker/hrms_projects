@@ -12,6 +12,11 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import api from '../api';
 import './ManagerLayout.css';
+import { RolePendingActionsModal } from '../components/RolePendingActionsModal';
+import type {
+  PendingActionItem,
+  PendingActionsSummary,
+} from '../components/RolePendingActionsModal';
 
 const ManagerLayout: React.FC = () => {
   const { user, logout } = useContext(AuthContext);
@@ -19,6 +24,16 @@ const ManagerLayout: React.FC = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profile, setProfile] = useState<any>(null);
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [reminderData, setReminderData] = useState<{
+    totalCount: number;
+    summary: PendingActionsSummary;
+    items: PendingActionItem[];
+  }>({
+    totalCount: 0,
+    summary: {},
+    items: [],
+  });
 
   useEffect(() => {
     let active = true;
@@ -35,6 +50,53 @@ const ManagerLayout: React.FC = () => {
       active = false;
     };
   }, []);
+
+  // Manager Pending Approvals Reminder Check (Hourly + on Mount)
+  useEffect(() => {
+    if (!user) return;
+
+    let active = true;
+
+    const checkPendingReminder = async (force: boolean = false) => {
+      try {
+        const lastShownKey = `pending_reminder_last_shown_MANAGER_${user.id || 'user'}`;
+        const lastShown = localStorage.getItem(lastShownKey);
+        const oneHourMs = 60 * 60 * 1000;
+        const now = Date.now();
+
+        if (!force && lastShown && now - parseInt(lastShown, 10) < oneHourMs) {
+          return;
+        }
+
+        const res = await api.get('/attendance/pending-actions-reminder/');
+        if (!active) return;
+
+        const data = res.data;
+        if (data && data.has_pending && data.total_pending_count > 0) {
+          setReminderData({
+            totalCount: data.total_pending_count,
+            summary: data.summary || {},
+            items: data.items || [],
+          });
+          setReminderModalOpen(true);
+          localStorage.setItem(lastShownKey, now.toString());
+        }
+      } catch (err) {
+        console.error('Failed to check manager reminders:', err);
+      }
+    };
+
+    checkPendingReminder(false);
+
+    const interval = setInterval(() => {
+      checkPendingReminder(true);
+    }, 60 * 60 * 1000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -140,6 +202,19 @@ const ManagerLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      <RolePendingActionsModal
+        isOpen={reminderModalOpen}
+        role="REPORTING_MANAGER"
+        totalCount={reminderData.totalCount}
+        summary={reminderData.summary}
+        items={reminderData.items}
+        onClose={() => setReminderModalOpen(false)}
+        onNavigateAction={(url) => {
+          setReminderModalOpen(false);
+          navigate(url);
+        }}
+      />
     </div>
   );
 };

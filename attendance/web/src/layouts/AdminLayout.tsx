@@ -34,6 +34,11 @@ import {
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api';
+import { RolePendingActionsModal } from '../components/RolePendingActionsModal';
+import type {
+  PendingActionItem,
+  PendingActionsSummary,
+} from '../components/RolePendingActionsModal';
 
 
 // ============================================================
@@ -648,8 +653,69 @@ const TopHeader = ({
 
 const AdminLayout = () => {
   const { user } = React.useContext(AuthContext);
+  const navigate = useNavigate();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [reminderModalOpen, setReminderModalOpen] = useState(false);
+  const [reminderData, setReminderData] = useState<{
+    totalCount: number;
+    summary: PendingActionsSummary;
+    items: PendingActionItem[];
+  }>({
+    totalCount: 0,
+    summary: {},
+    items: [],
+  });
+
+  // Hourly / Initial Pending Actions Reminder Check
+  useEffect(() => {
+    if (!user || !['SUPER_ADMIN', 'HR', 'ADMIN'].includes(user.role)) return;
+
+    let active = true;
+
+    const checkPendingReminder = async (force: boolean = false) => {
+      try {
+        const lastShownKey = `pending_reminder_last_shown_${user.role}_${user.id || 'user'}`;
+        const lastShown = localStorage.getItem(lastShownKey);
+        const oneHourMs = 60 * 60 * 1000;
+        const now = Date.now();
+
+        // Check if an hour has elapsed or first load
+        if (!force && lastShown && now - parseInt(lastShown, 10) < oneHourMs) {
+          return;
+        }
+
+        const res = await api.get('/attendance/pending-actions-reminder/');
+        if (!active) return;
+
+        const data = res.data;
+        if (data && data.has_pending && data.total_pending_count > 0) {
+          setReminderData({
+            totalCount: data.total_pending_count,
+            summary: data.summary || {},
+            items: data.items || [],
+          });
+          setReminderModalOpen(true);
+          localStorage.setItem(lastShownKey, now.toString());
+        }
+      } catch (err) {
+        console.error('Failed to check pending action reminders:', err);
+      }
+    };
+
+    // Run initial check
+    checkPendingReminder(false);
+
+    // Set recurring 1-hour interval (especially for HR and Admin)
+    const interval = setInterval(() => {
+      checkPendingReminder(true);
+    }, 60 * 60 * 1000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   
 
@@ -744,6 +810,19 @@ const AdminLayout = () => {
         </main>
 
       </div>
+
+      <RolePendingActionsModal
+        isOpen={reminderModalOpen}
+        role={user?.role || ''}
+        totalCount={reminderData.totalCount}
+        summary={reminderData.summary}
+        items={reminderData.items}
+        onClose={() => setReminderModalOpen(false)}
+        onNavigateAction={(url) => {
+          setReminderModalOpen(false);
+          navigate(url);
+        }}
+      />
     </div>
   );
 };

@@ -25,6 +25,13 @@ import {
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { getManagerDashboardSummary, ManagerSummary } from '../../services/managerService';
+import { fetchPendingActionsReminder } from '../../services/adminHRService';
+import {
+  MobileRolePendingActionsModal,
+  MobilePendingActionItem,
+  MobilePendingActionsSummary,
+} from '../../components/MobileRolePendingActionsModal';
+import * as SecureStore from 'expo-secure-store';
 import { COLORS } from '../../constants/theme';
 
 export default function ManagerDashboardScreen({ navigation }: any) {
@@ -34,6 +41,61 @@ export default function ManagerDashboardScreen({ navigation }: any) {
   const [summary, setSummary] = useState<ManagerSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [reminderData, setReminderData] = useState<{
+    totalCount: number;
+    summary: MobilePendingActionsSummary;
+    items: MobilePendingActionItem[];
+  }>({
+    totalCount: 0,
+    summary: {},
+    items: [],
+  });
+
+  // Hourly / mount reminder for Manager
+  useEffect(() => {
+    let active = true;
+
+    const checkReminder = async (force: boolean = false) => {
+      try {
+        const storeKey = `pending_reminder_ts_MGR_${user?.id || '0'}`;
+        const lastShown = await SecureStore.getItemAsync(storeKey);
+        const oneHourMs = 60 * 60 * 1000;
+        const now = Date.now();
+
+        if (!force && lastShown && now - parseInt(lastShown, 10) < oneHourMs) {
+          return;
+        }
+
+        const data = await fetchPendingActionsReminder();
+        if (!active) return;
+
+        if (data && data.has_pending && data.total_pending_count > 0) {
+          setReminderData({
+            totalCount: data.total_pending_count,
+            summary: data.summary || {},
+            items: data.items || [],
+          });
+          setReminderModalVisible(true);
+          await SecureStore.setItemAsync(storeKey, now.toString());
+        }
+      } catch (err) {
+        console.error('Error fetching manager pending actions reminder:', err);
+      }
+    };
+
+    checkReminder(false);
+
+    const interval = setInterval(() => {
+      checkReminder(true);
+    }, 60 * 60 * 1000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const loadData = useCallback(async () => {
     try {
@@ -232,6 +294,28 @@ export default function ManagerDashboardScreen({ navigation }: any) {
           </>
         )}
       </ScrollView>
+
+      <MobileRolePendingActionsModal
+        visible={reminderModalVisible}
+        role="REPORTING_MANAGER"
+        totalCount={reminderData.totalCount}
+        summary={reminderData.summary}
+        items={reminderData.items}
+        onClose={() => setReminderModalVisible(false)}
+        onNavigateAction={(item) => {
+          setReminderModalVisible(false);
+          switch (item.type) {
+            case 'ATTENDANCE_PUNCH':
+              navigation.navigate('ManagerAttendance');
+              break;
+            case 'TASK':
+              navigation.navigate('ManagerTasksTab');
+              break;
+            default:
+              navigation.navigate('ManagerAttendance');
+          }
+        }}
+      />
     </View>
   );
 }

@@ -10,6 +10,7 @@ from .views import (
     HolidayViewSet,
     EmployeePersonalAlarmView,
 )
+from .reminder_views import PendingActionsReminderView
 
 router = DefaultRouter()
 router.register(r'permissions', PermissionRequestViewSet, basename='permissions')
@@ -19,6 +20,7 @@ router.register(r'holidays', HolidayViewSet, basename='holidays')
 router.register(r'', AttendanceViewSet, basename='attendance')
 
 urlpatterns = [
+    path('pending-actions-reminder/', PendingActionsReminderView.as_view(), name='pending-actions-reminder'),
     path('personal-alarm/', EmployeePersonalAlarmView.as_view(), name='employee-personal-alarm'),
     path('check-in/', CheckInView.as_view(), name='check-in'),
     path('check-out/', CheckOutView.as_view(), name='check-out'),

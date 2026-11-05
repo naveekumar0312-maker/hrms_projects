@@ -408,3 +408,8 @@ export const updateHoliday = async (id: number, data: any): Promise<any> => {
   const response = await api.patch(`/attendance/holidays/${id}/`, data);
   return response.data;
 };
+
+export const fetchPendingActionsReminder = async (): Promise<any> => {
+  const response = await api.get('/attendance/pending-actions-reminder/');
+  return response.data;
+};
