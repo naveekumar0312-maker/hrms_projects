@@ -371,80 +371,85 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                   </View>
                 </TouchableOpacity>
 
-                                {/* Approval Status & Actions */}
-                <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9' }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Text style={{ fontSize: 11, color: '#64748B', fontFamily: 'Comfortaa_500Medium' }}>Approval:</Text>
-                      <View style={{
-                        paddingHorizontal: 8,
-                        paddingVertical: 2,
-                        borderRadius: 10,
-                        backgroundColor: item.approval_status === 'APPROVED' ? '#ECFDF5' : (item.approval_status === 'REJECTED' ? '#FEF2F2' : '#FFFBEB'),
-                        borderWidth: 1,
-                        borderColor: item.approval_status === 'APPROVED' ? '#A7F3D0' : (item.approval_status === 'REJECTED' ? '#FECACA' : '#FDE68A')
-                      }}>
-                        <Text style={{
-                          fontSize: 10,
-                          fontFamily: 'Comfortaa_700Bold',
-                          color: item.approval_status === 'APPROVED' ? '#059669' : (item.approval_status === 'REJECTED' ? '#DC2626' : '#D97706')
+                {/* Approval Status & Actions: Only show if employee actually punched in/out */}
+                {Boolean(item.check_in_time || item.check_out_time || (typeof item.id === 'number')) && (
+                  <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Text style={{ fontSize: 11, color: '#64748B', fontFamily: 'Comfortaa_500Medium' }}>Approval:</Text>
+                        <View style={{
+                          paddingHorizontal: 8,
+                          paddingVertical: 2,
+                          borderRadius: 10,
+                          backgroundColor: item.approval_status === 'APPROVED' ? '#ECFDF5' : (item.approval_status === 'REJECTED' ? '#FEF2F2' : '#FFFBEB'),
+                          borderWidth: 1,
+                          borderColor: item.approval_status === 'APPROVED' ? '#A7F3D0' : (item.approval_status === 'REJECTED' ? '#FECACA' : '#FDE68A')
                         }}>
-                          {item.approval_status || 'PENDING'}
-                        </Text>
+                          <Text style={{
+                            fontSize: 10,
+                            fontFamily: 'Comfortaa_700Bold',
+                            color: item.approval_status === 'APPROVED' ? '#059669' : (item.approval_status === 'REJECTED' ? '#DC2626' : '#D97706')
+                          }}>
+                            {item.approval_status || 'PENDING'}
+                          </Text>
+                        </View>
                       </View>
+                      {item.rejection_reason ? (
+                        <Text style={{ fontSize: 11, color: '#DC2626', fontStyle: 'italic', maxWidth: '55%' }} numberOfLines={1}>
+                          {item.rejection_reason}
+                        </Text>
+                      ) : null}
                     </View>
-                    {item.rejection_reason ? (
-                      <Text style={{ fontSize: 11, color: '#DC2626', fontStyle: 'italic', maxWidth: '55%' }} numberOfLines={1}>
-                        {item.rejection_reason}
-                      </Text>
-                    ) : null}
-                  </View>
 
-                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
-                    <TouchableOpacity
-                      style={{
-                        flex: 1,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        paddingVertical: 7,
-                        borderRadius: 6,
-                        backgroundColor: '#0056CF',
-                        gap: 4
-                      }}
-                      onPress={() => handleApproveRecord(item)}
-                      disabled={actionLoading || item.approval_status === 'APPROVED'}
-                      activeOpacity={0.8}
-                    >
-                      <CheckCircle size={13} color='#FFFFFF' strokeWidth={2.2} />
-                      <Text style={{ color: '#FFFFFF', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Approve</Text>
-                    </TouchableOpacity>
+                    {/* Only show Approve and Reject buttons if pending (once approved or rejected, hide buttons) */}
+                    {item.approval_status !== 'APPROVED' && item.approval_status !== 'REJECTED' && (
+                      <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            paddingVertical: 7,
+                            borderRadius: 6,
+                            backgroundColor: '#0056CF',
+                            gap: 4
+                          }}
+                          onPress={() => handleApproveRecord(item)}
+                          disabled={actionLoading}
+                          activeOpacity={0.8}
+                        >
+                          <CheckCircle size={13} color='#FFFFFF' strokeWidth={2.2} />
+                          <Text style={{ color: '#FFFFFF', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Approve</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity
-                      style={{
-                        flex: 1,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        paddingVertical: 7,
-                        borderRadius: 6,
-                        backgroundColor: '#FEF2F2',
-                        borderWidth: 1,
-                        borderColor: '#FECACA',
-                        gap: 4
-                      }}
-                      onPress={() => {
-                        setRejectingRecord(item);
-                        setRejectReason('');
-                      }}
-                      disabled={actionLoading}
-                      activeOpacity={0.8}
-                    >
-                      <XCircle size={13} color='#DC2626' strokeWidth={2.2} />
-                      <Text style={{ color: '#DC2626', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Reject</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            paddingVertical: 7,
+                            borderRadius: 6,
+                            backgroundColor: '#FEF2F2',
+                            borderWidth: 1,
+                            borderColor: '#FECACA',
+                            gap: 4
+                          }}
+                          onPress={() => {
+                            setRejectingRecord(item);
+                            setRejectReason('');
+                          }}
+                          disabled={actionLoading}
+                          activeOpacity={0.8}
+                        >
+                          <XCircle size={13} color='#DC2626' strokeWidth={2.2} />
+                          <Text style={{ color: '#DC2626', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Reject</Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
                   </View>
-                </View>
+                )}
 
                 {/* View, Edit, Delete Actions */}
                 <View style={styles.cardActionRow}>
@@ -527,13 +532,17 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Check In</Text>
                   <Text style={styles.detailValue}>
-                    {selectedRecord.check_in_time || selectedRecord.check_in || 'Not punched'}
+                    {selectedRecord.check_in_time || selectedRecord.check_in
+                      ? formatAttendanceTime(selectedRecord.check_in_time || selectedRecord.check_in)
+                      : 'Not punched'}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Check Out</Text>
                   <Text style={styles.detailValue}>
-                    {selectedRecord.check_out_time || selectedRecord.check_out || 'Not punched'}
+                    {selectedRecord.check_out_time || selectedRecord.check_out
+                      ? formatAttendanceTime(selectedRecord.check_out_time || selectedRecord.check_out)
+                      : 'Not punched'}
                   </Text>
                 </View>
                 <View style={styles.detailRow}>
