@@ -37,6 +37,7 @@ import {
 const LEAVE_TYPES = [
   { label: 'Casual Leave', value: 'CASUAL' },
   { label: 'Sick Leave', value: 'SICK' },
+  { label: 'Annual Leave', value: 'ANNUAL' },
   { label: 'Half Day', value: 'HALF_DAY' },
   { label: 'Personal Leave', value: 'PERSONAL' },
   { label: 'Other', value: 'OTHER' },

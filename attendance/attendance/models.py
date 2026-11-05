@@ -199,6 +199,7 @@ class LeaveRequest(models.Model):
     LEAVE_TYPE_CHOICES = (
         ('CASUAL', 'Casual Leave'),
         ('SICK', 'Sick Leave'),
+        ('ANNUAL', 'Annual Leave'),
         ('HALF_DAY', 'Half Day Leave'),
         ('PERSONAL', 'Personal Leave'),
         ('OTHER', 'Other'),

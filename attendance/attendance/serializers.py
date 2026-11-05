@@ -464,12 +464,22 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         instance = self.instance
+        leave_type = attrs.get('leave_type', instance.leave_type if instance else None)
         start_date = attrs.get(
             'start_date', instance.start_date if instance else None
         )
         end_date = attrs.get(
             'end_date', instance.end_date if instance else None
         )
+
+        # Automatically default end_date to start_date if HALF_DAY or omitted
+        if leave_type == 'HALF_DAY' and start_date and not end_date:
+            attrs['end_date'] = start_date
+            end_date = start_date
+
+        if start_date and not end_date:
+            attrs['end_date'] = start_date
+            end_date = start_date
 
         if start_date and end_date and end_date < start_date:
             raise serializers.ValidationError({
