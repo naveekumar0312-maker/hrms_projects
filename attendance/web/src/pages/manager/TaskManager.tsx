@@ -178,7 +178,7 @@ const TaskManager: React.FC = () => {
         </div>
         <div className="rm-actions">
           <button className="rm-btn rm-btn-primary" onClick={handleOpenCreate}>
-            <Plus size={16} /> + Assign New Task
+            <Plus size={16} /> Assign New Task
           </button>
         </div>
       </div>

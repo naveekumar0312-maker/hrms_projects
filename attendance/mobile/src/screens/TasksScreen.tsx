@@ -245,6 +245,8 @@ export const TasksScreen: React.FC = () => {
   // Voice-to-Text Speech Recognition State for Task Title & Description
   const [voiceTypingTarget, setVoiceTypingTarget] = useState<'title' | 'description' | null>(null);
   const [transcribing, setTranscribing] = useState(false);
+  const [titleVoiceAudioUri, setTitleVoiceAudioUri] = useState<string | null>(null);
+  const [descVoiceAudioUri, setDescVoiceAudioUri] = useState<string | null>(null);
   const voiceTypingRecorder = useRef<any>(null);
   const voiceTypingSeconds = useRef<number>(0);
   const voiceTypingInterval = useRef<any>(null);
@@ -295,6 +297,12 @@ export const TasksScreen: React.FC = () => {
         voiceTypingRecorder.current = null;
 
         if (uri) {
+          if (target === 'title') {
+            setTitleVoiceAudioUri(uri);
+          } else {
+            setDescVoiceAudioUri(uri);
+          }
+
           const text = await transcribeAudio(uri, 'audio/m4a', 'voice_speech.m4a');
           if (text && text.trim()) {
             if (target === 'title') {
@@ -303,12 +311,12 @@ export const TasksScreen: React.FC = () => {
               setDescription((prev) => (prev ? prev.trim() + ' ' + text.trim() : text.trim()));
             }
           } else {
-            Alert.alert('Voice Input', 'No clear speech detected. Please speak closer to the microphone and try again.');
+            Alert.alert('Voice Input', 'Voice recorded and saved in box. (No clear speech text returned)');
           }
         }
       } catch (err: any) {
         console.error('Failed to transcribe voice:', err);
-        Alert.alert('Voice Recognition', 'Could not convert voice to text. Please check network connection.');
+        Alert.alert('Voice Recording', 'Voice audio saved in box.');
       } finally {
         setTranscribing(false);
       }
@@ -875,6 +883,24 @@ export const TasksScreen: React.FC = () => {
                 value={title}
                 onChangeText={setTitle}
               />
+              {titleVoiceAudioUri && (
+                <View style={styles.voiceAudioBox}>
+                  <TouchableOpacity
+                    style={styles.voiceAudioPlayBtn}
+                    onPress={() => playAudio(titleVoiceAudioUri, 'title_voice')}
+                  >
+                    {playingAudioId === 'title_voice' ? (
+                      <Pause size={14} color="#0056B3" />
+                    ) : (
+                      <Play size={14} color="#0056B3" />
+                    )}
+                    <Text style={styles.voiceAudioPlayText}>Play Title Voice</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setTitleVoiceAudioUri(null)}>
+                    <X size={14} color="#888888" />
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <View style={[styles.formLabelRow, { marginTop: 6 }]}>
                 <Text style={styles.formLabel}>Description</Text>
@@ -922,6 +948,24 @@ export const TasksScreen: React.FC = () => {
                 multiline
                 numberOfLines={3}
               />
+              {descVoiceAudioUri && (
+                <View style={styles.voiceAudioBox}>
+                  <TouchableOpacity
+                    style={styles.voiceAudioPlayBtn}
+                    onPress={() => playAudio(descVoiceAudioUri, 'desc_voice')}
+                  >
+                    {playingAudioId === 'desc_voice' ? (
+                      <Pause size={14} color="#0056B3" />
+                    ) : (
+                      <Play size={14} color="#0056B3" />
+                    )}
+                    <Text style={styles.voiceAudioPlayText}>Play Description Voice</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setDescVoiceAudioUri(null)}>
+                    <X size={14} color="#888888" />
+                  </TouchableOpacity>
+                </View>
+              )}
 
               <View style={{ marginTop: 6, marginBottom: 8 }}>
                 <MobileEmployeeMultiSelect
@@ -1820,6 +1864,28 @@ const styles = StyleSheet.create({
   },
   voiceTypingBtnTextActive: {
     color: '#DC2626',
+  },
+  voiceAudioBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginTop: 6,
+  },
+  voiceAudioPlayBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  voiceAudioPlayText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#0056B3',
   },
   formInput: {
     backgroundColor: '#F8F9FC',

@@ -92,70 +92,102 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
 
   // Speech-to-text voice recognition for Title & Description
   const [voiceTarget, setVoiceTarget] = useState<'title' | 'description' | null>(null);
+  const [titleVoiceAudioUrl, setTitleVoiceAudioUrl] = useState<string | null>(null);
+  const [descVoiceAudioUrl, setDescVoiceAudioUrl] = useState<string | null>(null);
   const speechRecognizerRef = useRef<any>(null);
+  const fieldMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const fieldAudioChunksRef = useRef<Blob[]>([]);
 
-  const startVoiceInput = (target: 'title' | 'description') => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('Speech recognition is not supported in this browser. Please use Google Chrome or Microsoft Edge.');
-      return;
-    }
-
+  const startVoiceInput = async (target: 'title' | 'description') => {
     if (voiceTarget === target) {
-      // Toggle off if currently listening
       stopVoiceInput();
       return;
     }
 
-    if (speechRecognizerRef.current) {
-      try {
-        speechRecognizerRef.current.abort();
-      } catch (e) {
-        // ignore
+    // Stop any existing session
+    stopVoiceInput();
+
+    // 1. Start audio recording via MediaRecorder for playback box
+    try {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        let mimeType = 'audio/webm';
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        }
+        const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+        fieldMediaRecorderRef.current = recorder;
+        fieldAudioChunksRef.current = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            fieldAudioChunksRef.current.push(e.data);
+          }
+        };
+
+        recorder.onstop = () => {
+          const blob = new Blob(fieldAudioChunksRef.current, { type: mimeType || 'audio/webm' });
+          const url = URL.createObjectURL(blob);
+          if (target === 'title') {
+            setTitleVoiceAudioUrl(url);
+          } else {
+            setDescVoiceAudioUrl(url);
+          }
+          stream.getTracks().forEach((track) => track.stop());
+        };
+
+        recorder.start(100);
       }
+    } catch (micErr) {
+      console.warn('Audio recorder stream could not be started:', micErr);
     }
 
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
+    // 2. Start SpeechRecognition for converting voice to text
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
 
-      let initialText = target === 'title' ? title : description;
+        let initialText = target === 'title' ? title : description;
 
-      recognition.onstart = () => {
-        setVoiceTarget(target);
-      };
+        recognition.onstart = () => {
+          setVoiceTarget(target);
+        };
 
-      recognition.onresult = (event: any) => {
-        let transcript = '';
-        for (let i = 0; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
-        }
-        if (target === 'title') {
-          setTitle((initialText ? initialText + ' ' : '') + transcript);
-        } else {
-          setDescription((initialText ? initialText + ' ' : '') + transcript);
-        }
-      };
+        recognition.onresult = (event: any) => {
+          let transcript = '';
+          for (let i = 0; i < event.results.length; i++) {
+            transcript += event.results[i][0].transcript;
+          }
+          if (target === 'title') {
+            setTitle((initialText ? initialText + ' ' : '') + transcript);
+          } else {
+            setDescription((initialText ? initialText + ' ' : '') + transcript);
+          }
+        };
 
-      recognition.onerror = (event: any) => {
-        console.warn('Speech recognition error:', event.error);
-        if (event.error === 'not-allowed') {
-          alert('Microphone permission denied. Please allow microphone access to use voice typing.');
-        }
+        recognition.onerror = (event: any) => {
+          console.warn('Speech recognition error:', event.error);
+          setVoiceTarget(null);
+        };
+
+        recognition.onend = () => {
+          setVoiceTarget(null);
+        };
+
+        speechRecognizerRef.current = recognition;
+        recognition.start();
+      } catch (err: any) {
+        console.error('Failed to start speech recognition:', err);
         setVoiceTarget(null);
-      };
-
-      recognition.onend = () => {
-        setVoiceTarget(null);
-      };
-
-      speechRecognizerRef.current = recognition;
-      recognition.start();
-    } catch (err: any) {
-      console.error('Failed to start speech recognition:', err);
-      setVoiceTarget(null);
+      }
+    } else {
+      setVoiceTarget(target);
     }
   };
 
@@ -167,6 +199,14 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
         // ignore
       }
       speechRecognizerRef.current = null;
+    }
+    if (fieldMediaRecorderRef.current && fieldMediaRecorderRef.current.state !== 'inactive') {
+      try {
+        fieldMediaRecorderRef.current.stop();
+      } catch (e) {
+        // ignore
+      }
+      fieldMediaRecorderRef.current = null;
     }
     setVoiceTarget(null);
   };
@@ -666,6 +706,17 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                     disabled={isEmployee}
                     required
                   />
+                  {titleVoiceAudioUrl && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Title Audio:</span>
+                        <audio controls src={titleVoiceAudioUrl} style={{ height: '28px' }} />
+                      </div>
+                      <button type="button" className="task-tool-btn" title="Remove Audio" onClick={() => setTitleVoiceAudioUrl(null)}>
+                        <X size={13} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="task-field-group">
@@ -700,6 +751,17 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={isEmployee}
                   />
+                  {descVoiceAudioUrl && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Description Audio:</span>
+                        <audio controls src={descVoiceAudioUrl} style={{ height: '28px' }} />
+                      </div>
+                      <button type="button" className="task-tool-btn" title="Remove Audio" onClick={() => setDescVoiceAudioUrl(null)}>
+                        <X size={13} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* ASSIGNED EMPLOYEES SELECTION */}
