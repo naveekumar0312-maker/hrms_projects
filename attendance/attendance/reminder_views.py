@@ -38,10 +38,10 @@ class PendingActionsReminderView(APIView):
         if role in ('SUPER_ADMIN', 'ADMIN'):
             company_id = request.query_params.get('company')
             if company_id:
-                leaves_qs = LeaveRequest.objects.filter(employee__company_id=company_id)
-                permissions_qs = PermissionRequest.objects.filter(employee__company_id=company_id)
-                wfh_qs = WFHRequest.objects.filter(employee__company_id=company_id)
-                attendance_qs = Attendance.objects.filter(employee__company_id=company_id)
+                leaves_qs = LeaveRequest.objects.filter(employee__branch__company_id=company_id)
+                permissions_qs = PermissionRequest.objects.filter(employee__branch__company_id=company_id)
+                wfh_qs = WFHRequest.objects.filter(employee__branch__company_id=company_id)
+                attendance_qs = Attendance.objects.filter(employee__branch__company_id=company_id)
                 tasks_qs = Task.objects.filter(company_id=company_id)
             else:
                 leaves_qs = LeaveRequest.objects.all()
@@ -51,11 +51,12 @@ class PendingActionsReminderView(APIView):
                 tasks_qs = Task.objects.all()
 
         elif role == 'HR':
-            leaves_qs = LeaveRequest.objects.filter(employee__company_id=user.company_id)
-            permissions_qs = PermissionRequest.objects.filter(employee__company_id=user.company_id)
-            wfh_qs = WFHRequest.objects.filter(employee__company_id=user.company_id)
-            attendance_qs = Attendance.objects.filter(employee__company_id=user.company_id)
-            tasks_qs = Task.objects.filter(company_id=user.company_id)
+            company_id = getattr(user, 'company_id', None)
+            leaves_qs = LeaveRequest.objects.filter(employee__branch__company_id=company_id) if company_id else LeaveRequest.objects.none()
+            permissions_qs = PermissionRequest.objects.filter(employee__branch__company_id=company_id) if company_id else PermissionRequest.objects.none()
+            wfh_qs = WFHRequest.objects.filter(employee__branch__company_id=company_id) if company_id else WFHRequest.objects.none()
+            attendance_qs = Attendance.objects.filter(employee__branch__company_id=company_id) if company_id else Attendance.objects.none()
+            tasks_qs = Task.objects.filter(company_id=company_id) if company_id else Task.objects.none()
 
         elif role == 'REPORTING_MANAGER':
             if not emp:
@@ -69,7 +70,7 @@ class PendingActionsReminderView(APIView):
             # Manager's direct & indirect reports
             team_ids = list(emp.direct_reports.values_list('id', flat=True))
             # Also include team members under their team leaders
-            tl_ids = list(emp.direct_reports.filter(role='TEAM_LEADER').values_list('id', flat=True))
+            tl_ids = list(emp.direct_reports.filter(user__role='TEAM_LEADER').values_list('id', flat=True))
             if tl_ids:
                 team_ids += list(Employee.objects.filter(team_leader_id__in=tl_ids).values_list('id', flat=True))
             team_ids = list(set(team_ids))
