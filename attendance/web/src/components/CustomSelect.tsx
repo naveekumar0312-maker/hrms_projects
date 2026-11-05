@@ -17,6 +17,7 @@ export interface CustomSelectProps {
   disabled?: boolean;
   className?: string;
   alignRight?: boolean;
+  direction?: 'down' | 'up' | 'auto';
 }
 
 export function CustomSelect({
@@ -29,7 +30,9 @@ export function CustomSelect({
   disabled = false,
   className,
   alignRight = false,
+  direction = 'auto',
 }: CustomSelectProps) {
+  const [openUpward, setOpenUpward] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -74,6 +77,17 @@ export function CustomSelect({
         className={`custom-select-trigger ${isOpen ? "active" : ""}`}
         onClick={() => {
           if (!disabled) {
+            if (!isOpen) {
+              if (direction === 'up') {
+                setOpenUpward(true);
+              } else if (direction === 'down') {
+                setOpenUpward(false);
+              } else if (dropdownRef.current) {
+                const rect = dropdownRef.current.getBoundingClientRect();
+                const spaceBelow = window.innerHeight - rect.bottom;
+                setOpenUpward(spaceBelow < 260 && rect.top > 260);
+              }
+            }
             setIsOpen((prev) => !prev);
             setSearchTerm("");
           }
@@ -98,7 +112,7 @@ export function CustomSelect({
           <div
             className={`custom-select-dropdown ${
               alignRight ? "align-right" : ""
-            }`}
+            } ${openUpward ? "open-upward" : ""}`}
           >
             {options.length > 5 && (
               <div className="custom-select-search-wrapper">

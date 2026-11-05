@@ -628,6 +628,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                     <CustomSelect
                       value={status}
                       onChange={(val) => setStatus(val)}
+                      direction="up"
                       options={[
                         { value: 'PENDING', label: 'To Do (Pending)' },
                         { value: 'IN_PROGRESS', label: 'In Progress' },
@@ -646,6 +647,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                       value={priority}
                       onChange={(val) => setPriority(val as any)}
                       disabled={isEmployee}
+                      direction="up"
                       options={[
                         { value: 'LOW', label: 'Low' },
                         { value: 'MEDIUM', label: 'Medium' },
