@@ -10,6 +10,12 @@
   display: flex;
   justify-content: flex-end;
   animation: dailyTaskFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  font-family: 'Comfortaa', var(--font-primary, sans-serif);
+}
+
+.daily-task-sidebar-card,
+.daily-task-sidebar-card * {
+  font-family: 'Comfortaa', var(--font-primary, sans-serif);
 }
 
 @keyframes dailyTaskFadeIn {

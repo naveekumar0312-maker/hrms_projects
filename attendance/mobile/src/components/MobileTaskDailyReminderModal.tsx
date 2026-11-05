@@ -250,12 +250,14 @@ const styles = StyleSheet.create({
   eyebrow: {
     fontSize: 9,
     fontWeight: '700',
+    fontFamily: 'Comfortaa_700Bold',
     letterSpacing: 0.5,
     color: '#2563eb',
   },
   headerTitle: {
     fontSize: 15,
     fontWeight: '700',
+    fontFamily: 'Comfortaa_700Bold',
     color: '#0f172a',
   },
   closeBtn: {
@@ -291,11 +293,13 @@ const styles = StyleSheet.create({
   statNum: {
     fontSize: 14,
     fontWeight: '700',
+    fontFamily: 'Comfortaa_700Bold',
     color: '#0f172a',
   },
   statLabel: {
     fontSize: 9,
     fontWeight: '600',
+    fontFamily: 'Comfortaa_500Medium',
     color: '#64748b',
     textTransform: 'uppercase',
   },
@@ -328,6 +332,7 @@ const styles = StyleSheet.create({
   priorityBadgeText: {
     fontSize: 9,
     fontWeight: '700',
+    fontFamily: 'Comfortaa_700Bold',
   },
   categoryBadge: {
     backgroundColor: '#f1f5f9',
@@ -338,6 +343,7 @@ const styles = StyleSheet.create({
   categoryBadgeText: {
     fontSize: 9,
     fontWeight: '600',
+    fontFamily: 'Comfortaa_500Medium',
     color: '#475569',
   },
   overdueBadge: {
@@ -353,11 +359,13 @@ const styles = StyleSheet.create({
   overdueBadgeText: {
     fontSize: 9,
     fontWeight: '700',
+    fontFamily: 'Comfortaa_700Bold',
     color: '#dc2626',
   },
   cardTitle: {
     fontSize: 13,
     fontWeight: '600',
+    fontFamily: 'Comfortaa_600SemiBold',
     color: '#1e293b',
     marginBottom: 8,
     lineHeight: 18,
@@ -379,6 +387,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748b',
     fontWeight: '500',
+    fontFamily: 'Comfortaa_500Medium',
   },
   statusPill: {
     backgroundColor: '#eff6ff',
@@ -389,6 +398,7 @@ const styles = StyleSheet.create({
   statusPillText: {
     fontSize: 9,
     fontWeight: '700',
+    fontFamily: 'Comfortaa_700Bold',
     color: '#2563eb',
     textTransform: 'uppercase',
   },
@@ -396,6 +406,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 11,
     color: '#64748b',
+    fontFamily: 'Comfortaa_500Medium',
     paddingVertical: 6,
   },
   footerActions: {
@@ -417,6 +428,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 13,
     fontWeight: '700',
+    fontFamily: 'Comfortaa_700Bold',
   },
   dismissBtn: {
     borderRadius: 8,
@@ -429,6 +441,7 @@ const styles = StyleSheet.create({
     color: '#64748b',
     fontSize: 12,
     fontWeight: '600',
+    fontFamily: 'Comfortaa_500Medium',
   },
 });
 
