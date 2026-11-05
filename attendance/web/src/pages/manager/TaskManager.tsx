@@ -91,15 +91,20 @@ const TaskManager: React.FC = () => {
     if (isDraft) {
       return (
         <span style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          whiteSpace: 'nowrap',
           background: '#f1f5f9',
           color: '#64748b',
           border: '1px solid #cbd5e1',
-          padding: '3px 8px',
+          padding: '4px 10px',
           borderRadius: '9999px',
           fontSize: '11px',
           fontWeight: 700,
           textTransform: 'uppercase',
           letterSpacing: '0.04em',
+          lineHeight: 1.2,
         }}>
           DRAFT
         </span>
@@ -118,15 +123,20 @@ const TaskManager: React.FC = () => {
     const s = map[status] || { label: status, bg: '#f8fafc', color: '#334155', border: '#e2e8f0' };
     return (
       <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        whiteSpace: 'nowrap',
         background: s.bg,
         color: s.color,
         border: `1px solid ${s.border}`,
-        padding: '3px 8px',
+        padding: '4px 10px',
         borderRadius: '9999px',
         fontSize: '11px',
         fontWeight: 600,
         textTransform: 'uppercase',
         letterSpacing: '0.04em',
+        lineHeight: 1.2,
       }}>
         {s.label}
       </span>
@@ -144,12 +154,17 @@ const TaskManager: React.FC = () => {
     const p = map[priority] || { color: '#334155', bg: '#f1f5f9' };
     return (
       <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        whiteSpace: 'nowrap',
         background: p.bg,
         color: p.color,
         padding: '3px 8px',
         borderRadius: '4px',
         fontSize: '11px',
         fontWeight: 700,
+        lineHeight: 1.2,
       }}>
         {priority}
       </span>
@@ -246,14 +261,14 @@ const TaskManager: React.FC = () => {
           <table className="rm-table">
             <thead>
               <tr>
-                <th>Task</th>
-                <th>Category</th>
-                <th>Assigned To</th>
-                <th>Priority</th>
-                <th>Due Date</th>
-                <th>Logged / Est.</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ minWidth: '180px' }}>Task</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Category</th>
+                <th style={{ minWidth: '150px' }}>Assigned To</th>
+                <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Priority</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Due Date</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Logged / Est.</th>
+                <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Status</th>
+                <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -265,8 +280,8 @@ const TaskManager: React.FC = () => {
                       By {t.assigned_by_name} &bull; {new Date(t.created_at).toLocaleDateString()}
                     </div>
                   </td>
-                  <td>
-                    <span style={{ fontSize: '12px', color: '#475569', background: '#f8fafc', padding: '3px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: '12px', color: '#475569', background: '#f8fafc', padding: '3px 8px', borderRadius: '4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                       {t.category || 'General'}
                     </span>
                   </td>
@@ -352,23 +367,23 @@ const TaskManager: React.FC = () => {
                       <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>Unassigned (Draft)</span>
                     )}
                   </td>
-                  <td>{renderPriorityBadge(t.priority)}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                  <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{renderPriorityBadge(t.priority)}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', whiteSpace: 'nowrap' }}>
                       <Calendar size={14} color="#64748b" />
                       <span style={{ color: t.is_overdue ? '#dc2626' : '#334155', fontWeight: t.is_overdue ? 700 : 500 }}>
                         {t.due_date || 'No due date'} {t.is_overdue && '(Overdue)'}
                       </span>
                     </div>
                   </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#475569' }}>
+                  <td style={{ whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#475569', whiteSpace: 'nowrap' }}>
                       <Clock size={13} color="#0284c7" />
                       <span>{t.total_logged_hours || 0}h / {t.estimated_hours || 0}h</span>
                     </div>
                   </td>
-                  <td>{renderStatusBadge(t.status, t.is_draft)}</td>
-                  <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
+                  <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{renderStatusBadge(t.status, t.is_draft)}</td>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       className="rm-btn rm-btn-secondary"
