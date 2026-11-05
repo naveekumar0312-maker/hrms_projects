@@ -1,0 +1,96 @@
+.mgr-dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.mgr-dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.mgr-dash-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: var(--text-primary, #0f172a);
+}
+
+.mgr-dash-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.mgr-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.mgr-stat-card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.mgr-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mgr-stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.mgr-stat-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.mgr-stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary, #0f172a);
+}
+
+.mgr-team-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mgr-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.mgr-section-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 2px 0;
+  color: var(--text-primary, #0f172a);
+}
+
+.mgr-section-header p {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+

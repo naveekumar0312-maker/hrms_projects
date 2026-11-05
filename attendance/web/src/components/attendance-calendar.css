@@ -1,0 +1,546 @@
+﻿/* Compact green attendance calendar */
+.attendance-custom-calendar {
+  font-family: inherit !important;
+  border: 1px solid #e5eee7 !important;
+  border-radius: 16px !important;
+  padding: 10px !important;
+  width: 252px !important;
+  box-shadow: 0 12px 32px rgba(20, 70, 40, 0.14) !important;
+  background: #ffffff !important;
+}
+
+.attendance-custom-calendar .react-datepicker__header {
+  background: #ffffff !important;
+  border-bottom: 0 !important;
+  padding-top: 8px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__current-month {
+  color: #172b20 !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  padding-bottom: 12px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day-names,
+.attendance-custom-calendar .react-datepicker__week {
+  display: flex !important;
+  justify-content: space-around !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day-name {
+  color: #89958d !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  width: 29px !important;
+  line-height: 29px !important;
+  margin: 1px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day {
+  color: #34443a !important;
+  width: 29px !important;
+  line-height: 29px !important;
+  margin: 1px !important;
+  border-radius: 9px !important;
+  font-size: 12px !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day:hover {
+  background: #e5f7eb !important;
+  color: #13803d !important;
+  border-radius: 9px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--selected,
+.attendance-custom-calendar .react-datepicker__day--keyboard-selected {
+  background: #20bf55 !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  border-radius: 9px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--today {
+  border: 1px solid #20bf55 !important;
+  font-weight: 700 !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--outside-month {
+  color: #c0c9c2 !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--disabled {
+  color: #d5dcd7 !important;
+  cursor: not-allowed !important;
+}
+
+.attendance-custom-calendar .react-datepicker__navigation {
+  top: 12px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__navigation-icon::before {
+  border-color: #65756a !important;
+}
+
+.attendance-custom-calendar .react-datepicker__today-button {
+  background: #f0fbf3 !important;
+  border-top: 1px solid #e0f1e4 !important;
+  color: #13803d !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  padding: 9px !important;
+}
+
+.custom-date-field {
+  position: relative;
+  width: 100%;
+}
+
+.custom-date-field .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.custom-date-field .react-datepicker__input-container input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid #dce8df;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: #24352a;
+  font: inherit;
+  outline: none;
+}
+
+.custom-date-field .react-datepicker__input-container input:focus {
+  border-color: #20bf55;
+  box-shadow: 0 0 0 3px rgba(32, 191, 85, 0.12);
+}
+
+@media (max-width: 480px) {
+  .attendance-custom-calendar {
+    width: 246px !important;
+    padding: 8px !important;
+  }
+
+  .attendance-custom-calendar .react-datepicker__day,
+  .attendance-custom-calendar .react-datepicker__day-name {
+    width: 28px !important;
+    line-height: 28px !important;
+  }
+}
+
+/* Shared calendar responsive polish */
+.attendance-custom-calendar {
+  box-sizing: border-box !important;
+  width: 336px !important;
+  max-width: calc(100vw - 24px) !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  padding: 12px !important;
+  background: #fff !important;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.14) !important;
+}
+
+.attendance-custom-calendar .react-datepicker__month-container {
+  float: none !important;
+  width: 100% !important;
+}
+
+.attendance-custom-calendar .react-datepicker__header {
+  padding: 10px 4px 8px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__current-month {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  padding-bottom: 14px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day-names,
+.attendance-custom-calendar .react-datepicker__week {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  justify-items: center !important;
+  align-items: center !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day-name,
+.attendance-custom-calendar .react-datepicker__day {
+  box-sizing: border-box !important;
+  width: 38px !important;
+  height: 38px !important;
+  line-height: 38px !important;
+  margin: 2px 0 !important;
+  text-align: center !important;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day-name {
+  color: #84908a !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--selected,
+.attendance-custom-calendar .react-datepicker__day--keyboard-selected {
+  background: #0056B3 !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--today {
+  border: 1px solid #0056B3 !important;
+  font-weight: 700 !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--outside-month {
+  color: #cbd5e1 !important;
+}
+
+.attendance-custom-calendar .react-datepicker__navigation {
+  top: 14px !important;
+}
+
+.attendance-custom-calendar .react-datepicker__today-button {
+  margin-top: 8px !important;
+  border-top: 1px solid #e5eee7 !important;
+  background: #F8F9FC !important;
+  color: #014B9D !important;
+  border-radius: 0 0 10px 10px !important;
+  padding: 11px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+.custom-date-field,
+.custom-date-field .react-datepicker-wrapper,
+.custom-date-field .react-datepicker__input-container {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.custom-date-field .react-datepicker__input-container input {
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .attendance-custom-calendar {
+    width: calc(100vw - 24px) !important;
+    max-width: 336px !important;
+    padding: 8px !important;
+  }
+
+  .attendance-custom-calendar .react-datepicker__day-name,
+  .attendance-custom-calendar .react-datepicker__day {
+    width: min(38px, 10vw) !important;
+    height: min(38px, 10vw) !important;
+    line-height: min(38px, 10vw) !important;
+    font-size: 12px !important;
+    margin: 1px 0 !important;
+  }
+
+  .attendance-custom-calendar .react-datepicker__current-month {
+    font-size: 14px !important;
+  }
+
+  .attendance-custom-calendar .react-datepicker__navigation {
+    top: 12px !important;
+  }
+}
+
+
+/* Responsive Admin Attendance calendar */
+.admin-attendance-calendar {
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
+}
+
+.admin-attendance-calendar button {
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.admin-attendance-calendar button:focus-visible {
+  outline: 2px solid #0056B3;
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .admin-attendance-calendar {
+    left: auto !important;
+    right: 0 !important;
+    width: min(336px, calc(100vw - 24px)) !important;
+    padding: 10px !important;
+  }
+
+  .admin-attendance-calendar > div:nth-child(2),
+  .admin-attendance-calendar > div:nth-child(3) {
+    gap: 2px !important;
+  }
+
+  .admin-attendance-calendar > div:nth-child(3) button {
+    min-width: 0 !important;
+    min-height: 36px !important;
+    padding: 0 !important;
+    font-size: 13px !important;
+  }
+}
+
+
+/* Calendar icon input */
+.custom-date-field .react-datepicker__input-container {
+  position: relative;
+  display: block;
+}
+
+.custom-date-field .react-datepicker__input-container input {
+  cursor: pointer;
+  padding-right: 42px !important;
+}
+
+.custom-date-field .react-datepicker__input-container .react-datepicker__calendar-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0;
+  color: #014B9D;
+  fill: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.custom-date-field .react-datepicker__input-container input[readonly] {
+  caret-color: transparent;
+}
+
+
+/* Ensure the date picker popup appears above dashboard cards and containers */
+.attendance-datepicker-popper {
+  z-index: 99999 !important;
+}
+
+.attendance-datepicker-popper .attendance-custom-calendar {
+  position: relative;
+  z-index: 99999 !important;
+}
+
+.custom-date-field .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.custom-date-field .react-datepicker__input-container {
+  width: 100%;
+}
+
+.custom-date-field .react-datepicker__input-container input {
+  cursor: pointer;
+}
+
+.custom-date-field .react-datepicker__input-container .react-datepicker__calendar-icon {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Calendar selection and popup click fix */
+.attendance-datepicker-popper {
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+}
+
+.attendance-datepicker-popper .attendance-custom-calendar {
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+}
+
+.attendance-custom-calendar .react-datepicker__month-container,
+.attendance-custom-calendar .react-datepicker__month,
+.attendance-custom-calendar .react-datepicker__week,
+.attendance-custom-calendar .react-datepicker__day,
+.attendance-custom-calendar .react-datepicker__day-names,
+.attendance-custom-calendar .react-datepicker__day-name {
+  pointer-events: auto !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day {
+  position: relative;
+  cursor: pointer !important;
+  z-index: 1;
+}
+
+.attendance-custom-calendar .react-datepicker__day--disabled {
+  cursor: not-allowed !important;
+}
+
+.custom-date-field .react-datepicker-wrapper,
+.custom-date-field .react-datepicker__input-container {
+  width: 100%;
+}
+
+/* Reliable popup visibility and date click handling */
+.attendance-datepicker-popper {
+  z-index: 999999 !important;
+  pointer-events: auto !important;
+}
+
+.attendance-datepicker-popper .attendance-custom-calendar {
+  pointer-events: auto !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 2;
+}
+
+.attendance-custom-calendar .react-datepicker__day--disabled {
+  cursor: not-allowed !important;
+}
+
+.custom-date-field .react-datepicker-wrapper,
+.custom-date-field .react-datepicker__input-container {
+  width: 100%;
+}
+
+.custom-date-field .react-datepicker__input-container input {
+  cursor: pointer !important;
+}
+
+/* Final date selection interaction fix */
+.attendance-datepicker-popper {
+  z-index: 999999 !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--disabled {
+  cursor: not-allowed !important;
+}
+
+.attendance-custom-calendar .react-datepicker__day--outside-month {
+  visibility: visible;
+}
+
+.custom-date-field .react-datepicker-wrapper,
+.custom-date-field .react-datepicker__input-container {
+  width: 100%;
+}
+
+/* Native date picker: reliable opening and date selection */
+.custom-date-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.custom-date-control input[type="date"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 42px 10px 12px;
+  border: 1px solid #dce5df;
+  border-radius: 12px;
+  background: #fff;
+  color: #17251d;
+  font: inherit;
+  cursor: pointer;
+}
+
+.custom-date-control input[type="date"]:focus {
+  outline: 2px solid #22c55e;
+  outline-offset: 1px;
+}
+
+.custom-date-icon-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #159447;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.custom-date-icon-button:hover {
+  background: #ecfdf3;
+}
+
+/* Custom React DatePicker */
+.attendance-datepicker-wrapper {
+  display: block;
+  width: 100%;
+}
+
+.attendance-datepicker-wrapper input {
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.attendance-custom-calendar {
+  font-family: inherit;
+  border: 1px solid #dce8df !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 30px rgba(20, 60, 35, 0.14);
+  overflow: hidden;
+}
+
+.attendance-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-weight: 600;
+}
+
+.attendance-calendar-header button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 20px;
+}
+
+.attendance-custom-calendar .react-datepicker__day--selected,
+.attendance-custom-calendar .react-datepicker__day--keyboard-selected {
+  background: #0056B3;
+  color: #fff;
+  border-radius: 6px;
+}
+
+.custom-date-control {
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: 6px;
+}
+
+.custom-date-control .attendance-datepicker-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.custom-date-icon-button {
+  flex-shrink: 0;
+}

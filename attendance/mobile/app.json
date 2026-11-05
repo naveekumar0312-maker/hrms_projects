@@ -1,0 +1,92 @@
+{
+  "expo": {
+    "name": "Yaazh 360 HRMS",
+    "slug": "yaal360",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/branding/yaazh360-original.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "icon": "./assets/branding/yaazh360-original.png"
+    },
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "rgba(255,255,255,0.01)",
+      "hidden": false,
+      "translucent": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#FFFFFF",
+        "foregroundImage": "./assets/branding/yaazh360-original.png"
+      },
+      "package": "com.vibhutravelhub.dailyattendance",
+      "softwareKeyboardLayoutMode": "pan",
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.WAKE_LOCK",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "package": "com.vibhutravelhub.dailyattendance"
+    },
+    "web": {
+      "favicon": "./assets/branding/yaazh360-original.png"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "isAndroidForegroundServiceEnabled": true,
+          "locationAlwaysAndWhenInUsePermission": "Allow Yaazh360 to share your location in the background only when you enable location sharing.",
+          "locationWhenInUsePermission": "Allow Yaazh360 to use your location for attendance and location sharing.",
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFFFF",
+          "resizeMode": "contain",
+          "image": "./assets/branding/yaazh360-original.png"
+        }
+      ],
+      "expo-audio",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/shift_reminder_alarm.wav"
+          ]
+        }
+      ],
+      "expo-asset",
+      "expo-secure-store",
+      "expo-status-bar"
+    ],
+    "owner": "naveen-kumar-s",
+    "extra": {
+      "eas": {
+        "projectId": "74248a75-9ef3-4b37-8dc6-8e52bec78aa0"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/74248a75-9ef3-4b37-8dc6-8e52bec78aa0"
+    }
+  }
+}

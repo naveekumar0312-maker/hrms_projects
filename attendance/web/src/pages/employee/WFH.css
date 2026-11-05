@@ -1,0 +1,657 @@
+﻿/* WFH Employee Page */
+.wfh-page {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+  box-sizing: border-box;
+  color: #1f2937;
+}
+
+.wfh-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.wfh-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 13px;
+  border-radius: 12px;
+  background: #ecfdf5;
+  color: #014B9D;
+}
+
+.wfh-header h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.wfh-header p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.wfh-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 22px;
+}
+
+.wfh-card {
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.wfh-card h2 {
+  margin: 0 0 20px;
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.wfh-field {
+  margin-bottom: 18px;
+  min-width: 0;
+}
+
+.wfh-field label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.wfh-field textarea {
+  display: block;
+  width: 100%;
+  min-height: 110px;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  resize: vertical;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.wfh-field textarea:focus {
+  outline: none;
+  border-color: #014B9D;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+}
+
+.wfh-message {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.wfh-error {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.wfh-success {
+  color: #166534;
+  background: #F8F9FC;
+}
+
+.wfh-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #014B9D;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wfh-submit:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+.wfh-submit:not(:disabled):hover {
+  background: #065f46;
+}
+
+.wfh-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.wfh-card-head h2 {
+  margin: 0;
+}
+
+.wfh-refresh {
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.wfh-refresh:hover {
+  background: #f9fafb;
+}
+
+.wfh-empty {
+  padding: 32px 12px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.wfh-request-list {
+  display: grid;
+  gap: 12px;
+}
+
+.wfh-request {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+
+.wfh-request-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.wfh-request-date {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.wfh-status {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wfh-request-reason {
+  margin: 0 0 8px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wfh-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  .wfh-page {
+    padding: 20px;
+  }
+
+  .wfh-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .wfh-page {
+    padding: 16px 12px 24px;
+  }
+
+  .wfh-header {
+    align-items: flex-start;
+    gap: 11px;
+    margin-bottom: 18px;
+  }
+
+  .wfh-header-icon {
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .wfh-header h1 {
+    font-size: 22px;
+  }
+
+  .wfh-header p {
+    font-size: 13px;
+  }
+
+  .wfh-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .wfh-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .wfh-card h2 {
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  .wfh-card-head {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .wfh-card-head h2 {
+    max-width: 65%;
+  }
+
+  .wfh-request {
+    padding: 12px;
+  }
+
+  .wfh-request-top {
+    align-items: flex-start;
+  }
+}
+
+/* ===== WFH PAGE VISUAL UPGRADE ===== */
+.wfh-page {
+  max-width: 1240px;
+  padding: 30px 32px;
+  color: #17251e;
+}
+
+.wfh-header {
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.wfh-header-icon {
+  width: 56px;
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid #ccefe0;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #ecfdf5, #d9f7e9);
+  box-shadow: 0 3px 10px rgba(4, 120, 87, 0.06);
+}
+
+.wfh-header h1 {
+  color: #17251e;
+  font-size: 28px !important;
+  font-weight: 750 !important;
+  letter-spacing: -0.7px;
+}
+
+.wfh-header p {
+  margin-top: 7px !important;
+  color: #718078 !important;
+  font-size: 14px;
+}
+
+.wfh-grid {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.wfh-card {
+  padding: 26px;
+  border: 1px solid #e2eae5;
+  border-radius: 17px;
+  background: #ffffff;
+  box-shadow: 0 5px 20px rgba(24, 45, 33, 0.045);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wfh-card:hover {
+  border-color: #d3e6da;
+  box-shadow: 0 8px 26px rgba(24, 45, 33, 0.065);
+}
+
+.wfh-card h2 {
+  margin-bottom: 22px !important;
+  color: #1b3024;
+  font-size: 20px !important;
+  font-weight: 700;
+  letter-spacing: -0.35px;
+}
+
+.wfh-field {
+  margin-bottom: 21px;
+}
+
+.wfh-field label {
+  margin-bottom: 9px !important;
+  color: #34463a;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+}
+
+.wfh-field textarea {
+  min-height: 132px;
+  padding: 14px !important;
+  border: 1px solid #d6e0d9 !important;
+  border-radius: 11px !important;
+  background: #fcfdfc;
+  color: #25382c;
+  font-size: 14px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wfh-field textarea::placeholder {
+  color: #9aa79e;
+}
+
+.wfh-field textarea:focus {
+  border-color: #07845b !important;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(7, 132, 91, 0.1) !important;
+}
+
+.wfh-submit {
+  min-height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(100deg, #07845b, #079467);
+  box-shadow: 0 4px 10px rgba(7, 132, 91, 0.13);
+  font-size: 14px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.wfh-submit:not(:disabled):hover {
+  background: linear-gradient(100deg, #066b49, #07845b);
+  box-shadow: 0 6px 15px rgba(7, 132, 91, 0.2);
+  transform: translateY(-1px);
+}
+
+.wfh-submit:focus-visible,
+.wfh-refresh:focus-visible {
+  outline: 3px solid rgba(7, 132, 91, 0.22);
+  outline-offset: 3px;
+}
+
+.wfh-card-head {
+  margin-bottom: 22px;
+}
+
+.wfh-card-head h2 {
+  margin: 0 !important;
+  font-size: 20px !important;
+}
+
+.wfh-refresh {
+  padding: 9px 14px !important;
+  border-color: #d6e3da !important;
+  border-radius: 9px !important;
+  color: #08764f;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.wfh-refresh:hover {
+  background: #ecfdf5 !important;
+  border-color: #9ed9ba !important;
+}
+
+.wfh-empty {
+  padding: 42px 16px;
+  border: 1px dashed #dce8df;
+  border-radius: 12px;
+  background: #fbfdfb;
+  color: #718078;
+}
+
+.wfh-request-list {
+  gap: 13px;
+}
+
+.wfh-request {
+  padding: 17px;
+  border-color: #e4ebe6;
+  border-radius: 12px;
+  background: #ffffff;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.wfh-request:hover {
+  border-color: #cfe5d6;
+  background: #fcfefc;
+}
+
+.wfh-request-top {
+  margin-bottom: 13px;
+}
+
+.wfh-request-date {
+  color: #263b2e;
+  font-size: 14px;
+}
+
+.wfh-request-date svg {
+  flex-shrink: 0;
+  color: #07845b;
+}
+
+.wfh-status {
+  font-size: 11px;
+  letter-spacing: 0.3px;
+}
+
+.wfh-request-reason {
+  color: #59695f;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.wfh-meta {
+  color: #7b8980;
+}
+
+.wfh-page form [role="alert"],
+.wfh-page form [role="status"] {
+  margin: 0 0 16px;
+  padding: 12px 14px !important;
+  border: 1px solid transparent;
+  border-radius: 10px !important;
+  font-size: 13px !important;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.wfh-page form [role="alert"] {
+  border-color: #fecaca;
+}
+
+.wfh-page form [role="status"] {
+  border-color: #bbf7d0;
+}
+
+.wfh-page .wfh-field input,
+.wfh-page .wfh-field select {
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .wfh-page {
+    padding: 24px 20px;
+  }
+
+  .wfh-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .wfh-page {
+    padding: 18px 12px 26px;
+  }
+
+  .wfh-header {
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .wfh-header-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+  }
+
+  .wfh-header-icon svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .wfh-header h1 {
+    font-size: 22px !important;
+  }
+
+  .wfh-header p {
+    font-size: 13px;
+  }
+
+  .wfh-card {
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+
+  .wfh-card h2,
+  .wfh-card-head h2 {
+    font-size: 18px !important;
+  }
+
+  .wfh-field textarea {
+    min-height: 115px;
+  }
+
+  .wfh-card-head {
+    align-items: center;
+    gap: 10px;
+  }
+
+  .wfh-request {
+    padding: 14px;
+  }
+
+  .wfh-request-top {
+    gap: 9px;
+  }
+
+  .wfh-submit {
+    min-height: 47px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wfh-card,
+  .wfh-request,
+  .wfh-submit,
+  .wfh-refresh,
+  .wfh-field textarea {
+    transition: none;
+  }
+}
+
+/* Employee WFH calendar popup positioning fix */
+.wfh-page .attendance-datepicker-popper {
+  z-index: 999999 !important;
+}
+
+.wfh-page .attendance-datepicker-popper .attendance-custom-calendar {
+  position: relative;
+  z-index: 999999 !important;
+  max-width: calc(100vw - 24px) !important;
+}
+
+.wfh-page .wfh-grid,
+.wfh-page .wfh-card,
+.wfh-page .wfh-field {
+  overflow: visible !important;
+}
+
+.wfh-page .custom-date-field,
+.wfh-page .custom-date-control,
+.wfh-page .attendance-datepicker-wrapper {
+  min-width: 0;
+  width: 100%;
+}
+
+.wfh-page .wfh-textarea {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #17251d;
+  font: inherit;
+  line-height: 1.5;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wfh-page .wfh-textarea:focus {
+  outline: none;
+  border-color: #0056B3;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+.wfh-page .wfh-submit {
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.wfh-page .wfh-submit:not(:disabled):hover {
+  background: #014B9D;
+  box-shadow: 0 5px 14px rgba(22, 163, 74, 0.18);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .wfh-page .attendance-datepicker-popper {
+    max-width: calc(100vw - 24px) !important;
+  }
+
+  .wfh-page .wfh-header h1 {
+    font-size: 22px !important;
+  }
+}

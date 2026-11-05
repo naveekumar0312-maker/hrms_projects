@@ -1,0 +1,307 @@
+from rest_framework import serializers
+from .models import (
+    Attendance,
+    AttendancePolicy,
+    Shift,
+    PermissionRequest,
+    LeaveRequest,
+    Holiday)
+
+class HolidaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Holiday
+        fields = '__all__'
+
+
+class ShiftSerializer(serializers.ModelSerializer):
+    employee_count = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Shift
+        fields = '__all__'
+
+    def validate_code(self, value):
+        if not value:
+            raise serializers.ValidationError("Shift code is required.")
+        return value.upper()
+
+    def validate_name(self, value):
+        if not value:
+            raise serializers.ValidationError("Shift name is required.")
+        return value
+
+    def validate_grace_period(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Grace period cannot be negative.")
+        if value > 120:
+            raise serializers.ValidationError("Grace period is unreasonably large.")
+        return value
+
+class AttendanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attendance
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if instance.employee:
+            branch = instance.employee.branch
+            company = branch.company if branch else None
+            shift = instance.employee.shift
+
+            response['employee'] = {
+                'id': instance.employee.id,
+                'full_name': instance.employee.full_name,
+                'employee_id': instance.employee.employee_id,
+                'department': getattr(instance.employee, 'department', None),
+                'designation': getattr(instance.employee, 'designation', None),
+                'work_type': getattr(instance.employee, 'work_type', None),
+                'phone_number': (
+                    getattr(instance.employee.user, 'phone_number', None)
+                    if getattr(instance.employee, 'user', None)
+                    else None
+                ),
+                'branch': (
+                    {
+                        'id': branch.id,
+                        'name': branch.branch_name,
+                        'branch_name': branch.branch_name,
+                    }
+                    if branch else None
+                ),
+                'company': (
+                    {
+                        'id': company.id,
+                        'name': company.name,
+                    }
+                    if company else None
+                ),
+                'shift': (
+                    {
+                        'id': shift.id,
+                        'name': shift.name,
+                    }
+                    if shift else None
+                ),
+            }
+        # Format check-in and check-out to ISO strings and map keys
+        if instance.check_in:
+            response['check_in_time'] = instance.check_in.isoformat()
+        else:
+            response['check_in_time'] = None
+            
+        if instance.check_out:
+            response['check_out_time'] = instance.check_out.isoformat()
+        else:
+            response['check_out_time'] = None
+            
+        if 'check_in' in response:
+            del response['check_in']
+        if 'check_out' in response:
+            del response['check_out']
+            
+        # Formatting utility
+        def format_duration(minutes):
+            if minutes <= 0:
+                return "On time"
+            
+            h = minutes // 60
+            m = minutes % 60
+            
+            if h == 0:
+                return f"{m}m"
+            elif m == 0:
+                return f"{h}h"
+            else:
+                return f"{h}h {m}m"
+
+        response['late_display'] = format_duration(instance.late_minutes)
+
+        if instance.check_in and instance.check_out:
+            # We already calculated working_minutes in CheckOutView
+            working_mins = getattr(instance, 'working_minutes', 0)
+            if working_mins <= 0:
+                # Fallback if working_minutes was 0 but they are checked out
+                diff = instance.check_out - instance.check_in
+                working_mins = int(diff.total_seconds() // 60)
+            
+            if working_mins <= 0:
+                response['working_hours'] = "0m"
+            else:
+                h = working_mins // 60
+                m = working_mins % 60
+                if h == 0:
+                    response['working_hours'] = f"{m}m"
+                elif m == 0:
+                    response['working_hours'] = f"{h}h 00m" # keep 00m for working hours if needed, or just h
+                else:
+                    response['working_hours'] = f"{h}h {m}m"
+        else:
+            response['working_hours'] = None
+
+        return response
+
+class CheckInSerializer(serializers.Serializer):
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6)
+    accuracy = serializers.FloatField()
+    photo = serializers.ImageField()
+
+class CheckOutSerializer(serializers.Serializer):
+    latitude = serializers.DecimalField(max_digits=9, decimal_places=6)
+    longitude = serializers.DecimalField(max_digits=9, decimal_places=6)
+    accuracy = serializers.FloatField()
+    photo = serializers.ImageField()
+
+
+class PermissionRequestSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(
+        source='employee.full_name',
+        read_only=True
+    )
+    employee_id = serializers.CharField(
+        source='employee.employee_id',
+        read_only=True
+    )
+    approved_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PermissionRequest
+        fields = '__all__'
+        read_only_fields = [
+            'employee',
+            'status',
+            'approved_by',
+            'approved_at',
+            'rejection_reason',
+            'created_at',
+            'updated_at',
+        ]
+
+    def get_approved_by_name(self, obj):
+        if obj.approved_by:
+            return obj.approved_by.get_full_name() or obj.approved_by.username
+        return None
+
+    def validate_duration_minutes(self, value):
+        if value not in [30, 60]:
+            raise serializers.ValidationError(
+                "Permission duration must be 30 or 60 minutes."
+            )
+        return value
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+
+        if not request or not hasattr(request.user, 'employee_profile'):
+            return attrs
+
+        from django.db.models import Sum
+
+        employee = request.user.employee_profile
+        date = attrs.get('date')
+        duration = attrs.get('duration_minutes', 0)
+
+        if not date:
+            raise serializers.ValidationError({
+                'date': 'Permission date is required.'
+            })
+
+        daily_minutes = PermissionRequest.objects.filter(
+            employee=employee,
+            date=date,
+            status__in=['PENDING', 'APPROVED']
+        ).aggregate(total=Sum('duration_minutes'))['total'] or 0
+
+        if daily_minutes + duration > 60:
+            raise serializers.ValidationError({
+                'duration_minutes':
+                    f'Daily permission limit is 60 minutes. '
+                    f'Already requested/approved: {daily_minutes} minutes.'
+            })
+
+        from attendance.services import get_attendance_cycle
+
+        cycle_start, cycle_end = get_attendance_cycle(
+            date.year,
+            date.month
+        )
+
+        cycle_minutes = PermissionRequest.objects.filter(
+            employee=employee,
+            date__gte=cycle_start,
+            date__lte=cycle_end,
+            status__in=['PENDING', 'APPROVED']
+        ).aggregate(total=Sum('duration_minutes'))['total'] or 0
+
+        if cycle_minutes + duration > 180:
+            raise serializers.ValidationError({
+                'duration_minutes':
+                    f'Permission limit for this attendance cycle is 180 minutes. '
+                    f'Already requested/approved: {cycle_minutes} minutes.'
+            })
+
+        return attrs
+
+
+class LeaveRequestSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(
+        source='employee.full_name',
+        read_only=True
+    )
+    employee_id = serializers.CharField(
+        source='employee.employee_id',
+        read_only=True
+    )
+    approved_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaveRequest
+        fields = '__all__'
+        read_only_fields = [
+            'employee',
+            'status',
+            'approved_by',
+            'approved_at',
+            'rejection_reason',
+            'created_at',
+            'updated_at',
+        ]
+
+    def get_approved_by_name(self, obj):
+        if obj.approved_by:
+            return obj.approved_by.get_full_name() or obj.approved_by.username
+        return None
+
+    def validate(self, attrs):
+        start_date = attrs.get('start_date')
+        end_date = attrs.get('end_date')
+
+        if start_date and end_date and end_date < start_date:
+            raise serializers.ValidationError({
+                'end_date': 'End date cannot be before start date.'
+            })
+
+        request = self.context.get('request')
+
+        if request and hasattr(request.user, 'employee_profile'):
+            employee = request.user.employee_profile
+
+            overlapping = LeaveRequest.objects.filter(
+                employee=employee,
+                status__in=['PENDING', 'APPROVED'],
+                start_date__lte=end_date,
+                end_date__gte=start_date,
+            )
+
+            if self.instance:
+                overlapping = overlapping.exclude(pk=self.instance.pk)
+
+            if overlapping.exists():
+                raise serializers.ValidationError({
+                    'date':
+                        'You already have a pending or approved leave '
+                        'for one or more selected dates.'
+                })
+
+        return attrs

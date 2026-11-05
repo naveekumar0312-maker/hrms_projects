@@ -1,0 +1,30 @@
+/* ==========================================================================
+   EmployeeFormPage.css — Page level layout styling for Add/Edit Employee route
+   ========================================================================== */
+
+.employee-page-fullwidth {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.employee-page-top-bar {
+  margin-bottom: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.employee-page-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.employee-page-error-message {
+  color: var(--danger);
+  font-weight: 600;
+  margin-bottom: 1rem;
+}

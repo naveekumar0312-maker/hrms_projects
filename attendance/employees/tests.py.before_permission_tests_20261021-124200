@@ -1,0 +1,440 @@
+from datetime import timedelta
+from unittest.mock import patch
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.utils import timezone
+from rest_framework.test import APIRequestFactory, force_authenticate
+
+from branches.models import Branch
+from companies.models import Company
+from employees.models import (
+    Employee,
+    EmployeeLocation,
+    EmployeeLocationSharing,
+    EmployeeLocationTrackingEvent,
+)
+from employees.tracking_views import LocationSharingView, LocationUpdateView, LocationHistoryView
+
+
+class LocationSharingStopDurationTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            username="stop_test_user",
+            password="test-password-only",
+            role="EMPLOYEE",
+        )
+        company = Company.objects.create(name="Test Company")
+        branch = Branch.objects.create(
+            company=company,
+            branch_name="Test Branch",
+            office_address="Test address",
+            latitude=11.0,
+            longitude=76.0,
+        )
+        self.employee = Employee.objects.create(
+            user=self.user,
+            employee_id="STOP-TEST-001",
+            full_name="Test Employee",
+            branch=branch,
+            department="Testing",
+            designation="Field Employee",
+            work_type="FIELD",
+            employment_status="ACTIVE",
+            status=True,
+        )
+
+        self.off_time = timezone.now()
+        self.session_start = self.off_time - timedelta(minutes=20)
+        self.sharing = EmployeeLocationSharing.objects.create(
+            employee=self.employee,
+            is_enabled=True,
+            enabled_at=self.session_start,
+        )
+        self.factory = APIRequestFactory()
+
+    @patch("employees.tracking_views.timezone.now")
+    def test_off_closes_stop_and_creates_location_off(self, mock_now):
+        mock_now.return_value = self.off_time
+        stop_start = self.off_time - timedelta(minutes=7, seconds=30)
+
+        stop = EmployeeLocationTrackingEvent.objects.create(
+            employee=self.employee,
+            event_type="STOP",
+            recorded_at=stop_start,
+            details={"stop_started_at": stop_start.isoformat()},
+        )
+        EmployeeLocation.objects.create(
+            employee=self.employee,
+            latitude="11.000000",
+            longitude="76.000000",
+            recorded_at=self.off_time - timedelta(seconds=10),
+        )
+
+        request = self.factory.post(
+            "/api/tracking/sharing/",
+            {"enabled": False},
+            format="json",
+        )
+        force_authenticate(request, user=self.user)
+        response = LocationSharingView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        stop.refresh_from_db()
+        self.sharing.refresh_from_db()
+
+        self.assertFalse(self.sharing.is_enabled)
+        self.assertEqual(self.sharing.disabled_at, self.off_time)
+        self.assertEqual(stop.details["stop_duration_seconds"], 450.0)
+        self.assertEqual(stop.details["stop_duration_minutes"], 7.5)
+        self.assertEqual(
+            stop.details["duration_method"],
+            "sharing_disabled_estimate",
+        )
+        self.assertIn("stop_ended_at", stop.details)
+        self.assertTrue(
+            EmployeeLocationTrackingEvent.objects.filter(
+                employee=self.employee,
+                event_type="LOCATION_OFF",
+                details={"source": "sharing_api"},
+            ).exists()
+        )
+
+    @patch("employees.tracking_views.timezone.now")
+    def test_off_without_stop_still_creates_location_off(self, mock_now):
+        mock_now.return_value = self.off_time
+        EmployeeLocationTrackingEvent.objects.create(
+            employee=self.employee,
+            event_type="DRIVE",
+            recorded_at=self.off_time - timedelta(minutes=2),
+        )
+
+        request = self.factory.post(
+            "/api/tracking/sharing/",
+            {"enabled": False},
+            format="json",
+        )
+        force_authenticate(request, user=self.user)
+        response = LocationSharingView.as_view()(request)
+
+        self.assertEqual(response.status_code, 200)
+        self.sharing.refresh_from_db()
+        self.assertFalse(self.sharing.is_enabled)
+        self.assertTrue(
+            EmployeeLocationTrackingEvent.objects.filter(
+                employee=self.employee,
+                event_type="LOCATION_OFF",
+                details={"source": "sharing_api"},
+            ).exists()
+        )
+
+
+class LocationUpdateMovementTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            username="movement_test_user",
+            password="test-password-only",
+            role="EMPLOYEE",
+        )
+        company = Company.objects.create(name="Movement Test Company")
+        branch = Branch.objects.create(
+            company=company,
+            branch_name="Movement Test Branch",
+            office_address="Test address",
+            latitude=11.0,
+            longitude=76.0,
+        )
+        self.employee = Employee.objects.create(
+            user=self.user,
+            employee_id="MOVE-TEST-001",
+            full_name="Movement Test Employee",
+            branch=branch,
+            department="Testing",
+            designation="Field Employee",
+            work_type="FIELD",
+            employment_status="ACTIVE",
+            status=True,
+        )
+        now = timezone.now()
+        self.sharing = EmployeeLocationSharing.objects.create(
+            employee=self.employee,
+            is_enabled=True,
+            enabled_at=now - timedelta(minutes=10),
+        )
+        self.factory = APIRequestFactory()
+
+    @patch("employees.tracking_views.reverse_geocode", return_value="Test place")
+    def test_gps_movement_creates_drive_event(self, mock_geocode):
+        previous_time = timezone.now() - timedelta(seconds=30)
+        EmployeeLocation.objects.create(
+            employee=self.employee,
+            latitude="11.000000",
+            longitude="76.000000",
+            accuracy_meters=10,
+            recorded_at=previous_time,
+        )
+
+        request = self.factory.post(
+            "/api/tracking/update/",
+            {
+                "latitude": "11.000000",
+                "longitude": "76.001200",
+                "accuracy_meters": 10,
+            },
+            format="json",
+        )
+        force_authenticate(request, user=self.user)
+        response = LocationUpdateView.as_view()(request)
+
+        self.assertEqual(response.status_code, 201)
+        drive = EmployeeLocationTrackingEvent.objects.filter(
+            employee=self.employee,
+            event_type="DRIVE",
+        ).first()
+        self.assertIsNotNone(drive)
+        self.assertEqual(drive.details["source"], "gps_estimate")
+
+    @patch("employees.tracking_views.reverse_geocode", return_value="Test place")
+    def test_stationary_gps_points_create_stop_event(self, mock_geocode):
+        previous_time = timezone.now() - timedelta(seconds=120)
+        EmployeeLocation.objects.create(
+            employee=self.employee,
+            latitude="11.000000",
+            longitude="76.000000",
+            accuracy_meters=10,
+            recorded_at=previous_time,
+        )
+
+        request = self.factory.post(
+            "/api/tracking/update/",
+            {
+                "latitude": "11.000000",
+                "longitude": "76.000000",
+                "accuracy_meters": 10,
+            },
+            format="json",
+        )
+        force_authenticate(request, user=self.user)
+        response = LocationUpdateView.as_view()(request)
+
+        self.assertEqual(response.status_code, 201)
+        stop = EmployeeLocationTrackingEvent.objects.filter(
+            employee=self.employee,
+            event_type="STOP",
+        ).first()
+        self.assertIsNotNone(stop)
+        self.assertGreaterEqual(stop.details["stop_duration_seconds"], 60)
+        self.assertEqual(stop.details["duration_method"], "gps_estimate")
+
+
+    def _post_location_update(self, data):
+        request = self.factory.post(
+            "/api/tracking/update/",
+            data,
+            format="json",
+        )
+        force_authenticate(request, user=self.user)
+        return LocationUpdateView.as_view()(request)
+
+    def test_missing_coordinates_return_400(self):
+        response = self._post_location_update({
+            "accuracy_meters": 10,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["detail"],
+            "Valid latitude and longitude are required.",
+        )
+
+    def test_invalid_latitude_returns_400(self):
+        response = self._post_location_update({
+            "latitude": "91",
+            "longitude": "76",
+            "accuracy_meters": 10,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["detail"],
+            "Latitude must be between -90 and 90.",
+        )
+
+    def test_invalid_longitude_returns_400(self):
+        response = self._post_location_update({
+            "latitude": "11",
+            "longitude": "181",
+            "accuracy_meters": 10,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["detail"],
+            "Longitude must be between -180 and 180.",
+        )
+
+    def test_invalid_accuracy_returns_400(self):
+        response = self._post_location_update({
+            "latitude": "11",
+            "longitude": "76",
+            "accuracy_meters": -1,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["detail"],
+            "accuracy_meters must be between 0 and 10000.",
+        )
+
+    @patch("employees.tracking_views.reverse_geocode")
+    def test_poor_accuracy_skips_reverse_geocoding(self, mock_geocode):
+        response = self._post_location_update({
+            "latitude": "11",
+            "longitude": "76",
+            "accuracy_meters": 150,
+        })
+        self.assertEqual(response.status_code, 201)
+        mock_geocode.assert_not_called()
+
+        location = EmployeeLocation.objects.filter(
+            employee=self.employee,
+        ).latest("recorded_at")
+        self.assertEqual(location.accuracy_meters, 150)
+        self.assertEqual(location.location_name, "")
+
+
+class LocationSessionAndHistoryTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(
+            username="history_test_user",
+            password="test-password-only",
+            role="SUPER_ADMIN",
+        )
+        company = Company.objects.create(name="History Test Company")
+        branch = Branch.objects.create(
+            company=company,
+            branch_name="History Test Branch",
+            office_address="Test address",
+            latitude=11.0,
+            longitude=76.0,
+        )
+        self.employee = Employee.objects.create(
+            user=self.user,
+            employee_id="HISTORY-TEST-001",
+            full_name="History Test Employee",
+            branch=branch,
+            department="Testing",
+            designation="Field Employee",
+            work_type="FIELD",
+            employment_status="ACTIVE",
+            status=True,
+        )
+        self.factory = APIRequestFactory()
+
+    @patch("employees.tracking_views.reverse_geocode", return_value="New session place")
+    def test_new_session_does_not_compare_old_session_gps(self, mock_geocode):
+        now = timezone.now()
+        EmployeeLocation.objects.create(
+            employee=self.employee,
+            latitude="11.000000",
+            longitude="76.000000",
+            accuracy_meters=10,
+            recorded_at=now - timedelta(minutes=5),
+        )
+        EmployeeLocationSharing.objects.create(
+            employee=self.employee,
+            is_enabled=True,
+            enabled_at=now - timedelta(seconds=20),
+        )
+
+        request = self.factory.post(
+            "/api/tracking/update/",
+            {
+                "latitude": "11.001200",
+                "longitude": "76.000000",
+                "accuracy_meters": 10,
+            },
+            format="json",
+        )
+        force_authenticate(request, user=self.user)
+        response = LocationUpdateView.as_view()(request)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(
+            EmployeeLocationTrackingEvent.objects.filter(
+                employee=self.employee,
+                event_type__in=["DRIVE", "STOP"],
+            ).exists()
+        )
+
+    def test_history_returns_location_name_and_stop_duration(self):
+        location = EmployeeLocation.objects.create(
+            employee=self.employee,
+            latitude="11.000000",
+            longitude="76.000000",
+            accuracy_meters=10,
+            location_name="Test Street, Coimbatore",
+        )
+        stop = EmployeeLocationTrackingEvent.objects.create(
+            employee=self.employee,
+            event_type="STOP",
+            latitude="11.000000",
+            longitude="76.000000",
+            location_name="Test Street, Coimbatore",
+            details={
+                "stop_started_at": (timezone.now() - timedelta(minutes=5)).isoformat(),
+                "stop_duration_seconds": 300.0,
+                "stop_duration_minutes": 5.0,
+                "duration_method": "gps_estimate",
+            },
+        )
+
+        request = self.factory.get(
+            f"/api/tracking/history/{self.employee.pk}/"
+        )
+        force_authenticate(request, user=self.user)
+        response = LocationHistoryView.as_view()(request, employee_id=self.employee.pk)
+
+        self.assertEqual(response.status_code, 200)
+        results = response.data.get("results", response.data)
+        if isinstance(results, dict):
+            results = results.get("results", results.get("timeline", []))
+        gps_item = next(item for item in results if item.get("type") == "GPS")
+        stop_item = next(
+            item for item in results
+            if item.get("type") == "EVENT" and item.get("id") == f"event-{stop.pk}"
+        )
+        self.assertEqual(gps_item["location_name"], "Test Street, Coimbatore")
+        self.assertEqual(stop_item["location_name"], "Test Street, Coimbatore")
+        self.assertEqual(stop_item["details"]["stop_duration_seconds"], 300.0)
+        self.assertEqual(stop_item["details"]["stop_duration_minutes"], 5.0)
+
+    def test_history_estimates_duration_for_legacy_stop_event(self):
+        stop = EmployeeLocationTrackingEvent.objects.create(
+            employee=self.employee,
+            event_type="STOP",
+            details={
+                "elapsed_seconds": 674.5,
+                "source": "gps_estimate",
+            },
+        )
+
+        request = self.factory.get(
+            f"/api/tracking/history/{self.employee.pk}/"
+        )
+        force_authenticate(request, user=self.user)
+        response = LocationHistoryView.as_view()(request, employee_id=self.employee.pk)
+
+        self.assertEqual(response.status_code, 200)
+        results = response.data.get("results", response.data)
+        if isinstance(results, dict):
+            results = results.get("results", results.get("timeline", []))
+        stop_item = next(
+            item for item in results
+            if item.get("type") == "EVENT" and item.get("id") == f"event-{stop.pk}"
+        )
+        self.assertEqual(stop_item["details"]["stop_duration_seconds"], 674.5)
+        self.assertEqual(stop_item["details"]["stop_duration_minutes"], 11.2)
+        self.assertEqual(
+            stop_item["details"]["duration_method"],
+            "observed_gps_interval_estimate",
+        )

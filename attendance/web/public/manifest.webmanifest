@@ -1,0 +1,31 @@
+{
+  "id": "/",
+  "name": "Yaazh 360 HRMS",
+  "short_name": "Yaazh 360 HRMS",
+  "description": "Yaazh 360 HRMS Application",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#b8e6a3",
+  "icons": [
+    {
+      "src": "/attendance-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/attendance-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/attendance-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

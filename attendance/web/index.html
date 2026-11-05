@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>Yaazh 360 HRMS</title>
+    <link rel="icon" type="image/png" href="/branding/yaazh360-original.png" />
+    <link rel="apple-touch-icon" href="/branding/yaazh360-original.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#FFFFFF" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", async () => {
+      try {
+        const registration = await navigator.serviceWorker.register(
+          "/service-worker.js",
+          { updateViaCache: "none" }
+        );
+        await registration.update();
+        console.info("[PWA] Service worker update checked.");
+      } catch (error) {
+        console.error("[PWA] Service worker update failed:", error);
+      }
+    });
+  }
+</script>
+</body>
+</html>

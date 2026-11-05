@@ -1,0 +1,463 @@
+from rest_framework import viewsets, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from django.db.models import Q
+from django.utils import timezone
+
+from .models import Task, TaskComment, TaskAttachment, TaskActivity, TaskTimeLog
+from .serializers import (
+    TaskSerializer,
+    TaskCreateUpdateSerializer,
+    TaskCommentSerializer,
+    TaskAttachmentSerializer,
+    TaskActivitySerializer,
+    TaskTimeLogSerializer,
+)
+from employees.models import Employee
+
+
+def check_user_task_access(task, user):
+    """Enforces strict multi-tenant and role-based task read access."""
+    emp = getattr(user, 'employee_profile', None)
+    if user.role in ('SUPER_ADMIN', 'ADMIN'):
+        return True
+    if user.role == 'HR':
+        if task.company_id == user.company_id:
+            return True
+        raise PermissionDenied("You do not have access to tasks outside your company.")
+    if user.role == 'REPORTING_MANAGER':
+        if not emp or task.company_id != user.company_id:
+            raise PermissionDenied("You do not have access to this task.")
+        if (
+            task.assigned_by_id == user.id or
+            task.reporting_manager_id == emp.id or
+            (task.team_leader and task.team_leader.reporting_manager_id == emp.id) or
+            (task.assigned_to and task.assigned_to.reporting_manager_id == emp.id) or
+            (task.assigned_to and task.assigned_to.team_leader and task.assigned_to.team_leader.reporting_manager_id == emp.id) or
+            task.assigned_employees.filter(reporting_manager=emp).exists() or
+            task.assigned_employees.filter(team_leader__reporting_manager=emp).exists() or
+            task.assigned_employees.filter(id=emp.id).exists()
+        ):
+            return True
+        raise PermissionDenied("You do not have permission for this task.")
+    if user.role == 'TEAM_LEADER':
+        if not emp or task.company_id != user.company_id:
+            raise PermissionDenied("You do not have access to this task.")
+        if (
+            task.assigned_by_id == user.id or
+            task.team_leader_id == emp.id or
+            task.assigned_to_id == emp.id or
+            (task.assigned_to and task.assigned_to.team_leader_id == emp.id) or
+            task.assigned_employees.filter(id=emp.id).exists() or
+            task.assigned_employees.filter(team_leader=emp).exists()
+        ):
+            return True
+        raise PermissionDenied("Team Leaders can only access their own tasks or their team's tasks.")
+    if user.role == 'EMPLOYEE':
+        if emp and (task.assigned_to_id == emp.id or task.assigned_employees.filter(id=emp.id).exists()) and not task.is_draft:
+            return True
+        raise PermissionDenied("Employees can only access their own assigned non-draft tasks.")
+    raise PermissionDenied("Unauthorized.")
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return TaskCreateUpdateSerializer
+        return TaskSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        emp = getattr(user, 'employee_profile', None)
+
+        today = timezone.localdate()
+        Task.objects.filter(due_date__lt=today).exclude(status__in=['COMPLETED', 'CANCELLED', 'DRAFT']).update(status='OVERDUE')
+
+        qs = Task.objects.select_related(
+            'company', 'assigned_to', 'assigned_to__user',
+            'assigned_by', 'reporting_manager', 'team_leader'
+        ).prefetch_related(
+            'assigned_employees', 'assigned_employees__user',
+            'comments', 'comments__author', 'task_attachments',
+            'activities', 'time_logs', 'time_logs__user'
+        )
+
+        if user.role in ('SUPER_ADMIN', 'ADMIN'):
+            company_id = self.request.query_params.get('company')
+            return qs.filter(company_id=company_id) if company_id else qs
+
+        if user.role == 'HR':
+            return qs.filter(company_id=user.company_id)
+
+        if user.role == 'REPORTING_MANAGER':
+            if not emp:
+                return Task.objects.none()
+            return qs.filter(
+                Q(company_id=user.company_id) & (
+                    Q(reporting_manager=emp) |
+                    Q(assigned_by=user) |
+                    Q(team_leader__reporting_manager=emp) |
+                    Q(assigned_to=emp) |
+                    Q(assigned_to__reporting_manager=emp) |
+                    Q(assigned_to__team_leader__reporting_manager=emp) |
+                    Q(assigned_employees=emp) |
+                    Q(assigned_employees__reporting_manager=emp) |
+                    Q(assigned_employees__team_leader__reporting_manager=emp)
+                )
+            ).distinct()
+
+        if user.role == 'TEAM_LEADER':
+            if not emp:
+                return Task.objects.none()
+            return qs.filter(
+                Q(company_id=user.company_id) & (
+                    Q(team_leader=emp) |
+                    Q(assigned_by=user) |
+                    Q(assigned_to=emp) |
+                    Q(assigned_to__team_leader=emp) |
+                    Q(assigned_employees=emp) |
+                    Q(assigned_employees__team_leader=emp)
+                )
+            ).distinct()
+
+        if not emp:
+            return Task.objects.none()
+        # Non-draft tasks assigned to this employee (either via assigned_to or assigned_employees M2M)
+        return qs.filter(
+            Q(assigned_to=emp) | Q(assigned_employees=emp),
+            is_draft=False
+        ).distinct()
+
+    @action(detail=False, methods=['get'], url_path='assignable_members')
+    def assignable_members(self, request):
+        """
+        Returns authorized assignable members based on the user's role:
+        - Reporting Manager: Direct reports, Team Leaders, and employees under their Team Leaders.
+        - Team Leader: Employees assigned to their own team only.
+        """
+        user = request.user
+        emp = getattr(user, 'employee_profile', None)
+
+        def _format_emp(e):
+            photo_url = None
+            if e.profile_photo:
+                try:
+                    photo_url = e.profile_photo.url
+                except Exception:
+                    photo_url = None
+            return {
+                "id": e.id,
+                "full_name": e.full_name,
+                "employee_id": e.employee_id,
+                "department": e.department,
+                "designation": e.designation,
+                "role": e.user.role if e.user else 'EMPLOYEE',
+                "team_leader_name": e.team_leader.full_name if e.team_leader else None,
+                "profile_photo_url": photo_url,
+            }
+
+        if user.role == 'REPORTING_MANAGER':
+            if not emp:
+                return Response([])
+            qs = Employee.objects.filter(
+                Q(branch__company_id=user.company_id) & (
+                    Q(reporting_manager=emp) |
+                    Q(team_leader__reporting_manager=emp)
+                )
+            ).exclude(id=emp.id).select_related('user', 'team_leader').order_by('full_name')
+
+            return Response([_format_emp(e) for e in qs])
+
+        elif user.role == 'TEAM_LEADER':
+            if not emp:
+                return Response([])
+            qs = Employee.objects.filter(
+                branch__company_id=user.company_id,
+                team_leader=emp
+            ).exclude(id=emp.id).select_related('user').order_by('full_name')
+
+            return Response([_format_emp(e) for e in qs])
+
+        elif user.role in ('SUPER_ADMIN', 'ADMIN', 'HR'):
+            company_id = user.company_id or request.query_params.get('company')
+            qs = Employee.objects.filter(branch__company_id=company_id).select_related('user').order_by('full_name')
+            return Response([_format_emp(e) for e in qs])
+
+        return Response([])
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        if user.role == 'EMPLOYEE':
+            raise PermissionDenied("Employees cannot create or assign tasks.")
+
+        emp_creator = getattr(user, 'employee_profile', None)
+        assigned_to = serializer.validated_data.get('assigned_to')
+        assigned_employee_ids = serializer.validated_data.pop('assigned_employee_ids', None)
+        is_draft = serializer.validated_data.get('is_draft', False)
+
+        # Collect all assigned employees
+        assigned_emps = []
+        if assigned_employee_ids:
+            assigned_emps = list(Employee.objects.filter(id__in=assigned_employee_ids))
+            if assigned_emps and not assigned_to:
+                assigned_to = assigned_emps[0]
+                serializer.validated_data['assigned_to'] = assigned_to
+        elif assigned_to:
+            assigned_emps = [assigned_to]
+
+        # Determine Reporting Manager and Team Leader references for assignment history
+        if user.role == 'REPORTING_MANAGER':
+            rep_mgr = emp_creator
+            tl = assigned_to.team_leader if assigned_to else None
+        elif user.role == 'TEAM_LEADER':
+            tl = emp_creator
+            rep_mgr = emp_creator.reporting_manager if emp_creator else (assigned_to.reporting_manager if assigned_to else None)
+        else:
+            rep_mgr = assigned_to.reporting_manager if assigned_to else None
+            tl = assigned_to.team_leader if assigned_to else None
+
+        role_display = "Reporting Manager" if user.role == 'REPORTING_MANAGER' else ("Team Leader" if user.role == 'TEAM_LEADER' else user.role)
+        if len(assigned_emps) > 1:
+            assignee_name = f"{len(assigned_emps)} employees ({', '.join(e.full_name for e in assigned_emps[:3])}{'...' if len(assigned_emps) > 3 else ''})"
+        elif assigned_emps:
+            assignee_name = assigned_emps[0].full_name
+        else:
+            assignee_name = 'team'
+
+        task = serializer.save(
+            company_id=user.company_id or (assigned_to.branch.company_id if assigned_to and assigned_to.branch else None),
+            assigned_by=user,
+            reporting_manager=rep_mgr,
+            team_leader=tl,
+        )
+
+        if assigned_emps:
+            task.assigned_employees.set(assigned_emps)
+
+        # Log Activity with clearly identified assigning role
+        action_name = "Task Drafted" if is_draft else "Task Created & Assigned"
+        desc = (
+            f"Task drafted by {user.username} ({role_display})."
+            if is_draft
+            else f"Task created and assigned to {assignee_name} by {user.username} ({role_display})."
+        )
+        TaskActivity.objects.create(
+            task=task,
+            user=user,
+            action=action_name,
+            description=desc
+        )
+
+        # In-app notifications to all assigned employees if not draft
+        if not is_draft and assigned_emps:
+            try:
+                from notifications.models import Notification
+                for emp_item in assigned_emps:
+                    if emp_item.user:
+                        Notification.objects.create(
+                            recipient=emp_item.user,
+                            title="New Task Assigned",
+                            message=f"You have been assigned: {task.title}",
+                            notification_type="TASK_ASSIGNED",
+                            data={"task_id": task.id}
+                        )
+            except Exception:
+                pass
+
+    def perform_update(self, serializer):
+        user = self.request.user
+        task = self.get_object()
+        check_user_task_access(task, user)
+
+        # Employees can only update task status (or add completion notes)
+        if user.role == 'EMPLOYEE':
+            for field, new_val in serializer.validated_data.items():
+                if field in ('status',):
+                    continue
+                current_val = getattr(task, field, None)
+                if hasattr(current_val, 'pk'):
+                    current_val = current_val.pk
+                if hasattr(new_val, 'pk'):
+                    new_val = new_val.pk
+                if current_val != new_val:
+                    raise PermissionDenied("Employees can only update task status.")
+
+        old_status = task.status
+        old_is_draft = task.is_draft
+
+        assigned_employee_ids = serializer.validated_data.pop('assigned_employee_ids', None)
+
+        updated_task = serializer.save()
+
+        if assigned_employee_ids is not None:
+            new_emps = list(Employee.objects.filter(id__in=assigned_employee_ids))
+            updated_task.assigned_employees.set(new_emps)
+            if new_emps and updated_task.assigned_to not in new_emps:
+                updated_task.assigned_to = new_emps[0]
+                updated_task.save(update_fields=['assigned_to'])
+            elif not new_emps and updated_task.assigned_to:
+                updated_task.assigned_to = None
+                updated_task.save(update_fields=['assigned_to'])
+
+        # Log Status Change or Publish
+        if old_is_draft and not updated_task.is_draft:
+            role_display = "Reporting Manager" if user.role == 'REPORTING_MANAGER' else ("Team Leader" if user.role == 'TEAM_LEADER' else user.role)
+            TaskActivity.objects.create(
+                task=updated_task,
+                user=user,
+                action="Task Submitted",
+                description=f"Task published from draft and assigned to {updated_task.assigned_to.full_name if updated_task.assigned_to else 'team'} by {user.username} ({role_display})."
+            )
+        elif old_status != updated_task.status:
+            TaskActivity.objects.create(
+                task=updated_task,
+                user=user,
+                action="Status Changed",
+                description=f"Status changed from {old_status} to {updated_task.status} by {user.username}."
+            )
+
+
+class TaskCommentViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskCommentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        task_id = self.kwargs.get('task_pk')
+        task = Task.objects.get(pk=task_id)
+        check_user_task_access(task, self.request.user)
+        return TaskComment.objects.filter(task=task).select_related('author')
+
+    def perform_create(self, serializer):
+        task = Task.objects.get(pk=self.kwargs.get('task_pk'))
+        check_user_task_access(task, self.request.user)
+        comment = serializer.save(task=task, author=self.request.user)
+        
+        # Log Activity
+        type_desc = f"{comment.comment_type.title()} comment"
+        TaskActivity.objects.create(
+            task=task,
+            user=self.request.user,
+            action="Comment Added",
+            description=f"Added a {type_desc} to the task."
+        )
+
+
+class TaskAttachmentViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskAttachmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        task_id = self.kwargs.get('task_pk')
+        task = Task.objects.get(pk=task_id)
+        check_user_task_access(task, self.request.user)
+        return TaskAttachment.objects.filter(task=task).select_related('uploaded_by')
+
+    def perform_create(self, serializer):
+        task = Task.objects.get(pk=self.kwargs.get('task_pk'))
+        check_user_task_access(task, self.request.user)
+        f = self.request.FILES.get('file')
+        file_name = f.name if f else 'attachment'
+        file_size = f"{f.size / (1024 * 1024):.2f} MB" if f and f.size > 1024*1024 else (f"{f.size / 1024:.1f} KB" if f else '')
+        
+        serializer.save(
+            task=task,
+            uploaded_by=self.request.user,
+            file_name=file_name,
+            file_size=file_size,
+        )
+
+        TaskActivity.objects.create(
+            task=task,
+            user=self.request.user,
+            action="Attachment Uploaded",
+            description=f"Uploaded file {file_name}."
+        )
+
+
+class TaskTimeLogViewSet(viewsets.ModelViewSet):
+    serializer_class = TaskTimeLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        task_id = self.kwargs.get('task_pk')
+        task = Task.objects.get(pk=task_id)
+        check_user_task_access(task, self.request.user)
+        return TaskTimeLog.objects.filter(task=task).select_related('user')
+
+    def perform_create(self, serializer):
+        task = Task.objects.get(pk=self.kwargs.get('task_pk'))
+        check_user_task_access(task, self.request.user)
+        log = serializer.save(task=task, user=self.request.user)
+
+        TaskActivity.objects.create(
+            task=task,
+            user=self.request.user,
+            action="Time Logged",
+            description=f"Logged {log.hours} hours on {log.date}."
+        )
+
+
+class TaskActivityListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, pk):
+        task = Task.objects.get(pk=pk)
+        check_user_task_access(task, request.user)
+        activities = TaskActivity.objects.filter(task=task).select_related('user').order_by('-created_at')
+        serializer = TaskActivitySerializer(activities, many=True)
+        return Response(serializer.data)
+
+
+class TaskDashboardSummaryView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        emp = getattr(user, 'employee_profile', None)
+
+        today = timezone.localdate()
+        Task.objects.filter(due_date__lt=today).exclude(status__in=['COMPLETED', 'CANCELLED', 'DRAFT']).update(status='OVERDUE')
+
+        qs = Task.objects.all()
+        if user.role == 'HR':
+            qs = qs.filter(company_id=user.company_id)
+        elif user.role == 'REPORTING_MANAGER' and emp:
+            qs = qs.filter(
+                Q(company_id=user.company_id) & (
+                    Q(reporting_manager=emp) |
+                    Q(assigned_by=user) |
+                    Q(team_leader__reporting_manager=emp) |
+                    Q(assigned_to=emp) |
+                    Q(assigned_to__reporting_manager=emp) |
+                    Q(assigned_to__team_leader__reporting_manager=emp)
+                )
+            ).distinct()
+        elif user.role == 'TEAM_LEADER' and emp:
+            qs = qs.filter(
+                Q(company_id=user.company_id) & (
+                    Q(team_leader=emp) |
+                    Q(assigned_by=user) |
+                    Q(assigned_to=emp) |
+                    Q(assigned_to__team_leader=emp)
+                )
+            ).distinct()
+        elif user.role == 'EMPLOYEE' and emp:
+            qs = qs.filter(assigned_to=emp, is_draft=False)
+        elif user.role not in ('SUPER_ADMIN', 'ADMIN'):
+            return Response({})
+
+        return Response({
+            "total": qs.count(),
+            "pending": qs.filter(status='PENDING').count(),
+            "in_progress": qs.filter(status='IN_PROGRESS').count(),
+            "under_review": qs.filter(status='UNDER_REVIEW').count(),
+            "completed": qs.filter(status='COMPLETED').count(),
+            "on_hold": qs.filter(status='ON_HOLD').count(),
+            "cancelled": qs.filter(status='CANCELLED').count(),
+            "overdue": qs.filter(status='OVERDUE').count(),
+            "draft": qs.filter(status='DRAFT').count(),
+        })

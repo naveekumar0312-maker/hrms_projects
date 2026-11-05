@@ -1,0 +1,65 @@
+# Python / Virtual Environment
+venv/
+**/venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+**/db.sqlite3
+
+# Node / Web / Mobile dependencies & build artifacts
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.expo/
+**/.expo/
+android/app/build/
+**/android/app/build/
+android/.gradle/
+**/android/.gradle/
+android/build/
+**/android/build/
+
+# Binary builds & APK / AAB bundles (GitHub 100MB limit)
+*.apk
+*.aab
+**/*.apk
+**/*.aab
+
+# Uploaded Media, Static collection & Secrets
+media/
+**/media/
+staticfiles/
+**/staticfiles/
+secrets/
+**/secrets/
+
+# Backup directories and files
+backup_config_*/
+**/src_backup/
+**/icon-bg-backup/
+**/premium-icons-backup/
+**/backup_employee_*/
+**/*backup*
+**/*bak*
+**/*.before-*
+**/*.pre_*
+
+# Environment Variables & Credentials
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.*
+
+# OS / Editor / Miscellaneous junk
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+.vscode/
+**/attendance employees -maxdepth*
+**/ystemctl status nginx*

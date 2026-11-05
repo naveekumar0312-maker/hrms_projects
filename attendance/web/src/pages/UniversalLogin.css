@@ -1,0 +1,308 @@
+/* Clean Modern Split Login */
+@import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+.login-screen-split {
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  width: 100vw;
+  display: flex;
+  background-color: #FFFFFF;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ============================================================
+   LEFT SIDE ARCH HERO (Zero scroll, precise height)
+   ============================================================ */
+.login-left-hero-wrapper {
+  flex: 1.15;
+  max-width: 50%;
+  height: 100vh;
+  height: 100dvh;
+  position: relative;
+  background-color: #FFFFFF;
+  display: flex;
+  overflow: hidden;
+}
+
+.login-hero-arch-mask {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* Curved semi-elliptical right arch boundary */
+  border-top-right-radius: 46vw 100vh;
+  border-bottom-right-radius: 46vw 100vh;
+  overflow: hidden;
+  box-shadow: 12px 0 35px rgba(0, 0, 0, 0.04);
+}
+
+.login-hero-arch-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
+
+/* ============================================================
+   RIGHT SIDE LOGIN FORM
+   ============================================================ */
+.login-right-content-wrapper {
+  flex: 1;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 56px;
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.login-form-inner-container {
+  width: 100%;
+  max-width: 410px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Welcome Titles */
+.login-welcome-header {
+  margin-bottom: 38px;
+  text-align: left;
+}
+
+.login-welcome-title {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 600;
+  color: #2D3748;
+  font-family: 'Comfortaa', cursive, 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.login-welcome-subtitle {
+  margin: 10px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #8C98A9;
+}
+
+/* Error message */
+.login-split-error-box {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  color: #DC2626;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 22px;
+  line-height: 1.4;
+}
+
+/* Form */
+.login-split-form {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Clean Underline Input Row */
+.login-split-field-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-bottom: 1.5px solid #E2E8F0;
+  padding-bottom: 8px;
+  transition: border-color 200ms ease;
+}
+
+.login-split-field-row:focus-within {
+  border-bottom-color: #0757B8;
+}
+
+.login-split-icon {
+  color: #94A3B8;
+  flex-shrink: 0;
+  margin-right: 14px;
+  transition: color 200ms ease;
+}
+
+.login-split-field-row:focus-within .login-split-icon {
+  color: #0757B8;
+}
+
+.login-split-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: #1E293B;
+  padding: 6px 0;
+  font-family: inherit;
+}
+
+.login-split-input::placeholder {
+  color: #A0AEC0;
+  font-weight: 400;
+  font-size: 14.5px;
+}
+
+.login-split-pwd-toggle {
+  background: none;
+  border: none;
+  padding: 6px;
+  color: #94A3B8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 150ms ease;
+}
+
+.login-split-pwd-toggle:hover {
+  color: #4A5568;
+}
+
+/* Bottom Action Row */
+.login-split-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+  gap: 16px;
+}
+
+.login-split-forgot-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0757B8;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: inherit;
+  transition: color 150ms ease;
+}
+
+.login-split-forgot-btn:hover {
+  color: #004494;
+  text-decoration: underline;
+}
+
+/* Pill Button */
+.login-split-submit-pill {
+  background: #0757B8;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 38px;
+  font-size: 14.5px;
+  font-weight: 700;
+  font-family: 'Comfortaa', cursive, 'Plus Jakarta Sans', sans-serif;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(7, 87, 184, 0.28);
+  transition: all 180ms ease;
+  min-width: 110px;
+}
+
+.login-split-submit-pill:hover:not(:disabled) {
+  background: #004B9D;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(7, 87, 184, 0.35);
+}
+
+.login-split-submit-pill:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-split-submit-pill:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-split-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: login-spin 0.7s linear infinite;
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Footer Credits */
+.login-split-footer {
+  margin-top: 48px;
+  text-align: right;
+  font-size: 12px;
+  color: #A0AEC0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.login-split-footer-logo {
+  color: #0757B8;
+  font-weight: 700;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   ============================================================ */
+@media (max-width: 960px) {
+  .login-left-hero-wrapper {
+    display: none;
+  }
+
+  .login-right-content-wrapper {
+    padding: 32px 20px;
+  }
+
+  .login-form-inner-container {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-welcome-title {
+    font-size: 24px;
+  }
+
+  .login-split-action-row {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .login-split-submit-pill {
+    width: 100%;
+    padding: 13px 0;
+  }
+
+  .login-split-forgot-btn {
+    text-align: center;
+  }
+
+  .login-split-footer {
+    justify-content: center;
+    margin-top: 36px;
+  }
+}

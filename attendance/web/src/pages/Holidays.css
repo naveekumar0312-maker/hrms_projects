@@ -1,0 +1,272 @@
+﻿.holiday-page {
+  --holiday-green: #0056B3;
+  --holiday-green-dark: #014B9D;
+  --holiday-green-light: #F8F9FC;
+  --holiday-text: #172033;
+  --holiday-muted: #64748b;
+  --holiday-border: #e2e8f0;
+  width: 100%;
+  min-width: 0;
+  color: var(--holiday-text);
+  font-family: Inter, "Segoe UI", sans-serif;
+}
+
+.holiday-page * { box-sizing: border-box; }
+
+.holiday-page h1,
+.holiday-page h2 {
+  color: var(--holiday-text);
+  font-weight: 750;
+  letter-spacing: -0.45px;
+}
+
+.holiday-page .holiday-filter-panel,
+.holiday-page .holiday-form-panel,
+.holiday-page .holiday-table-panel {
+  background: #fff;
+  border: 1px solid var(--holiday-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, .035);
+}
+
+.holiday-page .holiday-filter-panel {
+  padding: 22px;
+  margin-bottom: 20px;
+}
+
+.holiday-page .holiday-form-panel {
+  padding: 24px;
+  margin-bottom: 22px;
+}
+
+.holiday-page .holiday-table-panel {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.holiday-page label {
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.holiday-page input:not([type="checkbox"]),
+.holiday-page textarea,
+.holiday-page select {
+  width: 100%;
+  min-height: 44px;
+  padding: 11px 13px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  background: #fff;
+  color: #172033;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.holiday-page textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.holiday-page input:focus,
+.holiday-page textarea:focus,
+.holiday-page select:focus {
+  border-color: var(--holiday-green);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, .10);
+}
+
+.holiday-page button { font-family: inherit; }
+
+.holiday-page button:focus-visible {
+  outline: 3px solid rgba(22, 163, 74, .24);
+  outline-offset: 2px;
+}
+
+/* Green primary actions, including existing inline orange buttons */
+.holiday-page button[type="submit"] {
+  min-height: 42px;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background: var(--holiday-green) !important;
+  color: #fff !important;
+  font-weight: 650;
+}
+
+.holiday-page button[type="submit"]:hover:not(:disabled) {
+  background: var(--holiday-green-dark) !important;
+  box-shadow: 0 5px 14px rgba(22, 163, 74, .18);
+  transform: translateY(-1px);
+}
+
+.holiday-page table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: separate !important;
+  border-spacing: 0;
+}
+
+.holiday-page thead { background: #f8fafc !important; }
+
+.holiday-page th {
+  padding: 15px 18px !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  letter-spacing: .65px;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--holiday-border) !important;
+}
+
+.holiday-page td {
+  padding: 16px 18px !important;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.6;
+  border-bottom: 1px solid #eef2f7 !important;
+}
+
+.holiday-page tbody tr { transition: background .16s ease; }
+.holiday-page tbody tr:hover { background: #F8F9FC; }
+.holiday-page tbody tr:last-child td { border-bottom: none !important; }
+.holiday-page td:first-child { color: var(--holiday-text); font-weight: 650; }
+
+.holiday-page .custom-select-container {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.holiday-page .custom-select-trigger {
+  min-height: 44px;
+  border-radius: 10px !important;
+}
+
+.holiday-page .custom-select-dropdown {
+  z-index: 1000;
+  border: 1px solid var(--holiday-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 14px 35px rgba(15, 23, 42, .14);
+  overflow: hidden;
+}
+
+.holiday-page .custom-select-option:hover,
+.holiday-page .custom-select-option.selected {
+  background: #F8F9FC;
+  color: #014B9D;
+}
+
+.holiday-page .attendance-datepicker-wrapper,
+.holiday-page .custom-date-field,
+.holiday-page .custom-date-control {
+  width: 100%;
+}
+
+.holiday-page .custom-date-input {
+  min-height: 44px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+  padding: 11px 13px;
+  background: #fff;
+  color: var(--holiday-text);
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .holiday-page .holiday-filter-panel,
+  .holiday-page .holiday-form-panel { padding: 16px; }
+  .holiday-page .holiday-filter-panel,
+  .holiday-page .holiday-form-panel,
+  .holiday-page .holiday-table-panel { border-radius: 12px; }
+  .holiday-page th,
+  .holiday-page td { padding: 12px !important; }
+}
+
+/* ===== Holiday form alignment refinement ===== */
+.holiday-page .holiday-company-field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.holiday-page .holiday-company-field > label,
+.holiday-page .holiday-company-field > span {
+  display: block;
+  width: 100%;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.holiday-page .holiday-company-field .custom-select-container {
+  width: 100%;
+  max-width: none;
+}
+
+.holiday-page .holiday-company-field .custom-select-trigger {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid #dbe2ea;
+  border-radius: 10px;
+}
+
+.holiday-page .holiday-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+  width: 100%;
+}
+
+.holiday-page .holiday-form-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.holiday-page .holiday-description-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.holiday-page .holiday-description-field textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px 15px;
+  border: 1px solid #dbe2ea;
+  border-radius: 12px;
+  background: #fbfdff;
+  color: #172033;
+  font-size: 14px;
+  line-height: 1.65;
+  resize: vertical;
+  transition: border-color .18s ease, box-shadow .18s ease,
+    background .18s ease;
+}
+
+.holiday-page .holiday-description-field textarea:focus {
+  background: #fff;
+  border-color: #0056B3;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, .10);
+}
+
+.holiday-page .holiday-description-field textarea::placeholder {
+  color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+  .holiday-page .holiday-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}

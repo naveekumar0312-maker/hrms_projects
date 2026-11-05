@@ -1,0 +1,1007 @@
+﻿import { useContext, useState, type FormEvent } from 'react';
+import { Eye, EyeOff, LockKeyhole, UserRound } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import api from '../api/index';
+import './UniversalLogin.css';
+
+const UniversalLogin = () => {
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!identifier.trim() || !password.trim()) {
+      setError('Please enter your login details.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      const isPhone = /^\d+$/.test(identifier.trim());
+
+      const payload = isPhone
+        ? {
+            phone_number: identifier.trim(),
+            password,
+          }
+        : {
+            username: identifier.trim(),
+            password,
+          };
+
+      const response = await api.post('/auth/login/', payload);
+
+      login(response.data);
+
+      const role =
+        response.data?.user?.role ||
+        response.data?.role;
+
+      if (role === 'SUPER_ADMIN' || role === 'HR') {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (err: any) {
+      console.error('Login error:', err);
+
+      const message =
+        err?.response?.data?.detail ||
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        'Invalid login credentials.';
+
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="universal-login">
+
+      <div className="login-background-overlay" />
+
+      <div className="login-card">
+
+        <div className="login-content">
+
+          <div className="login-heading">
+            <h1>Log In</h1>
+          </div>
+
+          {error && (
+            <div className="login-error">
+              {error}
+            </div>
+          )}
+
+          <form
+            className="login-form"
+            onSubmit={handleLogin}
+          >
+
+            <div className="login-field">
+
+              <label htmlFor="identifier">
+                Email / Phone Number
+              </label>
+
+              <div className="login-input-wrapper">
+
+                <UserRound
+                  className="login-input-icon"
+                  size={19}
+                />
+
+                <input
+                  id="identifier"
+                  type="text"
+                  value={identifier}
+                  onChange={(e) =>
+                    setIdentifier(e.target.value)
+                  }
+                  placeholder="Enter your email or phone"
+                  autoComplete="username"
+                  disabled={loading}
+                />
+
+              </div>
+
+            </div>
+
+            <div className="login-field">
+
+              <label htmlFor="password">
+                Password
+              </label>
+
+              <div className="login-input-wrapper">
+
+                <LockKeyhole
+                  className="login-input-icon"
+                  size={19}
+                />
+
+                <input
+                  id="password"
+                  type={
+                    showPassword
+                      ? 'text'
+                      : 'password'
+                  }
+                  value={password}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  disabled={loading}
+                />
+
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() =>
+                    setShowPassword((prev) => !prev)
+                  }
+                  aria-label={
+                    showPassword
+                      ? 'Hide password'
+                      : 'Show password'
+                  }
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeOff size={19} />
+                  ) : (
+                    <Eye size={19} />
+                  )}
+                </button>
+
+              </div>
+
+            </div>
+
+            <button
+              type="submit"
+              className="login-submit"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="login-spinner" />
+              ) : (
+                'Log In'
+              )}
+            </button>
+
+          </form>
+
+        </div>
+
+      </div>
+
+    </main>
+  );
+};
+
+export default UniversalLogin;
+/* =========================================================
+   ATTENDANCE LOGIN
+   Full Background Image + Glass Card
+========================================================= */
+
+.universal-login {
+  min-height: 100vh;
+  width: 100%;
+
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 2rem;
+
+  overflow: hidden;
+
+  background-image:
+    url("https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=2400&q=85");
+
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Dark glass overlay */
+
+.login-background-overlay {
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(2, 20, 12, 0.68),
+      rgba(6, 35, 20, 0.48)
+    );
+
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* =========================================================
+   GLASS LOGIN CARD
+========================================================= */
+
+.login-card {
+  position: relative;
+  z-index: 2;
+
+  width: min(100%, 500px);
+
+  padding: 3.2rem;
+
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.17),
+      rgba(255, 255, 255, 0.08)
+    );
+
+  border: 1px solid rgba(255, 255, 255, 0.22);
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* =========================================================
+   HEADING
+========================================================= */
+
+.login-heading {
+  margin-bottom: 2.5rem;
+}
+
+.login-heading h1 {
+  margin: 0;
+
+  color: #ffffff;
+
+  font-size: clamp(2.2rem, 5vw, 3rem);
+
+  line-height: 1;
+
+  font-weight: 800;
+
+  letter-spacing: -0.045em;
+}
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.login-error {
+  margin-bottom: 1.25rem;
+
+  padding: 0.8rem 1rem;
+
+  border-radius: 10px;
+
+  color: #ffe4e6;
+
+  background: rgba(190, 24, 93, 0.28);
+
+  border: 1px solid rgba(255, 255, 255, 0.14);
+
+  font-size: 0.85rem;
+}
+
+/* =========================================================
+   FORM
+========================================================= */
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 1.6rem;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 0.65rem;
+}
+
+.login-field label {
+  color: #ffffff;
+
+  font-size: 1rem;
+
+  font-weight: 700;
+
+  letter-spacing: -0.01em;
+}
+
+/* =========================================================
+   INPUT
+========================================================= */
+
+.login-input-wrapper {
+  position: relative;
+
+  width: 100%;
+}
+
+.login-input-wrapper input {
+  width: 100%;
+
+  height: 58px;
+
+  padding:
+    0 3.2rem
+    0 3rem;
+
+  box-sizing: border-box;
+
+  border-radius: 8px;
+
+  outline: none;
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 0.95rem;
+
+  background:
+    rgba(255, 255, 255, 0.13);
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.25);
+
+  box-shadow:
+    inset 0 1px 5px rgba(0, 0, 0, 0.08);
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.login-input-wrapper input::placeholder {
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.login-input-wrapper input:hover {
+  background:
+    rgba(255, 255, 255, 0.16);
+}
+
+.login-input-wrapper input:focus {
+  background:
+    rgba(255, 255, 255, 0.18);
+
+  border-color:
+    rgba(134, 239, 172, 0.8);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(34, 197, 94, 0.14);
+}
+
+.login-input-icon {
+  position: absolute;
+
+  left: 1rem;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  color:
+    rgba(255, 255, 255, 0.72);
+
+  pointer-events: none;
+}
+
+/* =========================================================
+   PASSWORD BUTTON
+========================================================= */
+
+.password-toggle {
+  position: absolute;
+
+  right: 0.8rem;
+  top: 50%;
+
+  transform: translateY(-50%);
+
+  width: 38px;
+  height: 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+
+  border-radius: 8px;
+
+  background: transparent;
+
+  color:
+    rgba(255, 255, 255, 0.72);
+
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  color: #ffffff;
+
+  background:
+    rgba(255, 255, 255, 0.1);
+}
+
+/* =========================================================
+   LOGIN BUTTON
+========================================================= */
+
+.login-submit {
+  width: 100%;
+
+  height: 58px;
+
+  margin-top: 0.5rem;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.18);
+
+  border-radius: 999px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(134, 239, 172, 0.35),
+      rgba(22, 101, 52, 0.55)
+    );
+
+  color: #ffffff;
+
+  font-family: inherit;
+
+  font-size: 1.05rem;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 10px 25px
+    rgba(0, 0, 0, 0.18);
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.login-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(134, 239, 172, 0.48),
+      rgba(22, 101, 52, 0.68)
+    );
+
+  box-shadow:
+    0 14px 30px
+    rgba(0, 0, 0, 0.24);
+}
+
+.login-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-submit:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.65;
+}
+
+/* =========================================================
+   SPINNER
+========================================================= */
+
+.login-spinner {
+  width: 21px;
+  height: 21px;
+
+  display: inline-block;
+
+  border-radius: 50%;
+
+  border:
+    3px solid
+    rgba(255, 255, 255, 0.35);
+
+  border-top-color: #ffffff;
+
+  animation:
+    loginSpin 0.75s linear infinite;
+}
+
+@keyframes loginSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .universal-login {
+    padding: 1.25rem;
+  }
+
+  .login-card {
+    width: min(100%, 460px);
+
+    padding: 2.5rem;
+  }
+
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 520px) {
+
+  .universal-login {
+    min-height: 100dvh;
+
+    padding: 1rem;
+
+    background-position: center;
+  }
+
+  .login-background-overlay {
+    background:
+      linear-gradient(
+        160deg,
+        rgba(2, 20, 12, 0.72),
+        rgba(6, 35, 20, 0.56)
+      );
+  }
+
+  .login-card {
+    width: 100%;
+
+    padding: 2rem 1.4rem;
+
+    border-radius: 16px;
+
+    background:
+      linear-gradient(
+        135deg,
+        rgba(20, 30, 24, 0.48),
+        rgba(20, 30, 24, 0.32)
+      );
+
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .login-heading {
+    margin-bottom: 2rem;
+  }
+
+  .login-heading h1 {
+    font-size: 2.15rem;
+  }
+
+  .login-form {
+    gap: 1.35rem;
+  }
+
+  .login-field {
+    gap: 0.55rem;
+  }
+
+  .login-field label {
+    font-size: 0.9rem;
+  }
+
+  .login-input-wrapper input {
+    height: 54px;
+
+    font-size: 0.88rem;
+
+    padding-left: 2.8rem;
+  }
+
+  .login-submit {
+    height: 54px;
+
+    font-size: 0.98rem;
+  }
+
+}
+
+/* =========================================================
+   SMALL PHONES
+========================================================= */
+
+@media (max-width: 380px) {
+
+  .universal-login {
+    padding: 0.75rem;
+  }
+
+  .login-card {
+    padding: 1.7rem 1.15rem;
+  }
+
+  .login-heading h1 {
+    font-size: 2rem;
+  }
+
+}
+import React, { useContext } from 'react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+
+import {
+  AuthProvider,
+  AuthContext,
+} from './context/AuthContext';
+
+// ============================================================
+// ADMIN PAGES
+// ============================================================
+
+import Branches from './pages/Branches';
+import Employees from './pages/Employees';
+import Shifts from './pages/Shifts';
+import Attendance from './pages/Attendance';
+import Companies from './pages/Companies';
+import Dashboard from './pages/Dashboard';
+import AdminLayout from './layouts/AdminLayout';
+
+// ============================================================
+// UNIVERSAL
+// ============================================================
+
+import UniversalLogin from './pages/UniversalLogin';
+import CustomAlertProvider from './components/CustomAlert';
+
+// ============================================================
+// EMPLOYEE PAGES
+// ============================================================
+
+import EmployeeLayout from './layouts/EmployeeLayout';
+import EmployeeDashboard from './pages/employee/Dashboard';
+import EmployeeAttendanceHistory from './pages/employee/AttendanceHistory';
+import EmployeeReports from './pages/employee/Reports';
+import EmployeeProfile from './pages/employee/Profile';
+import EmployeeChangePassword from './pages/employee/ChangePassword';
+import EmployeePermission from './pages/employee/Permission';
+import EmployeeLeave from './pages/employee/Leave';
+import AdminLeaves from './pages/Leaves';
+import AdminPermissions from './pages/Permissions';
+
+
+// ============================================================
+// PROTECTED ROUTE
+// ============================================================
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRole: 'ADMIN' | 'EMPLOYEE';
+}
+
+const ProtectedRoute = ({
+  children,
+  allowedRole,
+}: ProtectedRouteProps) => {
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+  } = useContext(AuthContext);
+
+  // Wait for AuthContext to restore authentication
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#F8FAFC',
+          color: '#0F172A',
+          fontSize: '15px',
+          fontWeight: 600,
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
+
+  // Not logged in
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Logged-in user has wrong role
+  if (user.role !== allowedRole) {
+    if (user.role === 'ADMIN') {
+      return <Navigate to="/admin" replace />;
+    }
+
+    if (user.role === 'EMPLOYEE') {
+      return <Navigate to="/dashboard" replace />;
+    }
+
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+
+// ============================================================
+// ROOT REDIRECT
+// ============================================================
+
+const RootRedirect = () => {
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+  } = useContext(AuthContext);
+
+  if (isLoading) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#F8FAFC',
+          color: '#0F172A',
+          fontSize: '15px',
+          fontWeight: 600,
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user.role === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (user.role === 'EMPLOYEE') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <Navigate to="/login" replace />;
+};
+
+
+// ============================================================
+// APP ROUTES
+// ============================================================
+
+const AppRoutes = () => {
+  return (
+    <Router>
+      <Routes>
+
+        {/* ==================================================
+            LOGIN
+        ================================================== */}
+
+        <Route
+          path="/login"
+          element={<UniversalLogin />}
+        />
+
+
+        {/* ==================================================
+            ROOT
+        ================================================== */}
+
+        <Route
+          path="/"
+          element={<RootRedirect />}
+        />
+
+
+        {/* ==================================================
+            ADMIN ROUTES
+        ================================================== */}
+
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRole="ADMIN">
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* /admin */}
+          <Route
+            index
+            element={<Dashboard />}
+          />
+
+          {/* /admin/attendance */}
+          <Route
+            path="attendance"
+            element={<Attendance />}
+          />
+
+          {/* /admin/employees */}
+          <Route
+            path="employees"
+            element={<Employees />}
+          />
+
+          {/* /admin/shifts */}
+          <Route
+            path="shifts"
+            element={<Shifts />}
+          />
+
+          {/* /admin/companies */}
+          <Route
+            path="companies"
+            element={<Companies />}
+          />
+
+          {/* /admin/branches */}
+          <Route
+            path="branches"
+            element={<Branches />}
+          />
+
+          {/* /admin/permissions */}
+          <Route
+            path="permissions"
+            element={<AdminPermissions />}
+          />
+          <Route
+            path="leaves"
+            element={<AdminLeaves />}
+          />
+        </Route>
+
+
+        {/* ==================================================
+            EMPLOYEE ROUTES
+        ================================================== */}
+
+        <Route
+          element={
+            <ProtectedRoute allowedRole="EMPLOYEE">
+              <EmployeeLayout />
+            </ProtectedRoute>
+          }
+        >
+          {/* /dashboard */}
+          <Route
+            path="/dashboard"
+            element={<EmployeeDashboard />}
+          />
+
+          {/* /attendance */}
+          <Route
+            path="/attendance"
+            element={<EmployeeAttendanceHistory />}
+          />
+
+          {/* /reports */}
+          <Route
+            path="/reports"
+            element={<EmployeeReports />}
+          />
+
+          {/* /profile */}
+          <Route
+            path="/profile"
+            element={<EmployeeProfile />}
+          />
+
+          {/* /profile/change-password */}
+          <Route
+            path="/profile/change-password"
+            element={<EmployeeChangePassword />}
+          />
+
+          {/* /permission */}
+          <Route
+            path="/permission"
+            element={<EmployeePermission />}
+          />
+          <Route
+            path="/leave"
+            element={<EmployeeLeave />}
+          />
+        </Route>
+
+
+        {/* ==================================================
+            FALLBACK
+        ================================================== */}
+
+        <Route
+          path="*"
+          element={<Navigate to="/" replace />}
+        />
+
+      </Routes>
+    </Router>
+  );
+};
+
+
+// ============================================================
+// APP
+// ============================================================
+
+const App = () => {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+      <CustomAlertProvider />
+    </AuthProvider>
+  );
+};
+
+export default App;
+
+
+
+
+
+
+
+

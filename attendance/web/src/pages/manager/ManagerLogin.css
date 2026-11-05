@@ -1,0 +1,384 @@
+/* ==========================================================================
+   REPORTING MANAGER LOGIN - DEDICATED STYLES
+   ========================================================================== */
+
+.manager-login-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  background: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   LEFT HERO BANNER
+   -------------------------------------------------------------------------- */
+.manager-login-banner {
+  flex: 1.15;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 60px 70px;
+  position: relative;
+  overflow: hidden;
+}
+
+.manager-login-banner::before {
+  content: '';
+  position: absolute;
+  top: -15%;
+  right: -15%;
+  width: 480px;
+  height: 480px;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.manager-login-banner::after {
+  content: '';
+  position: absolute;
+  bottom: -20%;
+  left: -20%;
+  width: 520px;
+  height: 520px;
+  background: radial-gradient(circle, rgba(49, 92, 85, 0.3) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.manager-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  z-index: 1;
+}
+
+.manager-banner-logo-badge {
+  width: 46px;
+  height: 46px;
+  background: #0056B3;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+}
+
+.manager-banner-company {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.manager-banner-content {
+  max-width: 500px;
+  z-index: 1;
+}
+
+.manager-banner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 24px;
+}
+
+.manager-banner-content h1 {
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.22;
+  margin: 0 0 16px 0;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+.manager-banner-content p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.manager-banner-features {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 36px;
+}
+
+.manager-banner-feat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.manager-banner-feat-bullet {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0056B3;
+}
+
+.manager-banner-footer {
+  font-size: 13px;
+  color: #64748b;
+  z-index: 1;
+}
+
+/* --------------------------------------------------------------------------
+   RIGHT FORM CONTAINER & CARD
+   -------------------------------------------------------------------------- */
+.manager-login-form-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.manager-login-box {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+}
+
+.manager-login-box-header {
+  margin-bottom: 28px;
+}
+
+.manager-role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 9999px;
+  color: #065f46;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.manager-login-box-header h2 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+  letter-spacing: -0.02em;
+}
+
+.manager-login-box-header p {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ERROR BANNER */
+.manager-login-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 20px;
+}
+
+.manager-error-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* FORM FIELDS */
+.manager-login-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.manager-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.manager-form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.manager-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.manager-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.manager-input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.manager-input-wrap input {
+  width: 100%;
+  height: 46px;
+  padding: 10px 44px 10px 42px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.manager-input-wrap input:focus {
+  background: #ffffff;
+  border-color: #0056B3;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+.manager-input-wrap input::placeholder {
+  color: #94a3b8;
+}
+
+.manager-password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+  z-index: 2;
+}
+
+.manager-password-toggle:hover {
+  color: #0f172a;
+}
+
+/* SUBMIT BUTTON */
+.manager-submit-btn {
+  width: 100%;
+  height: 46px;
+  background: #0056B3;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  margin-top: 6px;
+}
+
+.manager-submit-btn:hover:not(:disabled) {
+  background: #014B9D;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+}
+
+.manager-submit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.manager-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: managerSpin 0.7s linear infinite;
+}
+
+@keyframes managerSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* FOOTER HINT */
+.manager-login-footer {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #f1f5f9;
+  text-align: center;
+}
+
+.manager-footer-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+.manager-footer-hint a {
+  color: #0056B3;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.manager-footer-hint a:hover {
+  text-decoration: underline;
+  color: #014B9D;
+}
+
+/* RESPONSIVENESS */
+@media (max-width: 900px) {
+  .manager-login-banner {
+    display: none;
+  }
+  .manager-login-form-container {
+    padding: 32px 20px;
+  }
+}

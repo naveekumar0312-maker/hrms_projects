@@ -1,0 +1,566 @@
+from decimal import Decimal, InvalidOperation
+from math import asin, cos, radians, sin, sqrt
+from datetime import datetime, timedelta
+import json
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+from django.db import transaction
+from django.core.cache import cache
+
+from django.db.models import OuterRef, Subquery
+from django.utils import timezone
+
+from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import (Employee, EmployeeLocation, EmployeeLocationSharing, EmployeeLocationTrackingEvent)
+
+
+def get_own_employee(request):
+    try:
+        return request.user.employee_profile
+    except Employee.DoesNotExist:
+        return None
+
+
+def get_viewable_employees(request):
+    user = request.user
+
+    if user.role in ("SUPER_ADMIN", "ADMIN"):
+        return Employee.objects.filter(
+            status=True,
+            employment_status="ACTIVE",
+            work_type="FIELD",
+        )
+
+    if user.role == "HR" and user.company_id:
+        return Employee.objects.filter(
+            branch__company_id=user.company_id,
+            status=True,
+            employment_status="ACTIVE",
+            work_type="FIELD",
+        )
+
+    raise PermissionDenied(
+        "You are not allowed to view employee locations."
+    )
+
+
+
+
+def reverse_geocode(latitude, longitude):
+    """
+    Return a nearby readable address. Cache approximate 100 m grid cells
+    to reduce external requests. Failure never blocks GPS recording.
+    """
+    cache_key = f"attendance_geocode:{round(float(latitude), 3)}:{round(float(longitude), 3)}"
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    params = urlencode({
+        "format": "jsonv2",
+        "lat": str(latitude),
+        "lon": str(longitude),
+        "zoom": "18",
+        "addressdetails": "1",
+    })
+    request = Request(
+        f"https://nominatim.openstreetmap.org/reverse?{params}",
+        headers={
+            "User-Agent": "AttendanceTracking/1.0 (location lookup)",
+            "Accept": "application/json",
+        },
+    )
+
+    try:
+        with urlopen(request, timeout=3) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        name = str(payload.get("display_name") or "").strip()
+        if name:
+            cache.set(cache_key, name, 21600)
+            return name
+    except Exception:
+        # External geocoding failures must not reject a valid GPS point.
+        pass
+
+    return ""
+
+
+def serialize_location(location):
+    employee = location.employee
+    return {
+        "id": employee.pk,
+        "employee_id": employee.employee_id,
+        "employee_name": employee.full_name,
+        "designation": employee.designation,
+        "department": employee.department,
+        "branch": employee.branch.branch_name if employee.branch else None,
+        "latitude": float(location.latitude),
+        "longitude": float(location.longitude),
+        "accuracy_meters": location.accuracy_meters,
+        "location_name": location.location_name,
+        "recorded_at": location.recorded_at.isoformat(),
+    }
+
+
+class LocationSharingView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        employee = get_own_employee(request)
+        if employee is None:
+            return Response(
+                {"detail": "Employee profile not found."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        sharing = EmployeeLocationSharing.objects.filter(
+            employee=employee
+        ).first()
+
+        return Response({
+            "work_type": employee.work_type,
+            "is_enabled": bool(sharing and sharing.is_enabled),
+            "enabled_at": sharing.enabled_at.isoformat()
+            if sharing and sharing.enabled_at else None,
+            "disabled_at": sharing.disabled_at.isoformat()
+            if sharing and sharing.disabled_at else None,
+        })
+
+    def post(self, request):
+        employee = get_own_employee(request)
+        if employee is None:
+            return Response(
+                {"detail": "Employee profile not found."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        enabled = request.data.get("enabled")
+        if not isinstance(enabled, bool):
+            return Response(
+                {"detail": "'enabled' must be true or false."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if enabled and (
+            employee.work_type != "FIELD"
+            or employee.employment_status != "ACTIVE"
+            or not employee.status
+        ):
+            return Response(
+                {"detail": "Location sharing is available only to active field employees."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        with transaction.atomic():
+            sharing, _ = EmployeeLocationSharing.objects.select_for_update().get_or_create(
+                employee=employee
+            )
+
+            now = timezone.now()
+            state_changed = sharing.is_enabled != enabled
+
+            if state_changed and enabled:
+                sharing.is_enabled = True
+                sharing.enabled_at = now
+                sharing.disabled_at = None
+            elif state_changed and not enabled:
+                # Close an open STOP event belonging to this sharing session.
+                if sharing.enabled_at is not None:
+                    last_movement_event = EmployeeLocationTrackingEvent.objects.filter(
+                        employee=employee,
+                        event_type__in=["DRIVE", "STOP"],
+                        recorded_at__gte=sharing.enabled_at,
+                    ).order_by("-recorded_at", "-pk").first()
+
+                    if last_movement_event and last_movement_event.event_type == "STOP":
+                        details = dict(last_movement_event.details or {})
+                        stop_start = last_movement_event.recorded_at
+
+                        start_text = details.get("stop_started_at")
+                        if start_text:
+                            try:
+                                parsed = datetime.fromisoformat(start_text)
+                                if timezone.is_naive(parsed):
+                                    parsed = timezone.make_aware(parsed)
+                                stop_start = parsed
+                            except (ValueError, TypeError):
+                                pass
+
+                        duration = max(0, (now - stop_start).total_seconds())
+                        details.update({
+                            "stop_ended_at": now.isoformat(),
+                            "stop_duration_seconds": round(duration, 1),
+                            "stop_duration_minutes": round(duration / 60, 1),
+                            "duration_method": "sharing_disabled_estimate",
+                        })
+                        last_movement_event.details = details
+                        last_movement_event.save(update_fields=["details"])
+
+                sharing.is_enabled = False
+                sharing.disabled_at = now
+
+            sharing.save()
+
+            if state_changed:
+                latest_location = EmployeeLocation.objects.filter(
+                    employee=employee
+                ).order_by("-recorded_at", "-pk").first()
+
+                EmployeeLocationTrackingEvent.objects.create(
+                    employee=employee,
+                    event_type="LOCATION_ON" if enabled else "LOCATION_OFF",
+                    recorded_at=now,
+                    latitude=latest_location.latitude if latest_location else None,
+                    longitude=latest_location.longitude if latest_location else None,
+                    details={"source": "sharing_api"},
+                )
+
+        return Response({
+            "is_enabled": sharing.is_enabled,
+            "enabled_at": sharing.enabled_at.isoformat()
+            if sharing.enabled_at else None,
+            "disabled_at": sharing.disabled_at.isoformat()
+            if sharing.disabled_at else None,
+        })
+
+
+class LocationUpdateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        employee = get_own_employee(request)
+        if employee is None:
+            return Response(
+                {"detail": "Employee profile not found."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if (
+            employee.work_type != "FIELD"
+            or employee.employment_status != "ACTIVE"
+            or not employee.status
+        ):
+            return Response(
+                {"detail": "Only active field employees can submit location updates."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        sharing = EmployeeLocationSharing.objects.filter(
+            employee=employee,
+            is_enabled=True,
+        ).first()
+
+        if sharing is None:
+            return Response(
+                {"detail": "Enable location sharing before sending updates."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        try:
+            latitude = Decimal(str(request.data["latitude"]))
+            longitude = Decimal(str(request.data["longitude"]))
+            if not latitude.is_finite() or not longitude.is_finite():
+                raise InvalidOperation
+            latitude = latitude.quantize(Decimal("0.000001"))
+            longitude = longitude.quantize(Decimal("0.000001"))
+        except (KeyError, TypeError, ValueError, InvalidOperation):
+            return Response(
+                {"detail": "Valid latitude and longitude are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not Decimal("-90") <= latitude <= Decimal("90"):
+            return Response(
+                {"detail": "Latitude must be between -90 and 90."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not Decimal("-180") <= longitude <= Decimal("180"):
+            return Response(
+                {"detail": "Longitude must be between -180 and 180."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        accuracy = request.data.get("accuracy_meters")
+        if accuracy is not None:
+            try:
+                accuracy = float(accuracy)
+                if not 0 <= accuracy <= 10000:
+                    raise ValueError
+            except (TypeError, ValueError):
+                return Response(
+                    {"detail": "accuracy_meters must be between 0 and 10000."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        # Reuse the previous readable place when the employee remains nearby.
+        previous_named = EmployeeLocation.objects.filter(
+            employee=employee,
+            location_name__gt="",
+        ).order_by("-recorded_at", "-pk").first()
+
+        location_name = ""
+        if previous_named is not None:
+            lat1 = radians(float(previous_named.latitude))
+            lon1 = radians(float(previous_named.longitude))
+            lat2 = radians(float(latitude))
+            lon2 = radians(float(longitude))
+            dlat, dlon = lat2 - lat1, lon2 - lon1
+            h = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+            distance_from_named = 6371000 * 2 * asin(min(1, sqrt(h)))
+            age_seconds = (timezone.now() - previous_named.recorded_at).total_seconds()
+
+            if distance_from_named <= 100 and age_seconds <= 21600:
+                location_name = previous_named.location_name
+
+        if not location_name and (accuracy is None or accuracy <= 100):
+            location_name = reverse_geocode(latitude, longitude)
+
+        location = EmployeeLocation.objects.create(
+            employee=employee,
+            latitude=latitude,
+            longitude=longitude,
+            accuracy_meters=accuracy,
+            location_name=location_name,
+        )
+
+        # Estimate movement from recent GPS points.
+        # Ignore inaccurate fixes and large GPS time gaps.
+        if accuracy is None or accuracy <= 100:
+            previous_points = EmployeeLocation.objects.filter(
+                employee=employee,
+                recorded_at__lt=location.recorded_at,
+            ).exclude(pk=location.pk)
+
+            # Never compare GPS points across separate sharing sessions.
+            if sharing.enabled_at is not None:
+                previous_points = previous_points.filter(
+                    recorded_at__gte=sharing.enabled_at,
+                )
+
+            previous = previous_points.order_by("-recorded_at", "-pk").first()
+
+            if previous is not None:
+                elapsed = (location.recorded_at - previous.recorded_at).total_seconds()
+
+                if 10 <= elapsed <= 900:
+                    lat1, lon1 = radians(float(previous.latitude)), radians(float(previous.longitude))
+                    lat2, lon2 = radians(float(latitude)), radians(float(longitude))
+                    dlat, dlon = lat2 - lat1, lon2 - lon1
+                    haversine = (
+                        sin(dlat / 2) ** 2
+                        + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+                    )
+                    distance_m = 6371000 * 2 * asin(min(1, sqrt(haversine)))
+                    speed_kmh = (distance_m / elapsed) * 3.6
+
+                    if distance_m >= 50 and speed_kmh >= 5:
+                        event_type = "DRIVE"
+                    elif distance_m <= 25 and elapsed >= 60:
+                        event_type = "STOP"
+                    else:
+                        event_type = None
+
+                    if event_type:
+                        movement_events = EmployeeLocationTrackingEvent.objects.filter(
+                            employee=employee,
+                            event_type__in=["DRIVE", "STOP"],
+                        )
+                        if sharing.enabled_at is not None:
+                            movement_events = movement_events.filter(
+                                recorded_at__gte=sharing.enabled_at,
+                            )
+                        last_event = movement_events.order_by(
+                            "-recorded_at", "-pk"
+                        ).first()
+
+                        if event_type == "DRIVE" and last_event and last_event.event_type == "STOP":
+                            details = dict(last_event.details or {})
+                            stop_start = last_event.recorded_at
+
+                            # Older STOP events may have their estimated start
+                            # in details rather than recorded_at.
+                            start_text = details.get("stop_started_at")
+                            if start_text:
+                                try:
+                                    parsed = datetime.fromisoformat(start_text)
+                                    if timezone.is_naive(parsed):
+                                        parsed = timezone.make_aware(parsed)
+                                    stop_start = parsed
+                                except (ValueError, TypeError):
+                                    pass
+
+                            duration = max(
+                                0,
+                                (location.recorded_at - stop_start).total_seconds(),
+                            )
+                            details.update({
+                                "stop_ended_at": location.recorded_at.isoformat(),
+                                "stop_duration_seconds": round(duration, 1),
+                                "stop_duration_minutes": round(duration / 60, 1),
+                                "duration_method": "gps_estimate",
+                            })
+                            last_event.details = details
+                            last_event.save(update_fields=["details"])
+
+                        # Save only movement state changes.
+                        if not last_event or last_event.event_type != event_type:
+                            event_time = (
+                                previous.recorded_at
+                                if event_type == "STOP"
+                                else location.recorded_at
+                            )
+                            event_details = {
+                                "distance_meters": round(distance_m, 1),
+                                "elapsed_seconds": round(elapsed, 1),
+                                "estimated_speed_kmh": round(speed_kmh, 1),
+                                "source": "gps_estimate",
+                            }
+
+                            if event_type == "STOP":
+                                event_details.update({
+                                    "stop_started_at": previous.recorded_at.isoformat(),
+                                    "detection_observed_at": location.recorded_at.isoformat(),
+                                    "stop_duration_seconds": round(elapsed, 1),
+                                    "stop_duration_minutes": round(elapsed / 60, 1),
+                                    "duration_method": "gps_estimate",
+                                })
+
+                            EmployeeLocationTrackingEvent.objects.create(
+                                employee=employee,
+                                event_type=event_type,
+                                recorded_at=event_time,
+                                latitude=latitude,
+                                longitude=longitude,
+                                location_name=location.location_name,
+                                details=event_details,
+                            )
+
+        return Response(
+            {
+                "detail": "Location update saved.",
+                "recorded_at": location.recorded_at.isoformat(),
+            },
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class LiveLocationsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        employees = get_viewable_employees(request).filter(
+            location_sharing__is_enabled=True
+        )
+
+        latest_location_ids = employees.annotate(
+            latest_location_id=Subquery(
+                EmployeeLocation.objects.filter(
+                    employee_id=OuterRef("pk")
+                ).order_by("-recorded_at", "-pk").values("pk")[:1]
+            )
+        ).exclude(
+            latest_location_id__isnull=True
+        ).values_list("latest_location_id", flat=True)
+
+        locations = EmployeeLocation.objects.filter(
+            pk__in=latest_location_ids
+        ).select_related(
+            "employee", "employee__branch"
+        ).order_by("-recorded_at")
+
+        return Response({
+            "count": locations.count(),
+            "results": [serialize_location(item) for item in locations],
+        })
+
+
+class LocationHistoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, employee_id):
+        employees = get_viewable_employees(request)
+        employee = employees.filter(pk=employee_id).select_related(
+            "branch"
+        ).first()
+
+        if employee is None:
+            return Response(
+                {"detail": "Employee not found or access denied."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        try:
+            limit = int(request.query_params.get("limit", 100))
+        except (TypeError, ValueError):
+            limit = 100
+
+        limit = max(1, min(limit, 200))
+
+        locations = list(EmployeeLocation.objects.filter(
+            employee=employee
+        ).select_related(
+            "employee", "employee__branch"
+        ).order_by("-recorded_at", "-pk")[:limit])
+
+        events = EmployeeLocationTrackingEvent.objects.filter(
+            employee=employee
+        ).order_by("-recorded_at", "-pk")[:limit]
+
+        timeline = [
+            {
+                **serialize_location(item),
+                "type": "GPS",
+                "event_type": "GPS",
+                "details": {},
+            }
+            for item in locations
+        ]
+
+        for event in events:
+            event_details = dict(event.details or {})
+
+            if event.event_type == "STOP":
+                # Legacy STOP events may only contain the observed GPS interval.
+                if "stop_duration_seconds" not in event_details:
+                    elapsed = event_details.get("elapsed_seconds")
+                    if elapsed is not None:
+                        try:
+                            elapsed = max(0.0, float(elapsed))
+                            event_details["stop_duration_seconds"] = round(elapsed, 1)
+                            event_details["stop_duration_minutes"] = round(elapsed / 60, 1)
+                            event_details["duration_method"] = "observed_gps_interval_estimate"
+                        except (TypeError, ValueError):
+                            pass
+
+            timeline.append({
+                "id": f"event-{event.pk}",
+                "employee_id": employee.employee_id,
+                "employee_name": employee.full_name,
+                "designation": employee.designation,
+                "department": employee.department,
+                "branch": employee.branch.branch_name if employee.branch else None,
+                "latitude": float(event.latitude) if event.latitude is not None else None,
+                "longitude": float(event.longitude) if event.longitude is not None else None,
+                "accuracy_meters": None,
+                "location_name": event.location_name,
+                "recorded_at": event.recorded_at.isoformat(),
+                "type": "EVENT",
+                "event_type": event.event_type,
+                "details": event_details,
+            })
+
+        timeline.sort(key=lambda item: item["recorded_at"], reverse=True)
+        timeline = timeline[:limit]
+
+        return Response({
+            "employee_id": employee.employee_id,
+            "employee_name": employee.full_name,
+            "count": len(timeline),
+            "results": timeline,
+        })

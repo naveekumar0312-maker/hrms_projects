@@ -1,0 +1,1076 @@
+from rest_framework import views, viewsets, status, permissions
+from rest_framework.response import Response
+from django.utils import timezone
+from django.conf import settings
+from datetime import datetime, timedelta
+from .models import (
+    Attendance,
+    AttendancePolicy,
+    Shift,
+    PermissionRequest,
+    LeaveRequest,
+)
+from .serializers import (
+    CheckInSerializer,
+    CheckOutSerializer,
+    AttendanceSerializer,
+    ShiftSerializer,
+    PermissionRequestSerializer,
+    LeaveRequestSerializer,
+)
+from .services import calculate_distance, reverse_geocode
+from django.db.models import Count
+from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+
+class IsAdminUser(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and request.user.role == 'ADMIN')
+
+class ShiftViewSet(viewsets.ModelViewSet):
+    serializer_class = ShiftSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return Shift.objects.annotate(employee_count=Count('employees')).order_by('-created_at')
+
+    @action(detail=False, methods=['get'])
+    def active(self, request):
+        active_shifts = self.get_queryset().filter(is_active=True)
+        serializer = self.get_serializer(active_shifts, many=True)
+        return Response(serializer.data)
+
+    def perform_destroy(self, instance):
+        if instance.employees.exists():
+            instance.is_active = False
+            instance.save()
+            raise ValidationError({"detail": "Shift is currently assigned to employees and has been deactivated."})
+        else:
+            instance.delete()
+
+class AttendanceViewSet(viewsets.ModelViewSet):
+    queryset = Attendance.objects.all()
+    serializer_class = AttendanceSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # If employee, restrict to their own attendance
+        if hasattr(self.request.user, 'employee_profile'):
+            queryset = queryset.filter(employee=self.request.user.employee_profile)
+        else:
+            # Admin filters
+            company_id = self.request.query_params.get('company')
+            branch_id = self.request.query_params.get('branch')
+            if company_id is not None:
+                queryset = queryset.filter(employee__branch__company_id=company_id)
+            if branch_id is not None:
+                queryset = queryset.filter(employee__branch_id=branch_id)
+                
+        return queryset.order_by('-date', '-check_in')
+
+    @action(detail=False, methods=['get'])
+    def today(self, request):
+        user = request.user
+        if not hasattr(user, 'employee_profile'):
+            return Response({"error": "User is not an employee."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        employee = user.employee_profile
+        today_date = timezone.localdate()
+        
+        attendance = Attendance.objects.filter(employee=employee, date=today_date).first()
+        
+        if not attendance:
+            return Response({
+                "date": str(today_date),
+                "check_in": None,
+                "check_out": None,
+                "status": "NOT_CHECKED_IN"
+            })
+            
+        serializer = self.get_serializer(attendance)
+        data = serializer.data
+        data["date"] = str(today_date)
+        return Response(data)
+
+    @action(detail=False, methods=['get'])
+    def history(self, request):
+        queryset = self.get_queryset()
+        
+        month_param = request.query_params.get('month')
+        year_param = request.query_params.get('year')
+        
+        if month_param:
+            queryset = queryset.filter(date__month=int(month_param))
+        if year_param:
+            queryset = queryset.filter(date__year=int(year_param))
+            
+        # Pagination
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+            
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def reports(self, request):
+        queryset = self.get_queryset()
+        
+        start_date_param = request.query_params.get('start_date')
+        end_date_param = request.query_params.get('end_date')
+        month_param = request.query_params.get('month')
+        year_param = request.query_params.get('year')
+        
+        is_range = False
+        start_date = None
+        end_date = None
+
+        if start_date_param and end_date_param:
+            try:
+                start_date = datetime.strptime(start_date_param, '%Y-%m-%d').date()
+                end_date = datetime.strptime(end_date_param, '%Y-%m-%d').date()
+                is_range = True
+            except ValueError:
+                return Response({
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid date format. Use YYYY-MM-DD."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            queryset = queryset.filter(date__range=[start_date, end_date])
+        else:
+            try:
+                if month_param is not None:
+                    month = int(month_param)
+                    if not (1 <= month <= 12):
+                        raise ValueError
+                else:
+                    month = timezone.localdate().month
+                    
+                if year_param is not None:
+                    year = int(year_param)
+                else:
+                    year = timezone.localdate().year
+            except ValueError:
+                return Response({
+                    "code": "VALIDATION_ERROR",
+                    "message": "Invalid month or year."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            queryset = queryset.filter(date__year=year, date__month=month)
+            
+        # ---------------------------------------------------------
+        # APPROVED LEAVE INTEGRATION
+        # ---------------------------------------------------------
+        user_employee = None
+        if hasattr(request.user, 'employee_profile'):
+            user_employee = request.user.employee_profile
+
+        leave_filter = {
+            'status': 'APPROVED',
+            'start_date__lte': end_date if is_range else queryset.order_by('-date').first().date if queryset.exists() else timezone.localdate(),
+            'end_date__gte': start_date if is_range else timezone.localdate().replace(day=1),
+        }
+
+        if is_range:
+            leave_qs = LeaveRequest.objects.filter(
+                employee=user_employee,
+                status='APPROVED',
+                start_date__lte=end_date,
+                end_date__gte=start_date
+            ) if user_employee else LeaveRequest.objects.filter(
+                status='APPROVED',
+                start_date__lte=end_date,
+                end_date__gte=start_date
+            )
+        else:
+            from datetime import date as date_class
+            report_start = date_class(year, month, 1)
+
+            if month == 12:
+                report_end = date_class(year + 1, 1, 1) - timedelta(days=1)
+            else:
+                report_end = date_class(year, month + 1, 1) - timedelta(days=1)
+
+            leave_qs = LeaveRequest.objects.filter(
+                status='APPROVED',
+                start_date__lte=report_end,
+                end_date__gte=report_start
+            )
+
+            if user_employee:
+                leave_qs = leave_qs.filter(employee=user_employee)
+
+        leave_days = set()
+
+        for leave in leave_qs:
+            current = max(
+                leave.start_date,
+                start_date if is_range else report_start
+            )
+            last = min(
+                leave.end_date,
+                end_date if is_range else report_end
+            )
+
+            while current <= last:
+                leave_days.add(current)
+                current += timedelta(days=1)
+
+        present_count = queryset.filter(
+            status__in=['COMPLETED', 'ON_TIME', 'WORKING', 'LATE']
+        ).count()
+
+        late_count = queryset.filter(status='LATE').count()
+
+        attendance_absent_dates = set(
+            queryset.filter(status='ABSENT').values_list('date', flat=True)
+        )
+
+        absent_count = len(
+            attendance_absent_dates - leave_days
+        )
+
+        working_days = queryset.filter(
+            status__in=['COMPLETED', 'ON_TIME', 'WORKING', 'LATE']
+        ).values('date').distinct().count()
+        
+        # Calculate total working hours
+        total_seconds = 0
+        for attendance in queryset.filter(check_in__isnull=False, check_out__isnull=False):
+            diff = attendance.check_out - attendance.check_in
+            total_seconds += int(diff.total_seconds())
+            
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        total_working_hours = f"{hours:02d}:{minutes:02d}"
+        
+        calendar_data = []
+        for att in queryset:
+            wh_str = "00:00"
+            if att.check_in and att.check_out:
+                diff = att.check_out - att.check_in
+                ts = int(diff.total_seconds())
+                wh_str = f"{ts // 3600:02d}:{(ts % 3600) // 60:02d}"
+                
+            calendar_data.append({
+                "date": str(att.date),
+                "status": att.status,
+                "approval_status": att.approval_status,
+                "rejection_reason": att.rejection_reason,
+                "check_in_time": att.check_in.isoformat() if att.check_in else None,
+                "check_out_time": att.check_out.isoformat() if att.check_out else None,
+                "working_hours": wh_str,
+                "late_minutes": att.late_minutes,
+                "early_minutes": att.early_minutes,
+                "overtime_minutes": att.overtime_minutes
+            })
+            
+        # Add approved leave dates that do not have attendance records.
+        existing_calendar_dates = {
+            item["date"] for item in calendar_data
+        }
+
+        for leave in leave_qs:
+            current = max(
+                leave.start_date,
+                start_date if is_range else report_start
+            )
+            last = min(
+                leave.end_date,
+                end_date if is_range else report_end
+            )
+
+            while current <= last:
+                date_string = str(current)
+
+                if date_string not in existing_calendar_dates:
+                    calendar_data.append({
+                        "date": date_string,
+                        "status": "ON_LEAVE",
+                        "approval_status": "APPROVED",
+                        "rejection_reason": None,
+                        "check_in_time": None,
+                        "check_out_time": None,
+                        "working_hours": "00:00",
+                        "late_minutes": 0,
+                        "early_minutes": 0,
+                        "overtime_minutes": 0,
+                        "leave": {
+                            "id": leave.id,
+                            "leave_type": leave.leave_type,
+                            "start_date": str(leave.start_date),
+                            "end_date": str(leave.end_date),
+                            "reason": leave.reason,
+                            "status": leave.status,
+                        }
+                    })
+
+                current += timedelta(days=1)
+
+        calendar_data.sort(key=lambda item: item["date"])
+
+        return Response({
+            "is_range": is_range,
+            "start_date": str(start_date) if is_range else None,
+            "end_date": str(end_date) if is_range else None,
+            "month": month if not is_range else None,
+            "year": year if not is_range else None,
+            "summary": {
+                "present": present_count,
+                "absent": absent_count,
+                "late": late_count,
+                "working_days": working_days,
+                "total_working_hours": total_working_hours
+            },
+            "calendar": calendar_data
+        })
+
+    @action(detail=False, methods=['get'])
+    def dashboard(self, request):
+        from datetime import datetime, timedelta
+        from django.db.models import Count, Q
+        from employees.models import Employee
+        from django.db.models.functions import TruncDate
+        
+        date_filter = request.query_params.get('date_filter', 'today')
+        today = timezone.localdate()
+        
+        if date_filter == 'today':
+            start_date = today
+            end_date = today
+        elif date_filter == 'yesterday':
+            start_date = today - timedelta(days=1)
+            end_date = today - timedelta(days=1)
+        elif date_filter == 'this_week':
+            start_date = today - timedelta(days=today.weekday())
+            end_date = today
+        elif date_filter == 'this_month':
+            start_date = today.replace(day=1)
+            end_date = today
+        elif date_filter == 'custom':
+            s = request.query_params.get('start_date')
+            e = request.query_params.get('end_date')
+            start_date = datetime.strptime(s, '%Y-%m-%d').date() if s else today
+            end_date = datetime.strptime(e, '%Y-%m-%d').date() if e else today
+        else:
+            date_str = request.query_params.get('date')
+            if date_str:
+                start_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            else:
+                start_date = today
+            end_date = start_date
+
+        company_id = request.query_params.get('company')
+        branch_id = request.query_params.get('branch')
+        department = request.query_params.get('department')
+        work_type = request.query_params.get('work_type')
+        
+        employees = Employee.objects.filter(status=True)
+        if company_id:
+            employees = employees.filter(branch__company_id=company_id)
+        if branch_id:
+            employees = employees.filter(branch_id=branch_id)
+        if department:
+            employees = employees.filter(department=department)
+        if work_type:
+            employees = employees.filter(work_type=work_type)
+            
+        total_employees = employees.count()
+        
+        attendance_qs = Attendance.objects.filter(date__range=[start_date, end_date])
+        if company_id:
+            attendance_qs = attendance_qs.filter(employee__branch__company_id=company_id)
+        if branch_id:
+            attendance_qs = attendance_qs.filter(employee__branch_id=branch_id)
+        if department:
+            attendance_qs = attendance_qs.filter(employee__department=department)
+        if work_type:
+            attendance_qs = attendance_qs.filter(employee__work_type=work_type)
+
+        days_diff = (end_date - start_date).days + 1
+        expected_attendances = total_employees * days_diff
+        
+        # Avoid duplicate counting of employee in "Present Today" by just counting unique if range is 1 day
+        if days_diff == 1:
+            present = attendance_qs.filter(status__in=['COMPLETED', 'ON_TIME', 'WORKING', 'LATE']).values('employee').distinct().count()
+        else:
+            present = attendance_qs.filter(status__in=['COMPLETED', 'ON_TIME', 'WORKING', 'LATE']).count()
+            
+        late = attendance_qs.filter(status='LATE').count()
+        working = attendance_qs.filter(check_out__isnull=True).count()
+        checked_out = attendance_qs.filter(check_out__isnull=False).count()
+        pending = attendance_qs.filter(approval_status='PENDING').count()
+        approved = attendance_qs.filter(approval_status='APPROVED').count()
+        rejected = attendance_qs.filter(approval_status='REJECTED').count()
+        
+        # ---------------------------------------------------------
+        # APPROVED LEAVE SHOULD NOT COUNT AS ABSENT
+        # ---------------------------------------------------------
+        approved_leave_qs = LeaveRequest.objects.filter(
+            status='APPROVED',
+            start_date__lte=end_date,
+            end_date__gte=start_date
+        )
+
+        if company_id:
+            approved_leave_qs = approved_leave_qs.filter(
+                employee__branch__company_id=company_id
+            )
+        if branch_id:
+            approved_leave_qs = approved_leave_qs.filter(
+                employee__branch_id=branch_id
+            )
+        if department:
+            approved_leave_qs = approved_leave_qs.filter(
+                employee__department=department
+            )
+        if work_type:
+            approved_leave_qs = approved_leave_qs.filter(
+                employee__work_type=work_type
+            )
+
+        leave_day_count = 0
+
+        for leave in approved_leave_qs:
+            leave_start = max(leave.start_date, start_date)
+            leave_end = min(leave.end_date, end_date)
+
+            if leave_start <= leave_end:
+                leave_day_count += (
+                    leave_end - leave_start
+                ).days + 1
+
+        absent = expected_attendances - present - leave_day_count
+        if absent < 0:
+            absent = 0
+
+        trend_period = request.query_params.get('trend_period', '7d')
+        if trend_period == 'today':
+            trend_start = end_date
+        elif trend_period == '30d':
+            trend_start = end_date - timedelta(days=29)
+        elif trend_period == 'this_month':
+            trend_start = end_date.replace(day=1)
+        else: # 7d
+            trend_start = end_date - timedelta(days=6)
+
+        trend_attendance_qs = Attendance.objects.filter(date__range=[trend_start, end_date])
+        if company_id:
+            trend_attendance_qs = trend_attendance_qs.filter(employee__branch__company_id=company_id)
+        if branch_id:
+            trend_attendance_qs = trend_attendance_qs.filter(employee__branch_id=branch_id)
+        if department:
+            trend_attendance_qs = trend_attendance_qs.filter(employee__department=department)
+        if work_type:
+            trend_attendance_qs = trend_attendance_qs.filter(employee__work_type=work_type)
+
+        trend_qs = trend_attendance_qs.values('date').annotate(
+            present=Count('id', filter=Q(status__in=['COMPLETED', 'ON_TIME', 'WORKING', 'LATE'])),
+            late=Count('id', filter=Q(status='LATE'))
+        ).order_by('date')
+        
+        attendance_trend = []
+        for t in trend_qs:
+            attendance_trend.append({
+                "date": str(t['date']),
+                "present": t['present'],
+                "late": t['late'],
+                "absent": total_employees - t['present'] if total_employees > t['present'] else 0
+            })
+
+        status_distribution = [
+            {"name": "On Time", "value": attendance_qs.filter(status='ON_TIME').count()},
+            {"name": "Late", "value": late},
+            {"name": "Working", "value": working},
+            {"name": "Completed", "value": checked_out},
+            {"name": "Absent", "value": absent},
+        ]
+        
+        branch_qs = employees.values('branch__branch_name').annotate(total=Count('id'))
+        branch_attendance = attendance_qs.values('employee__branch__branch_name').annotate(
+            present=Count('employee', distinct=True) if days_diff == 1 else Count('id'),
+            late=Count('id', filter=Q(status='LATE')),
+            working=Count('id', filter=Q(check_out__isnull=True))
+        )
+        branch_summary = []
+        for b in branch_qs:
+            b_name = b['branch__branch_name']
+            if not b_name: continue
+            att = next((a for a in branch_attendance if a['employee__branch__branch_name'] == b_name), None)
+            present_val = att['present'] if att else 0
+            late_val = att['late'] if att else 0
+            working_val = att['working'] if att else 0
+            b_absent = (b['total'] * days_diff) - present_val
+            branch_summary.append({
+                "branch_name": b_name,
+                "total_employees": b['total'],
+                "present": present_val,
+                "late": late_val,
+                "working": working_val,
+                "absent": b_absent if b_absent > 0 else 0
+            })
+
+        company_qs = employees.values('branch__company__name').annotate(total=Count('id'))
+        company_attendance = attendance_qs.values('employee__branch__company__name').annotate(
+            present=Count('employee', distinct=True) if days_diff == 1 else Count('id'),
+            late=Count('id', filter=Q(status='LATE')),
+            working=Count('id', filter=Q(check_out__isnull=True))
+        )
+        company_summary = []
+        for c in company_qs:
+            c_name = c['branch__company__name']
+            if not c_name: continue
+            att = next((a for a in company_attendance if a['employee__branch__company__name'] == c_name), None)
+            present_val = att['present'] if att else 0
+            late_val = att['late'] if att else 0
+            working_val = att['working'] if att else 0
+            c_absent = (c['total'] * days_diff) - present_val
+            company_summary.append({
+                "company_name": c_name,
+                "total_employees": c['total'],
+                "present": present_val,
+                "late": late_val,
+                "working": working_val,
+                "absent": c_absent if c_absent > 0 else 0
+            })
+
+        dept_qs = employees.values('department').annotate(total=Count('id'))
+        dept_attendance = attendance_qs.values('employee__department').annotate(
+            present=Count('employee', distinct=True) if days_diff == 1 else Count('id'),
+            late=Count('id', filter=Q(status='LATE'))
+        )
+        department_summary = []
+        for d in dept_qs:
+            d_name = d['department']
+            if not d_name: d_name = "Unassigned"
+            att = next((a for a in dept_attendance if a['employee__department'] == d['department']), None)
+            present_val = att['present'] if att else 0
+            late_val = att['late'] if att else 0
+            d_absent = (d['total'] * days_diff) - present_val
+            department_summary.append({
+                "department": d_name,
+                "total_employees": d['total'],
+                "present": present_val,
+                "late": late_val,
+                "absent": d_absent if d_absent > 0 else 0
+            })
+
+        recent = attendance_qs.select_related('employee', 'employee__branch', 'employee__shift').order_by('-check_in')[:20]
+        recent_data = AttendanceSerializer(recent, many=True).data
+
+        return Response({
+            "start_date": str(start_date),
+            "end_date": str(end_date),
+            "summary": {
+                "total_employees": total_employees,
+                "present": present,
+                "working": working,
+                "late": late,
+                "absent": absent,
+                "completed": checked_out,
+                "pending": pending,
+                "approved": approved,
+                "rejected": rejected
+            },
+            "attendance_trend": attendance_trend,
+            "status_distribution": status_distribution,
+            "branch_summary": branch_summary,
+            "company_summary": company_summary,
+            "department_summary": department_summary,
+            "recent_attendance": recent_data
+        })
+
+    @action(detail=False, methods=['get'], url_path='date/(?P<date>\d{4}-\d{2}-\d{2})')
+    def date_detail(self, request, date=None):
+        try:
+            attendance = self.get_queryset().get(date=date)
+            serializer = self.get_serializer(attendance)
+            data = serializer.data
+            
+            # Format location to match UI requirements
+            response_data = {
+                "date": data.get("date"),
+                "status": data.get("status"),
+                "check_in_time": data.get("check_in_time"),
+                "check_out_time": data.get("check_out_time"),
+                "working_hours": data.get("working_hours", "00:00") or "00:00",
+                "late_minutes": data.get("late_minutes"),
+                "branch": data.get("employee", {}).get("branch"),
+                "check_in_photo": data.get("check_in_photo"),
+                "check_out_photo": data.get("check_out_photo")
+            }
+            
+            if data.get("check_in_latitude") and data.get("check_in_longitude"):
+                response_data["check_in_location"] = {
+                    "latitude": data.get("check_in_latitude"),
+                    "longitude": data.get("check_in_longitude"),
+                    "accuracy": data.get("check_in_accuracy")
+                }
+            if data.get("check_out_latitude") and data.get("check_out_longitude"):
+                response_data["check_out_location"] = {
+                    "latitude": data.get("check_out_latitude"),
+                    "longitude": data.get("check_out_longitude"),
+                    "accuracy": data.get("check_out_accuracy")
+                }
+                
+            return Response(response_data)
+        except Attendance.DoesNotExist:
+            return Response({
+                "date": date,
+                "status": "ABSENT",
+                "check_in_time": None,
+                "check_out_time": None,
+                "working_hours": "00:00",
+                "late_minutes": 0,
+                "branch": None,
+                "check_in_photo": None,
+                "check_out_photo": None
+            })
+
+    @action(detail=True, methods=['patch', 'post'], permission_classes=[IsAdminUser])
+    def approve(self, request, pk=None):
+        attendance = self.get_object()
+        attendance.approval_status = 'APPROVED'
+        attendance.rejection_reason = None
+        attendance.reviewed_by = request.user
+        attendance.reviewed_at = timezone.now()
+        attendance.save()
+        
+        serializer = self.get_serializer(attendance, context={'request': request})
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch', 'post'], permission_classes=[IsAdminUser])
+    def reject(self, request, pk=None):
+        attendance = self.get_object()
+        reason = request.data.get('reason')
+        if not reason:
+            return Response({"error": "Rejection reason is required."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        attendance.approval_status = 'REJECTED'
+        attendance.rejection_reason = reason
+        attendance.reviewed_by = request.user
+        attendance.reviewed_at = timezone.now()
+        attendance.save()
+        
+        serializer = self.get_serializer(attendance, context={'request': request})
+        return Response(serializer.data)
+
+from rest_framework.parsers import MultiPartParser, FormParser
+
+class CheckInView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        user = request.user
+        if not hasattr(user, 'employee_profile'):
+            return Response({"error": "User is not an employee."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        employee = user.employee_profile
+        today = timezone.localdate()
+
+        attendance = Attendance.objects.filter(employee=employee, date=today).first()
+        if attendance:
+            if attendance.check_out or attendance.status == 'COMPLETED':
+                return Response({
+                    "success": False,
+                    "code": "ATTENDANCE_ALREADY_COMPLETED",
+                    "message": "Today's attendance has already been completed."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            if attendance.check_in:
+                return Response({"error": "Attendance already checked in for today."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = CheckInSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                "code": "VALIDATION_ERROR",
+                "message": "Check-in validation failed.",
+                "errors": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        lat = serializer.validated_data['latitude']
+        lon = serializer.validated_data['longitude']
+        acc = serializer.validated_data['accuracy']
+        photo = serializer.validated_data['photo']
+
+        location_name = reverse_geocode(float(lat), float(lon))
+
+        max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
+        if acc > max_accuracy:
+            return Response({
+                "code": "GPS_ACCURACY_TOO_LOW",
+                "error": "GPS accuracy is too low.",
+                "accuracy": acc,
+                "max_allowed_accuracy": max_accuracy
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        branch = employee.branch
+        if not branch:
+            return Response({"error": "No branch assigned."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            policy = branch.attendance_policy
+        except AttendancePolicy.DoesNotExist:
+            return Response({"error": "Branch has no attendance policy."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if employee.work_type == 'OFFICE':
+            distance = calculate_distance(float(lat), float(lon), float(branch.latitude), float(branch.longitude))
+            if distance > policy.allowed_radius:
+                return Response({
+                    "error": "You are outside the allowed attendance location.",
+                    "distance": round(distance, 2),
+                    "allowed_radius": policy.allowed_radius
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Calculate late minutes
+        now = timezone.now()
+        
+        # Use employee shift if assigned, else fallback to branch policy
+        shift_start_time = employee.shift.start_time if employee.shift else policy.start_time
+        
+        start_datetime = timezone.make_aware(datetime.combine(today, shift_start_time))
+        
+        late_minutes = 0
+        attendance_status = 'ON_TIME'
+        
+        if now > start_datetime:
+            diff = now - start_datetime
+            late_minutes = int(diff.total_seconds() // 60)
+            if late_minutes > 0:
+                attendance_status = 'LATE'
+            
+        if attendance:
+            attendance.check_in = timezone.now()
+            attendance.check_in_latitude = lat
+            attendance.check_in_longitude = lon
+            attendance.check_in_accuracy = acc
+            attendance.check_in_location_name = location_name
+            attendance.check_in_photo = photo
+            attendance.status = attendance_status
+            attendance.late_minutes = late_minutes
+            attendance.save()
+        else:
+            attendance = Attendance.objects.create(
+                employee=employee,
+                date=today,
+                check_in=timezone.now(),
+                check_in_latitude=lat,
+                check_in_longitude=lon,
+                check_in_accuracy=acc,
+                check_in_location_name=location_name,
+                check_in_photo=photo,
+                status=attendance_status,
+                late_minutes=late_minutes
+            )
+
+        return Response(AttendanceSerializer(attendance).data, status=status.HTTP_201_CREATED)
+
+
+class CheckOutView(views.APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        user = request.user
+        if not hasattr(user, 'employee_profile'):
+            return Response({"error": "User is not an employee."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        employee = user.employee_profile
+        today = timezone.localdate()
+
+        attendance = Attendance.objects.filter(employee=employee, date=today).first()
+        if not attendance or not attendance.check_in:
+            return Response({"error": "Please check in first."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if attendance.check_out or attendance.status == 'COMPLETED':
+            return Response({
+                "success": False,
+                "code": "ATTENDANCE_ALREADY_COMPLETED",
+                "message": "Today's attendance has already been completed."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = CheckOutSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response({
+                "code": "VALIDATION_ERROR",
+                "message": "Check-out validation failed.",
+                "errors": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        lat = serializer.validated_data['latitude']
+        lon = serializer.validated_data['longitude']
+        acc = serializer.validated_data['accuracy']
+        photo = serializer.validated_data['photo']
+
+        location_name = reverse_geocode(float(lat), float(lon))
+        
+        max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
+        if acc > max_accuracy:
+            return Response({
+                "code": "GPS_ACCURACY_TOO_LOW",
+                "error": "GPS accuracy is too low.",
+                "accuracy": acc,
+                "max_allowed_accuracy": max_accuracy
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        branch = employee.branch
+        if employee.work_type == 'OFFICE':
+            distance = calculate_distance(float(lat), float(lon), float(branch.latitude), float(branch.longitude))
+            if distance > branch.attendance_policy.allowed_radius:
+                return Response({"error": "You are outside the allowed attendance location."}, status=status.HTTP_400_BAD_REQUEST)
+
+        now = timezone.now()
+        attendance.check_out = now
+        attendance.check_out_latitude = lat
+        attendance.check_out_longitude = lon
+        attendance.check_out_accuracy = acc
+        attendance.check_out_location_name = location_name
+        attendance.check_out_photo = photo
+        
+        policy = branch.attendance_policy
+        shift_start_time = employee.shift.start_time if employee.shift else policy.start_time
+        shift_end_time = employee.shift.end_time if employee.shift else policy.end_time
+        
+        # Handle overnight shifts for end datetime
+        end_date = attendance.date
+        if shift_end_time < shift_start_time:
+            end_date = attendance.date + timedelta(days=1)
+            
+        end_datetime = timezone.make_aware(datetime.combine(end_date, shift_end_time))
+        
+        early_minutes = 0
+        overtime_minutes = 0
+
+        if now < end_datetime:
+            diff = end_datetime - now
+            early_minutes = int(diff.total_seconds() // 60)
+        elif now > end_datetime:
+            diff = now - end_datetime
+            overtime_minutes = int(diff.total_seconds() // 60)
+
+        # ---------------------------------------------------------
+        # APPROVED PERMISSION COVERAGE
+        # ---------------------------------------------------------
+        approved_permission_minutes = PermissionRequest.objects.filter(
+            employee=employee,
+            date=today,
+            status='APPROVED'
+        ).aggregate(
+            total=Sum('duration_minutes')
+        )['total'] or 0
+
+        covered_permission_minutes = min(
+            early_minutes,
+            approved_permission_minutes
+        )
+
+        extra_early_minutes = max(
+            early_minutes - approved_permission_minutes,
+            0
+        )
+
+        attendance.early_minutes = extra_early_minutes
+        attendance.overtime_minutes = overtime_minutes
+
+        if attendance.check_in:
+            working_diff = now - attendance.check_in
+            attendance.working_minutes = int(
+                working_diff.total_seconds() // 60
+            )
+
+        attendance.status = 'COMPLETED' 
+        attendance.save()
+
+        response_data = AttendanceSerializer(
+            attendance,
+            context={'request': request}
+        ).data
+
+        response_data['permission_minutes'] = approved_permission_minutes
+        response_data['permission_covered_minutes'] = covered_permission_minutes
+        response_data['extra_early_minutes'] = extra_early_minutes
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class PermissionRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = PermissionRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = PermissionRequest.objects.select_related(
+            'employee',
+            'employee__user',
+            'approved_by'
+        ).order_by('-date', '-created_at')
+
+        user = self.request.user
+
+        if hasattr(user, 'employee_profile'):
+            return queryset.filter(employee=user.employee_profile)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        if not hasattr(user, 'employee_profile'):
+            raise ValidationError(
+                "Only employees can apply for permission."
+            )
+
+        serializer.save(employee=user.employee_profile)
+
+    @action(
+        detail=True,
+        methods=['patch', 'post'],
+        permission_classes=[IsAdminUser]
+    )
+    def approve(self, request, pk=None):
+        permission_request = self.get_object()
+
+        if permission_request.status != 'PENDING':
+            return Response(
+                {"error": "Only pending permission requests can be approved."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        permission_request.status = 'APPROVED'
+        permission_request.approved_by = request.user
+        permission_request.approved_at = timezone.now()
+        permission_request.rejection_reason = None
+        permission_request.save()
+
+        return Response(
+            PermissionRequestSerializer(
+                permission_request,
+                context={'request': request}
+            ).data
+        )
+
+    @action(
+        detail=True,
+        methods=['patch', 'post'],
+        permission_classes=[IsAdminUser]
+    )
+    def reject(self, request, pk=None):
+        permission_request = self.get_object()
+        reason = request.data.get('reason')
+
+        if permission_request.status != 'PENDING':
+            return Response(
+                {"error": "Only pending permission requests can be rejected."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not reason:
+            return Response(
+                {"error": "Rejection reason is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        permission_request.status = 'REJECTED'
+        permission_request.rejection_reason = reason
+        permission_request.approved_by = request.user
+        permission_request.approved_at = timezone.now()
+        permission_request.save()
+
+        return Response(
+            PermissionRequestSerializer(
+                permission_request,
+                context={'request': request}
+            ).data
+        )
+
+
+class LeaveRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = LeaveRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = LeaveRequest.objects.select_related(
+            'employee',
+            'employee__user',
+            'approved_by'
+        ).order_by('-start_date', '-created_at')
+
+        user = self.request.user
+
+        if hasattr(user, 'employee_profile'):
+            return queryset.filter(employee=user.employee_profile)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        user = self.request.user
+
+        if not hasattr(user, 'employee_profile'):
+            raise ValidationError(
+                "Only employees can apply for leave."
+            )
+
+        serializer.save(employee=user.employee_profile)
+
+    @action(
+        detail=True,
+        methods=['patch', 'post'],
+        permission_classes=[IsAdminUser]
+    )
+    def approve(self, request, pk=None):
+        leave_request = self.get_object()
+
+        if leave_request.status != 'PENDING':
+            return Response(
+                {"error": "Only pending leave requests can be approved."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        leave_request.status = 'APPROVED'
+        leave_request.approved_by = request.user
+        leave_request.approved_at = timezone.now()
+        leave_request.rejection_reason = None
+        leave_request.save()
+
+        return Response(
+            LeaveRequestSerializer(
+                leave_request,
+                context={'request': request}
+            ).data
+        )
+
+    @action(
+        detail=True,
+        methods=['patch', 'post'],
+        permission_classes=[IsAdminUser]
+    )
+    def reject(self, request, pk=None):
+        leave_request = self.get_object()
+        reason = request.data.get('reason')
+
+        if leave_request.status != 'PENDING':
+            return Response(
+                {"error": "Only pending leave requests can be rejected."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not reason:
+            return Response(
+                {"error": "Rejection reason is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        leave_request.status = 'REJECTED'
+        leave_request.rejection_reason = reason
+        leave_request.approved_by = request.user
+        leave_request.approved_at = timezone.now()
+        leave_request.save()
+
+        return Response(
+            LeaveRequestSerializer(
+                leave_request,
+                context={'request': request}
+            ).data
+        )

@@ -1,0 +1,49 @@
+.web-splash-container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background-color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999999;
+}
+
+.web-splash-logo-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 1000ms cubic-bezier(0.16, 1, 0.3, 1), transform 1800ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.web-splash-logo-wrapper.fade-in {
+  opacity: 1;
+}
+
+.web-splash-logo-wrapper.scale-up {
+  transform: scale(1);
+}
+
+.web-splash-logo-img {
+  width: min(75vw, 320px);
+  height: min(75vw, 320px);
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.web-splash-brand-title {
+  margin: 18px 0 0;
+  font-size: clamp(22px, 3.5vw, 32px);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  text-align: center;
+}
+

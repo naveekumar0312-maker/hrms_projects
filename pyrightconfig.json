@@ -1,0 +1,17 @@
+{
+  "include": [
+    "attendance"
+  ],
+  "extraPaths": [
+    "./attendance"
+  ],
+  "typeCheckingMode": "off",
+  "reportMissingImports": "none",
+  "reportAttributeAccessIssue": "none",
+  "reportGeneralTypeIssues": "none",
+  "reportOptionalSubscript": "none",
+  "reportOptionalMemberAccess": "none",
+  "reportIncompatibleMethodOverride": "none",
+  "reportAssignmentType": "none",
+  "reportArgumentType": "none"
+}

@@ -1,0 +1,243 @@
+﻿type CustomOption = {
+  value: string;
+  label: string;
+};
+
+function CustomSelect({
+  label,
+  value,
+  options,
+  onChange,
+  disabled = false,
+  searchable = false,
+  loading = false,
+  emptyLabel = 'No options found',
+}: {
+  label: string;
+  value: string;
+  options: CustomOption[];
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  searchable?: boolean;
+  loading?: boolean;
+  emptyLabel?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+
+  const selectedOption = options.find((item) => item.value === value);
+  const filteredOptions = options.filter((item) =>
+    item.label.toLowerCase().includes(query.toLowerCase())
+  );
+
+  return (
+    <div className="live-custom-field">
+      <span className="live-custom-label">{label}</span>
+      <div className="live-custom-select">
+        <button
+          type="button"
+          className="live-custom-trigger"
+          disabled={disabled}
+          aria-expanded={open}
+          onClick={() => {
+            setOpen((current) => !current);
+            setQuery('');
+          }}
+        >
+          <span>{loading ? 'Loading employees...' : selectedOption?.label || emptyLabel}</span>
+          <ChevronDown size={15} />
+        </button>
+
+        {open && !disabled && (
+          <>
+            <button
+              type="button"
+              className="live-custom-dismiss"
+              aria-label="Close dropdown"
+              onClick={() => setOpen(false)}
+            />
+            <div className="live-custom-menu">
+              {searchable && (
+                <div className="live-custom-search">
+                  <Search size={15} />
+                  <input
+                    autoFocus
+                    value={query}
+                    placeholder="Search employees..."
+                    onChange={(event) => setQuery(event.target.value)}
+                  />
+                </div>
+              )}
+
+              <div className="live-custom-options">
+                {filteredOptions.map((option) => (
+                  <button
+                    type="button"
+                    key={option.value}
+                    className={`live-custom-option ${option.value === value ? 'is-selected' : ''}`}
+                    onClick={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                      setQuery('');
+                    }}
+                  >
+                    <span>{option.label}</span>
+                    {option.value === value && <span className="live-option-check"></span>}
+                  </button>
+                ))}
+                {filteredOptions.length === 0 && (
+                  <div className="live-custom-empty">
+                    {loading ? 'Loading employees...' : emptyLabel}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CustomDatePicker({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  min?: string;
+  max?: string;
+  onChange: (value: string) => void;
+}) {
+  const parseDate = (input: string) => {
+    const parts = input.split('-').map(Number);
+    return parts.length === 3 && parts.every(Number.isFinite)
+      ? new Date(parts[0], parts[1] - 1, parts[2])
+      : new Date();
+  };
+
+  const toDateString = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+  const [open, setOpen] = useState(false);
+  const [viewDate, setViewDate] = useState(() => parseDate(value));
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = Array.from({ length: firstWeekday + daysInMonth }, (_, index) =>
+    index < firstWeekday ? null : index - firstWeekday + 1
+  );
+
+  const isDisabled = (day: number) => {
+    const date = toDateString(new Date(year, month, day));
+    return Boolean((min && date < min) || (max && date > max));
+  };
+
+  return (
+    <div className="live-custom-field">
+      <span className="live-custom-label">
+        <CalendarDays size={14} />
+        {label}
+      </span>
+      <div className="live-custom-select">
+        <button
+          type="button"
+          className="live-custom-trigger live-date-trigger"
+          aria-expanded={open}
+          onClick={() => {
+            setViewDate(parseDate(value));
+            setOpen((current) => !current);
+          }}
+        >
+          <span>{value ? parseDate(value).toLocaleDateString('en-IN', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          }) : 'Select date'}</span>
+          <CalendarDays size={15} />
+        </button>
+
+        {open && (
+          <>
+            <button
+              type="button"
+              className="live-custom-dismiss"
+              aria-label="Close calendar"
+              onClick={() => setOpen(false)}
+            />
+            <div className="live-custom-calendar">
+              <div className="live-calendar-heading">
+                <button
+                  type="button"
+                  aria-label="Previous month"
+                  onClick={() => setViewDate(new Date(year, month - 1, 1))}
+                >
+                  <ChevronLeft size={17} />
+                </button>
+                <strong>
+                  {viewDate.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}
+                </strong>
+                <button
+                  type="button"
+                  aria-label="Next month"
+                  onClick={() => setViewDate(new Date(year, month + 1, 1))}
+                >
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+
+              <div className="live-calendar-grid">
+                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                  <span key={day} className="live-calendar-weekday">{day}</span>
+                ))}
+                {cells.map((day, index) => {
+                  if (day === null) {
+                    return <span key={`empty-${index}`} className="live-calendar-blank" />;
+                  }
+
+                  const date = toDateString(new Date(year, month, day));
+                  const selectedDay = date === value;
+
+                  return (
+                    <button
+                      type="button"
+                      key={date}
+                      disabled={isDisabled(day)}
+                      className={`live-calendar-day ${selectedDay ? 'is-selected' : ''}`}
+                      onClick={() => {
+                        onChange(date);
+                        setOpen(false);
+                      }}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                className="live-calendar-today"
+                onClick={() => {
+                  const today = toDateString(new Date());
+                  if ((!min || today >= min) && (!max || today <= max)) {
+                    onChange(today);
+                    setViewDate(parseDate(today));
+                    setOpen(false);
+                  }
+                }}
+              >
+                Today
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
