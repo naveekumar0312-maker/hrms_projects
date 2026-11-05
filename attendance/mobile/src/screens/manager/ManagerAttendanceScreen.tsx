@@ -32,6 +32,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { getManagerTeamAttendance, ManagerAttendanceRow } from '../../services/managerService';
 import { approveAttendanceRecord, rejectAttendanceRecord } from '../../services/attendanceService';
 import { resolveMediaUrl } from '../../utils/imageUtils';
+import { formatAttendanceTime } from '../../utils/dateUtils';
 import { COLORS } from '../../constants/theme';
 import { colors } from '../../theme/colors';
 
@@ -275,7 +276,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
               <LogIn size={15} color="#0056CF" />
               <Text style={styles.punchTypeTitle}>Check In</Text>
               <Text style={styles.punchTimeText}>
-                {item.check_in ? item.check_in.substring(0, 5) : '--:--'}
+                {formatAttendanceTime(item.check_in)}
               </Text>
               {item.late_minutes > 0 ? (
                 <View style={styles.lateTag}>
@@ -322,7 +323,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
               <LogOutIcon size={15} color="#0369A1" />
               <Text style={styles.punchTypeTitle}>Check Out</Text>
               <Text style={styles.punchTimeText}>
-                {item.check_out ? item.check_out.substring(0, 5) : '--:--'}
+                {formatAttendanceTime(item.check_out)}
               </Text>
             </View>
             {item.check_out ? renderApprovalBadge(item.check_out_approval_status) : null}

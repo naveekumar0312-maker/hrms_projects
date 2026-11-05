@@ -41,6 +41,7 @@ import {
   rejectAttendanceRecord,
 } from '../../services/attendanceService';
 import { resolveMediaUrl } from '../../utils/imageUtils';
+import { formatAttendanceTime } from '../../utils/dateUtils';
 
 export const AdminAttendanceScreen = ({ navigation }: any) => {
   const { user } = useContext(AuthContext);
@@ -118,8 +119,17 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
 
   const openEditModal = (rec: any) => {
     setEditingRecord(rec);
-    setEditCheckIn(rec.check_in_time ? rec.check_in_time.substring(0, 5) : '09:00');
-    setEditCheckOut(rec.check_out_time ? rec.check_out_time.substring(0, 5) : '18:00');
+    const extractHM = (val: string | null | undefined, defaultVal: string) => {
+      if (!val) return defaultVal;
+      if (/^\d{1,2}:\d{2}/.test(val)) return val.substring(0, 5);
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+      }
+      return defaultVal;
+    };
+    setEditCheckIn(extractHM(rec.check_in_time, '09:00'));
+    setEditCheckOut(extractHM(rec.check_out_time, '18:00'));
     setEditStatus(rec.status || 'PRESENT');
   };
 
@@ -342,14 +352,14 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                     <View style={styles.timeCol}>
                       <Clock size={13} color="#5A6A80" />
                       <Text style={styles.timeText}>
-                        In: {item.check_in_time ? item.check_in_time.substring(0, 5) : '--:--'}
+                        In: {formatAttendanceTime(item.check_in_time)}
                       </Text>
                     </View>
 
                     <View style={styles.timeCol}>
                       <Clock size={13} color="#5A6A80" />
                       <Text style={styles.timeText}>
-                        Out: {item.check_out_time ? item.check_out_time.substring(0, 5) : '--:--'}
+                        Out: {formatAttendanceTime(item.check_out_time)}
                       </Text>
                     </View>
 

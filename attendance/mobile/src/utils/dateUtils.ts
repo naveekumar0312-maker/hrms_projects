@@ -9,11 +9,22 @@ export const formatAttendanceDate = (dateString: string | null | undefined): str
 
 export const formatAttendanceTime = (timeString: string | null | undefined): string => {
   if (!timeString) return '--';
-  
-  // Handle backend time which could be ISO string
-  const date = new Date(timeString);
+
+  // Handle 'HH:MM' or 'HH:MM:SS' time string
+  const trimmed = timeString.trim();
+  if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+    const parts = trimmed.split(':');
+    let hour = parseInt(parts[0], 10);
+    const minute = parts[1].padStart(2, '0');
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12 || 12;
+    return `${hour.toString().padStart(2, '0')}:${minute} ${ampm}`;
+  }
+
+  // Handle ISO datetime string like '2026-11-05T06:13:50.953165+00:00'
+  const date = new Date(trimmed);
   if (isNaN(date.getTime())) return '--';
-  
+
   const options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
   return date.toLocaleTimeString('en-US', options);
 };
