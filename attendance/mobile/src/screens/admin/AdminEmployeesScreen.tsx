@@ -406,8 +406,25 @@ export const AdminEmployeesScreen = ({ navigation }: any) => {
     }
   };
 
-  const filteredEmployees = employees.filter((emp) => {
-    if (selectedBranch !== 'ALL' && emp.branch !== selectedBranch) return false;
+  const filteredEmployees = employees.filter((emp: any) => {
+    // 1. Branch filter
+    if (selectedBranch !== 'ALL') {
+      const empBranchId = typeof emp.branch === 'object' && emp.branch !== null
+        ? emp.branch.id
+        : Number(emp.branch);
+      if (empBranchId !== Number(selectedBranch)) return false;
+    }
+
+    // 2. Search filter
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      const matchName = emp.full_name?.toLowerCase().includes(q);
+      const matchId = emp.employee_id?.toLowerCase().includes(q);
+      const matchEmail = emp.email?.toLowerCase().includes(q);
+      const matchDept = emp.department?.toLowerCase().includes(q);
+      if (!matchName && !matchId && !matchEmail && !matchDept) return false;
+    }
+
     return true;
   });
 
