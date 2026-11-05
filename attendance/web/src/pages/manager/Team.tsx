@@ -8,8 +8,10 @@ import {
   Eye,
   CheckCircle2,
   AlertCircle,
+  User,
 } from 'lucide-react';
 import api from '../../api';
+import '../ReportingManagers.css';
 
 interface TeamEmployee {
   id: number;
@@ -217,9 +219,13 @@ const ManagerTeam: React.FC = () => {
                   <tr key={m.id}>
                     <td>
                       <div className="rm-profile-cell">
-                        <div className="rm-avatar">
-                          {m.full_name.charAt(0).toUpperCase()}
-                        </div>
+                        {m.profile_photo ? (
+                          <img src={m.profile_photo} alt={m.full_name} className="rm-avatar" />
+                        ) : (
+                          <div className="rm-avatar" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                            <User size={18} strokeWidth={2.2} />
+                          </div>
+                        )}
                         <div>
                           <div className="rm-name">{m.full_name}</div>
                           <div className="rm-sub">{m.email || 'No email on record'}</div>

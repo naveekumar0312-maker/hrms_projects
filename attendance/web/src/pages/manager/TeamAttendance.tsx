@@ -4,8 +4,10 @@ import {
   RefreshCw,
   Calendar,
   X,
+  User,
 } from 'lucide-react';
 import api from '../../api';
+import '../ReportingManagers.css';
 import { CustomDatePicker } from '../../components/CustomDatePicker';
 
 interface TeamAttendanceRow {
@@ -370,7 +372,9 @@ const ManagerTeamAttendance: React.FC = () => {
                       {row.profile_photo ? (
                         <img src={row.profile_photo} alt={row.full_name} className="rm-avatar" />
                       ) : (
-                        <div className="rm-avatar">{row.full_name.charAt(0).toUpperCase()}</div>
+                        <div className="rm-avatar" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                          <User size={18} strokeWidth={2.2} />
+                        </div>
                       )}
                       <div>
                         <div className="rm-name">{row.full_name}</div>

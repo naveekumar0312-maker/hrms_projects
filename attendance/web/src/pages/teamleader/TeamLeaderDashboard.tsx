@@ -11,11 +11,13 @@ import {
   ListTodo,
   CheckCircle2,
   AlertTriangle,
+  User,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
 import '../manager/ManagerDashboard.css';
+import '../ReportingManagers.css';
 
 interface LeaderDashboardSummary {
   leader_name: string;
@@ -280,11 +282,15 @@ const TeamLeaderDashboard: React.FC = () => {
                 {team.slice(0, 5).map((m) => (
                   <tr key={m.id}>
                     <td>
-                      <div className="mgr-emp-cell">
-                        <div className="mgr-emp-avatar">
-                          {m.full_name.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="mgr-emp-name">{m.full_name}</span>
+                      <div className="rm-profile-cell">
+                        {m.profile_photo ? (
+                          <img src={m.profile_photo} alt={m.full_name} className="rm-avatar" />
+                        ) : (
+                          <div className="rm-avatar" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                            <User size={18} strokeWidth={2.2} />
+                          </div>
+                        )}
+                        <span className="mgr-emp-name" style={{ fontWeight: 600, color: '#0f172a' }}>{m.full_name}</span>
                       </div>
                     </td>
                     <td><code>{m.employee_id}</code></td>
