@@ -22,6 +22,7 @@ import { User, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { useAppMessage } from '../context/MessageContext';
 
 const ARCH_IMAGE = require('../../assets/branding/office-team-unsplash.jpg');
+const BRAND_LOGO = require('../../assets/branding/yaazh360-logo-transparent.png');
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const REMEMBER_ME_KEY = 'yaazh360_remember_username';
@@ -191,113 +192,119 @@ export default function LoginScreen() {
 
           {/* MAIN CONTENT AREA */}
           <View style={styles.contentContainer}>
-            {/* WELCOME HEADER */}
-            <View style={styles.welcomeHeader}>
-              <Text style={styles.welcomeTitle}>Welcome to Hrms !</Text>
-              <Text style={styles.welcomeSubtitle}>
-                Please Login to your Account
-              </Text>
-            </View>
-
-            {/* FORM */}
-            <View style={styles.formContainer}>
-              {/* USERNAME INPUT (Clean Underline Style) */}
-              <View
-                style={[
-                  styles.fieldRow,
-                  isFocusedIdentifier && styles.fieldRowFocused,
-                ]}
-              >
-                <User
-                  size={19}
-                  color={isFocusedIdentifier ? '#0757B8' : '#94A3B8'}
-                  strokeWidth={2}
-                  style={styles.fieldIcon}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  value={identifier}
-                  onChangeText={setIdentifier}
-                  placeholder="Username"
-                  placeholderTextColor="#A0AEC0"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  editable={!isSubmitting}
-                  onFocus={handleIdentifierFocus}
-                  onBlur={() => setIsFocusedIdentifier(false)}
-                />
+            <View style={styles.cardContainer}>
+              {/* WELCOME HEADER */}
+              <View style={styles.welcomeHeader}>
+                <Text style={styles.welcomeTitle}>Welcome to Hrms !</Text>
+                <Text style={styles.welcomeSubtitle}>
+                  Please Login to your Account
+                </Text>
               </View>
 
-              {/* PASSWORD INPUT (Clean Underline Style) */}
-              <View
-                style={[
-                  styles.fieldRow,
-                  isFocusedPassword && styles.fieldRowFocused,
-                ]}
-              >
-                <Lock
-                  size={19}
-                  color={isFocusedPassword ? '#0757B8' : '#94A3B8'}
-                  strokeWidth={2}
-                  style={styles.fieldIcon}
-                />
-                <TextInput
-                  style={styles.textInput}
-                  value={password}
-                  onChangeText={setPassword}
-                  placeholder="Password"
-                  placeholderTextColor="#A0AEC0"
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  editable={!isSubmitting}
-                  onFocus={handlePasswordFocus}
-                  onBlur={() => setIsFocusedPassword(false)}
-                />
-                <TouchableOpacity
-                  style={styles.pwdToggleBtn}
-                  onPress={() => setShowPassword((prev) => !prev)}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  {showPassword ? (
-                    <EyeOff size={19} color="#94A3B8" strokeWidth={2} />
-                  ) : (
-                    <Eye size={19} color="#94A3B8" strokeWidth={2} />
-                  )}
-                </TouchableOpacity>
-              </View>
-
-              {/* ACTION ROW: FORGOT PASSWORD & SUBMIT PILL */}
-              <View style={styles.actionRow}>
-                <TouchableOpacity
-                  onPress={handleForgotPassword}
-                  activeOpacity={0.7}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                >
-                  <Text style={styles.forgotBtnText}>Forgot your Password ?</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
+              {/* FORM */}
+              <View style={styles.formContainer}>
+                {/* USERNAME INPUT (Clean Underline Style) */}
+                <View
                   style={[
-                    styles.submitPill,
-                    isSubmitting && styles.submitPillDisabled,
+                    styles.fieldRow,
+                    isFocusedIdentifier && styles.fieldRowFocused,
                   ]}
-                  onPress={handleLogin}
-                  disabled={isSubmitting}
-                  activeOpacity={0.88}
                 >
-                  {isSubmitting ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.submitPillText}>Login</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
+                  <User
+                    size={19}
+                    color={isFocusedIdentifier ? '#0757B8' : '#94A3B8'}
+                    strokeWidth={2}
+                    style={styles.fieldIcon}
+                  />
+                  <TextInput
+                    style={styles.textInput}
+                    value={identifier}
+                    onChangeText={setIdentifier}
+                    placeholder="Username"
+                    placeholderTextColor="#A0AEC0"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isSubmitting}
+                    onFocus={handleIdentifierFocus}
+                    onBlur={() => setIsFocusedIdentifier(false)}
+                  />
+                </View>
 
-              {/* FOOTER BRANDING */}
-              <View style={styles.footerRow}>
-                <Text style={styles.footerMuted}>Powered by </Text>
-                <Text style={styles.footerLogo}>Yaazh 360</Text>
+                {/* PASSWORD INPUT (Clean Underline Style) */}
+                <View
+                  style={[
+                    styles.fieldRow,
+                    isFocusedPassword && styles.fieldRowFocused,
+                  ]}
+                >
+                  <Lock
+                    size={19}
+                    color={isFocusedPassword ? '#0757B8' : '#94A3B8'}
+                    strokeWidth={2}
+                    style={styles.fieldIcon}
+                  />
+                  <TextInput
+                    style={styles.textInput}
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Password"
+                    placeholderTextColor="#A0AEC0"
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    editable={!isSubmitting}
+                    onFocus={handlePasswordFocus}
+                    onBlur={() => setIsFocusedPassword(false)}
+                  />
+                  <TouchableOpacity
+                    style={styles.pwdToggleBtn}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={19} color="#94A3B8" strokeWidth={2} />
+                    ) : (
+                      <Eye size={19} color="#94A3B8" strokeWidth={2} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* ACTION ROW: FORGOT PASSWORD & SUBMIT PILL */}
+                <View style={styles.actionRow}>
+                  <TouchableOpacity
+                    onPress={handleForgotPassword}
+                    activeOpacity={0.7}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={styles.forgotBtnText}>Forgot your Password ?</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.submitPill,
+                      isSubmitting && styles.submitPillDisabled,
+                    ]}
+                    onPress={handleLogin}
+                    disabled={isSubmitting}
+                    activeOpacity={0.88}
+                  >
+                    {isSubmitting ? (
+                      <ActivityIndicator size="small" color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.submitPillText}>Login</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* RIGHT BOTTOM POWERED BY LOGO */}
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerMuted}>Powered by </Text>
+                  <Image
+                    source={BRAND_LOGO}
+                    style={styles.footerLogoImg}
+                    resizeMode="contain"
+                  />
+                </View>
               </View>
             </View>
           </View>
@@ -356,29 +363,49 @@ const styles = StyleSheet.create({
   /* CONTENT CONTAINER */
   contentContainer: {
     flex: 1,
-    paddingHorizontal: 30,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    paddingBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  /* ELEVATED LOGIN CARD */
+  cardContainer: {
+    width: '100%',
+    maxWidth: 410,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    paddingHorizontal: 24,
     paddingTop: 28,
-    justifyContent: 'space-between',
+    paddingBottom: 22,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
   },
 
   /* WELCOME HEADER */
   welcomeHeader: {
-    marginBottom: 32,
+    marginBottom: 24,
     alignItems: 'flex-start',
   },
 
   welcomeTitle: {
-    fontSize: 27,
+    fontSize: 26,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#2D3748',
+    color: '#1E293B',
     letterSpacing: -0.3,
-    marginBottom: 8,
+    marginBottom: 6,
   },
 
   welcomeSubtitle: {
-    fontSize: 14.5,
+    fontSize: 14,
     fontFamily: 'Comfortaa_500Medium',
-    color: '#8C98A9',
+    color: '#64748B',
   },
 
   /* FORM */
@@ -386,27 +413,31 @@ const styles = StyleSheet.create({
     width: '100%',
   },
 
-  /* CLEAN UNDERLINE ROW */
+  /* MODERN INPUT FIELD */
   fieldRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#E2E8F0',
-    paddingBottom: 8,
-    marginBottom: 28,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 6,
+    marginBottom: 18,
   },
 
   fieldRowFocused: {
-    borderBottomColor: '#0757B8',
+    backgroundColor: '#FFFFFF',
+    borderColor: '#0757B8',
   },
 
   fieldIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
 
   textInput: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14.5,
     fontFamily: 'Comfortaa_500Medium',
     color: '#1E293B',
     paddingVertical: 4,
@@ -422,12 +453,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 10,
-    marginBottom: 36,
+    marginTop: 8,
+    marginBottom: 22,
   },
 
   forgotBtnText: {
-    fontSize: 13,
+    fontSize: 12.5,
     fontFamily: 'Comfortaa_600SemiBold',
     color: '#0757B8',
   },
@@ -435,8 +466,8 @@ const styles = StyleSheet.create({
   /* SUBMIT PILL BUTTON */
   submitPill: {
     backgroundColor: '#0757B8',
-    paddingVertical: 12,
-    paddingHorizontal: 34,
+    paddingVertical: 11,
+    paddingHorizontal: 32,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
@@ -445,7 +476,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 4,
-    minWidth: 105,
+    minWidth: 100,
   },
 
   submitPillDisabled: {
@@ -454,29 +485,31 @@ const styles = StyleSheet.create({
 
   submitPillText: {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 14.5,
     fontFamily: 'Comfortaa_700Bold',
     letterSpacing: 0.2,
   },
 
-  /* FOOTER BRANDING */
+  /* FOOTER BRANDING WITH IMAGE */
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    marginTop: 16,
-    paddingBottom: 10,
+    marginTop: 10,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
 
   footerMuted: {
     fontSize: 12,
-    fontFamily: 'Comfortaa_400Regular',
-    color: '#A0AEC0',
+    fontFamily: 'Comfortaa_500Medium',
+    color: '#94A3B8',
+    marginRight: 4,
   },
 
-  footerLogo: {
-    fontSize: 12.5,
-    fontFamily: 'Comfortaa_700Bold',
-    color: '#0757B8',
+  footerLogoImg: {
+    width: 90,
+    height: 24,
   },
 });

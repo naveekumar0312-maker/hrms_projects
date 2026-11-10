@@ -210,10 +210,14 @@ const UniversalLogin = ({ loginMode = 'general' }: UniversalLoginProps) => {
             </div>
           </form>
 
-          {/* Footer Branding */}
+          {/* Right Bottom Powered By Logo */}
           <div className="login-split-footer">
-            <span>Powered by</span>
-            <strong className="login-split-footer-logo">Yaazh 360</strong>
+            <span className="login-split-footer-text">Powered by</span>
+            <img
+              src="/branding/yaazh360-logo-transparent.png"
+              alt="Yaazh 360"
+              className="login-split-footer-img"
+            />
           </div>
         </div>
       </div>

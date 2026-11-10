@@ -56,39 +56,46 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 56px;
+  padding: 40px 64px;
   background-color: #FFFFFF;
   box-sizing: border-box;
   overflow: hidden;
 }
 
+/* Beautiful elevated login card container */
 .login-form-inner-container {
   width: 100%;
-  max-width: 410px;
+  max-width: 440px;
   display: flex;
   flex-direction: column;
+  background: #FFFFFF;
+  padding: 38px 36px 30px;
+  border-radius: 24px;
+  box-shadow: 0 12px 42px rgba(15, 23, 42, 0.07), 0 2px 10px rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Welcome Titles */
 .login-welcome-header {
-  margin-bottom: 38px;
+  margin-bottom: 30px;
   text-align: left;
 }
 
 .login-welcome-title {
   margin: 0;
-  font-size: 32px;
-  font-weight: 600;
-  color: #2D3748;
+  font-size: 30px;
+  font-weight: 700;
+  color: #1E293B;
   font-family: 'Comfortaa', cursive, 'Plus Jakarta Sans', sans-serif;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .login-welcome-subtitle {
-  margin: 10px 0 0;
-  font-size: 15px;
+  margin: 8px 0 0;
+  font-size: 14.5px;
   font-weight: 500;
-  color: #8C98A9;
+  color: #64748B;
 }
 
 /* Error message */
@@ -108,27 +115,31 @@
 .login-split-form {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 22px;
 }
 
-/* Clean Underline Input Row */
+/* Modern Input Card/Field with subtle background and active border */
 .login-split-field-row {
   position: relative;
   display: flex;
   align-items: center;
-  border-bottom: 1.5px solid #E2E8F0;
-  padding-bottom: 8px;
-  transition: border-color 200ms ease;
+  background: #F8FAFC;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 14px;
+  padding: 12px 16px;
+  transition: all 200ms ease;
 }
 
 .login-split-field-row:focus-within {
-  border-bottom-color: #0757B8;
+  background: #FFFFFF;
+  border-color: #0757B8;
+  box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
 }
 
 .login-split-icon {
   color: #94A3B8;
   flex-shrink: 0;
-  margin-right: 14px;
+  margin-right: 12px;
   transition: color 200ms ease;
 }
 
@@ -144,20 +155,20 @@
   font-size: 15px;
   font-weight: 500;
   color: #1E293B;
-  padding: 6px 0;
+  padding: 0;
   font-family: inherit;
 }
 
 .login-split-input::placeholder {
-  color: #A0AEC0;
+  color: #94A3B8;
   font-weight: 400;
-  font-size: 14.5px;
+  font-size: 14px;
 }
 
 .login-split-pwd-toggle {
   background: none;
   border: none;
-  padding: 6px;
+  padding: 4px;
   color: #94A3B8;
   cursor: pointer;
   display: flex;
@@ -176,7 +187,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 18px;
+  margin-top: 10px;
   gap: 16px;
 }
 
@@ -204,7 +215,7 @@
   color: #FFFFFF;
   border: none;
   border-radius: 9999px;
-  padding: 12px 38px;
+  padding: 12px 36px;
   font-size: 14.5px;
   font-weight: 700;
   font-family: 'Comfortaa', cursive, 'Plus Jakarta Sans', sans-serif;
@@ -247,21 +258,29 @@
   }
 }
 
-/* Footer Credits */
+/* Footer Credits with Background-Removed Logo */
 .login-split-footer {
-  margin-top: 48px;
-  text-align: right;
-  font-size: 12px;
-  color: #A0AEC0;
+  margin-top: 32px;
+  padding-top: 14px;
+  border-top: 1px solid #F1F5F9;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 5px;
+  gap: 8px;
 }
 
-.login-split-footer-logo {
-  color: #0757B8;
-  font-weight: 700;
+.login-split-footer-text {
+  font-size: 12px;
+  font-weight: 500;
+  color: #94A3B8;
+  font-family: 'Comfortaa', sans-serif;
+}
+
+.login-split-footer-img {
+  height: 24px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.08));
 }
 
 /* ============================================================
