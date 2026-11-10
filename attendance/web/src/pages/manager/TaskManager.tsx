@@ -211,7 +211,7 @@ const TaskManager: React.FC = () => {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="task-filter-controls">
           <div style={{ width: '160px' }}>
             <CustomSelect
               value={statusFilter}

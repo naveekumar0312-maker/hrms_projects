@@ -134,9 +134,9 @@ const ManagerLayout: React.FC = () => {
           </div>
           <button
             type="button"
-            className="btn-icon"
-            style={{ display: 'none' }}
+            className="mgr-sidebar-close-btn"
             onClick={() => setSidebarOpen(false)}
+            aria-label="Close Sidebar"
           >
             <X size={20} color="#fff" />
           </button>
@@ -185,16 +185,19 @@ const ManagerLayout: React.FC = () => {
       {/* Main Content */}
       <div className="mgr-main">
         <header className="mgr-topbar">
-          <button
-            className="rm-icon-btn"
-            style={{ display: 'inline-flex' }}
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu size={20} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <button
+              type="button"
+              className="mgr-sidebar-toggle-btn"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open Sidebar"
+            >
+              <Menu size={20} />
+            </button>
 
-          <div style={{ fontWeight: 600, fontSize: '15px' }}>
-            Welcome, {profile?.full_name || user?.username}
+            <div style={{ fontWeight: 600, fontSize: '15px', color: '#0f172a' }}>
+              Welcome, {profile?.full_name || user?.username}
+            </div>
           </div>
         </header>
 

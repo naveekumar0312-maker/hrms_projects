@@ -752,9 +752,57 @@
   gap: 12px;
 }
 
+/* Responsive Design for Task Workspace Modal */
+@media (max-width: 1024px) {
+  .task-workspace-backdrop {
+    padding: 12px;
+  }
+  .task-workspace-modal {
+    height: 96vh;
+    max-height: none;
+  }
+  .task-workspace-body {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+  .task-panel-left {
+    border-right: none;
+    border-bottom: 1px solid #e2e8f0;
+    height: auto;
+  }
+  .task-panel-left-scroll {
+    padding: 18px 20px 40px 20px;
+    overflow-y: visible;
+  }
+  .task-panel-right {
+    height: 600px;
+  }
+}
+
 @media (max-width: 640px) {
+  .task-workspace-backdrop {
+    padding: 0;
+  }
+  .task-workspace-modal {
+    border-radius: 0;
+    height: 100vh;
+  }
+  .task-workspace-header {
+    padding: 12px 16px;
+  }
+  .task-panel-left-scroll {
+    padding: 16px 14px 40px 14px;
+  }
   .task-dates-grid,
   .task-controls-grid {
     grid-template-columns: 1fr;
+  }
+  .task-panel-left-actions {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+  .task-panel-left-actions > div {
+    width: 100%;
+    justify-content: flex-end;
   }
 }
