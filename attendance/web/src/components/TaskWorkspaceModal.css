@@ -779,30 +779,105 @@
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .task-workspace-backdrop {
     padding: 0;
+    align-items: flex-end;
   }
   .task-workspace-modal {
-    border-radius: 0;
-    height: 100vh;
+    border-radius: 16px 16px 0 0;
+    height: 94vh;
+    max-height: 94vh;
   }
   .task-workspace-header {
     padding: 12px 16px;
   }
+  .task-workspace-header-title h2 {
+    font-size: 16px;
+  }
+  .task-tabs-header,
+  .task-panel-right-tabs {
+    padding: 0 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+  }
+  .task-tab-btn {
+    padding: 12px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
   .task-panel-left-scroll {
-    padding: 16px 14px 40px 14px;
+    padding: 14px 14px 28px 14px;
+    gap: 16px;
+  }
+  .task-input-title-modern {
+    font-size: 14px;
+    padding: 10px 12px;
+  }
+  .task-textarea-modern {
+    font-size: 13px;
+    padding: 10px 12px;
+    min-height: 90px;
   }
   .task-dates-grid,
   .task-controls-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   .task-panel-left-actions {
-    padding: 12px 16px;
+    padding: 12px 14px;
     flex-wrap: wrap;
+    gap: 8px;
+  }
+  .task-panel-left-actions .rm-btn {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .task-panel-left-actions > div {
+    display: flex;
+    gap: 8px;
+  }
+  .task-panel-right {
+    height: 480px;
+  }
+  .task-tab-content {
+    padding: 14px;
+  }
+  .task-comment-composer {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-workspace-modal {
+    border-radius: 0;
+    height: 100vh;
+    max-height: 100vh;
+  }
+  .task-workspace-header-title {
+    gap: 6px;
+  }
+  .task-workspace-header-title h2 {
+    font-size: 15px;
+  }
+  .task-mode-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+  .task-panel-left-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .task-panel-left-actions button {
+    width: 100%;
+    justify-content: center;
   }
   .task-panel-left-actions > div {
     width: 100%;
-    justify-content: flex-end;
+    flex-direction: row;
+  }
+  .task-panel-left-actions > div button {
+    flex: 1;
   }
 }
