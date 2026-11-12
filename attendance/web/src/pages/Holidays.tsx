@@ -153,6 +153,20 @@ export default function Holidays() {
       if (editingId !== null) {
         await api.patch(`/holidays/${editingId}/`, payload);
         setSuccess('Holiday updated successfully.');
+      } else if (form.company === 'ALL') {
+        const createPromises = companies.map((comp) =>
+          api.post('/holidays/', {
+            name: form.name.trim(),
+            date: form.date,
+            description: form.description.trim(),
+            company: String(comp.id),
+          }).catch((err) => {
+            console.error(`Failed to create holiday for company ${comp.name}:`, err);
+            return null;
+          })
+        );
+        await Promise.all(createPromises);
+        setSuccess('Holiday created for all companies successfully.');
       } else {
         await api.post('/holidays/', payload);
         setSuccess('Holiday created successfully.');
@@ -309,8 +323,10 @@ export default function Holidays() {
           </h2>
 
           {isSuperAdmin && (
-            <label className="holiday-company-field">
-              Company *
+            <div className="holiday-company-field" style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 6 }}>
+                Company *
+              </div>
               <CustomSelect
                 value={form.company}
                 onChange={(value) => setForm({ ...form, company: value })}
@@ -318,13 +334,14 @@ export default function Holidays() {
                 searchPlaceholder="Search company..."
                 options={[
                   { value: '', label: 'Select company' },
+                  ...(editingId === null ? [{ value: 'ALL', label: 'All Companies' }] : []),
                   ...companies.map((company) => ({
                     value: String(company.id),
                     label: company.name,
                   })),
                 ]}
               />
-            </label>
+            </div>
           )}
 
           <div className="holiday-form-grid">
