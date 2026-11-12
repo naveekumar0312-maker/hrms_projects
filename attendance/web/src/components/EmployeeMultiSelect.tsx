@@ -225,7 +225,7 @@ export const EmployeeMultiSelect: React.FC<EmployeeMultiSelectProps> = ({
                       <div className="emp-item-name">{m.full_name}</div>
                       <div className="emp-item-meta">
                         {m.company_name && (
-                          <span style={{ color: '#0369a1', fontWeight: 600 }}>{m.company_name} &bull; </span>
+                          <span style={{ color: '#E56108', fontWeight: 600 }}>{m.company_name} &bull; </span>
                         )}
                         {m.employee_id && <span className="emp-meta-id">{m.employee_id}</span>}
                         {m.designation && <span className="emp-meta-desig">&bull; {m.designation}</span>}

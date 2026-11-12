@@ -28,8 +28,8 @@
 }
 
 .emp-multiselect-trigger.active {
-  border-color: #0f172a;
-  box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+  border-color: #E56108;
+  box-shadow: 0 0 0 3px rgba(229, 97, 8, 0.12);
 }
 
 .emp-multiselect-content {
@@ -241,7 +241,7 @@
 }
 
 .emp-list-item.selected {
-  background-color: #f1f5f9;
+  background-color: #FFF7ED;
 }
 
 .emp-item-avatar-wrapper {
@@ -314,8 +314,8 @@
 }
 
 .emp-checkbox.checked {
-  background-color: #0f172a;
-  border-color: #0f172a;
+  background-color: #E56108;
+  border-color: #E56108;
 }
 
 .emp-no-results {

@@ -211,7 +211,7 @@
 
 /* Pill Button */
 .login-split-submit-pill {
-  background: #0757B8;
+  background: #E56108;
   color: #FFFFFF;
   border: none;
   border-radius: 9999px;
@@ -223,15 +223,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 14px rgba(7, 87, 184, 0.28);
+  box-shadow: 0 4px 14px rgba(229, 97, 8, 0.28);
   transition: all 180ms ease;
   min-width: 110px;
 }
 
 .login-split-submit-pill:hover:not(:disabled) {
-  background: #004B9D;
+  background: #CC5200;
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(7, 87, 184, 0.35);
+  box-shadow: 0 6px 18px rgba(229, 97, 8, 0.35);
 }
 
 .login-split-submit-pill:active:not(:disabled) {

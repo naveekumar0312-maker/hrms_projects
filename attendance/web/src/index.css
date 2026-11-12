@@ -2,34 +2,34 @@
   --font-primary: "Comfortaa", -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", sans-serif;
   --font-family: var(--font-primary);
 
-  /* Yaazh 360 Signature Royal Blue & Radiant Gold Luxury Palette */
+  /* Yaazh 360 Signature Orange Palette */
   --bg-page: #F8F9FC;
   --bg-card: rgba(255, 255, 255, 0.95);
   --bg-card-solid: #FFFFFF;
   --bg-sidebar: #061B3A;
-  --bg-sidebar-hover: rgba(212, 160, 23, 0.12);
+  --bg-sidebar-hover: rgba(229, 97, 8, 0.12);
   --bg-blur: blur(20px);
 
   --text-primary: #0D1B2A;
   --text-secondary: #5A6A80;
   --text-muted: #8E9BAE;
   --text-sidebar: #B0C4DE;
-  --text-sidebar-active: #FFD700;
+  --text-sidebar-active: #E56108;
 
   --border: rgba(6, 27, 58, 0.08);
   --border-subtle: rgba(6, 27, 58, 0.04);
 
-  /* Signature Royal Blue */
-  --primary: #0056B3;
-  --primary-hover: #004494;
-  --primary-light: rgba(0, 86, 179, 0.08);
-  --primary-glow: rgba(0, 86, 179, 0.25);
+  /* Signature Orange */
+  --primary: #E56108;
+  --primary-hover: #CC5200;
+  --primary-light: rgba(229, 97, 8, 0.08);
+  --primary-glow: rgba(229, 97, 8, 0.25);
 
-  /* Signature Radiant Metallic Gold */
-  --accent-gold: #D4A017;
-  --accent-gold-hover: #B8860B;
-  --accent-gold-light: rgba(212, 160, 23, 0.12);
-  --accent-gold-glow: rgba(212, 160, 23, 0.3);
+  /* Signature Radiant Metallic Gold / Amber */
+  --accent-gold: #E56108;
+  --accent-gold-hover: #CC5200;
+  --accent-gold-light: rgba(229, 97, 8, 0.12);
+  --accent-gold-glow: rgba(229, 97, 8, 0.3);
 
   --success: #34C759;
   --success-bg: rgba(52, 199, 89, 0.12);

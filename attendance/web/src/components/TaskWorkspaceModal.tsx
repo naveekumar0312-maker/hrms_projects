@@ -779,7 +779,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                           value={selectedCompanyFilter}
                           onChange={(val) => setSelectedCompanyFilter(val)}
                           placeholder="Filter by Company"
-                          icon={<Building2 size={15} color="#0284c7" />}
+                          icon={<Building2 size={15} color="#E56108" />}
                           alignRight={true}
                           direction="down"
                           options={[

@@ -206,8 +206,8 @@
 }
 
 .task-tab-btn.active {
-  color: #0056B3;
-  border-bottom-color: #0056B3;
+  color: #E56108;
+  border-bottom-color: #E56108;
 }
 
 /* TAB CONTENT SCROLL */
@@ -381,7 +381,7 @@
 }
 
 .task-composer-textarea:focus {
-  border-color: #0056B3;
+  border-color: #E56108;
 }
 
 .task-composer-toolbar {
@@ -421,7 +421,7 @@
 }
 
 .task-send-btn {
-  background: #0056B3;
+  background: #E56108;
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -435,7 +435,7 @@
 }
 
 .task-send-btn:hover {
-  background: #014B9D;
+  background: #CC5200;
 }
 
 .task-send-btn:disabled {
@@ -578,7 +578,7 @@
 
 .task-voice-btn:hover:not(:disabled) {
   background: #e2e8f0;
-  color: #0056B3;
+  color: #E56108;
   border-color: #94a3b8;
 }
 
@@ -626,8 +626,8 @@
 }
 
 .task-input-title-modern:focus {
-  border-color: #0056B3;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  border-color: #E56108;
+  box-shadow: 0 0 0 3px rgba(229, 97, 8, 0.15);
 }
 
 .task-input-title-modern:disabled {
@@ -656,8 +656,8 @@
 }
 
 .task-textarea-modern:focus {
-  border-color: #0056B3;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  border-color: #E56108;
+  box-shadow: 0 0 0 3px rgba(229, 97, 8, 0.15);
 }
 
 .task-textarea-modern:disabled {

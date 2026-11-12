@@ -58,13 +58,13 @@
 }
 
 .rm-btn-primary {
-  background: var(--primary, #0056B3);
+  background: var(--primary, #E56108);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 8px rgba(229, 97, 8, 0.25);
 }
 
 .rm-btn-primary:hover:not(:disabled) {
-  background: #014B9D;
+  background: #CC5200;
 }
 
 .rm-btn-secondary {
