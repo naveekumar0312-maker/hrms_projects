@@ -225,7 +225,9 @@ export default function ManagerTeamScreen() {
 
                     <Text style={styles.designationText}>{item.designation || 'Staff Member'}</Text>
                     <Text style={styles.branchText}>
-                      {item.department ? `${item.department} • ` : ''}
+                      {item.company_name ? `${item.company_name} • ` : ''}
+                      {item.department ? `${item.company_name ? `${item.company_name} • ` : ''}
+                      {item.department} • ` : ''}
                       {item.branch_name || 'Main Branch'}
                     </Text>
                   </View>

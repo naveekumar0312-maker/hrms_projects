@@ -6,6 +6,9 @@ export interface AssignedEmployee {
   employee_id?: string;
   department?: string;
   designation?: string;
+  branch_name?: string;
+  company_id?: number | null;
+  company_name?: string;
   role?: string;
   profile_photo_url?: string | null;
 }

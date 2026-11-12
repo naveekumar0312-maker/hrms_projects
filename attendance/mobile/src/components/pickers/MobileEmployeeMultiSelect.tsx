@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   Modal,
   FlatList,
   Image,
+  ScrollView,
   StyleSheet,
 } from 'react-native';
-import { Search, Check, X, Users, ChevronDown } from 'lucide-react-native';
+import { Search, Check, X, Users, ChevronDown, Building2 } from 'lucide-react-native';
 import { AssignedEmployee } from '../../services/taskService';
 
 interface MobileEmployeeMultiSelectProps {
@@ -29,17 +30,29 @@ export const MobileEmployeeMultiSelect: React.FC<MobileEmployeeMultiSelectProps>
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCompany, setSelectedCompany] = useState<string>('ALL');
+
+  // Extract distinct companies
+  const companyOptions = useMemo(() => {
+    const names = Array.from(new Set(members.map((m) => m.company_name).filter(Boolean))) as string[];
+    return names;
+  }, [members]);
 
   const selectedMembers = members.filter((m) => selectedIds.includes(m.id));
 
   const filteredMembers = members.filter((m) => {
+    if (selectedCompany !== 'ALL' && m.company_name !== selectedCompany) {
+      return false;
+    }
     if (!searchTerm.trim()) return true;
     const term = searchTerm.toLowerCase();
     return (
       m.full_name?.toLowerCase().includes(term) ||
       m.employee_id?.toLowerCase().includes(term) ||
       m.designation?.toLowerCase().includes(term) ||
-      m.department?.toLowerCase().includes(term)
+      m.department?.toLowerCase().includes(term) ||
+      m.company_name?.toLowerCase().includes(term) ||
+      m.branch_name?.toLowerCase().includes(term)
     );
   });
 
@@ -188,6 +201,66 @@ export const MobileEmployeeMultiSelect: React.FC<MobileEmployeeMultiSelectProps>
               />
             </View>
 
+            {/* COMPANY FILTER CHIPS (Visible when multiple companies available) */}
+            {companyOptions.length > 1 && (
+              <View style={styles.companyFilterWrapper}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.companyScrollContent}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.companyChip,
+                      selectedCompany === 'ALL' && styles.companyChipActive,
+                    ]}
+                    onPress={() => setSelectedCompany('ALL')}
+                    activeOpacity={0.7}
+                  >
+                    <Building2
+                      size={12}
+                      color={selectedCompany === 'ALL' ? '#FFFFFF' : '#64748B'}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text
+                      style={[
+                        styles.companyChipText,
+                        selectedCompany === 'ALL' && styles.companyChipTextActive,
+                      ]}
+                    >
+                      All ({members.length})
+                    </Text>
+                  </TouchableOpacity>
+
+                  {companyOptions.map((cName) => {
+                    const count = members.filter((m) => m.company_name === cName).length;
+                    const isSelected = selectedCompany === cName;
+                    return (
+                      <TouchableOpacity
+                        key={cName}
+                        style={[
+                          styles.companyChip,
+                          isSelected && styles.companyChipActive,
+                        ]}
+                        onPress={() => setSelectedCompany(cName)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.companyChipText,
+                            isSelected && styles.companyChipTextActive,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {cName} ({count})
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            )}
+
             {/* EMPLOYEES LIST */}
             <FlatList
               data={filteredMembers}
@@ -205,6 +278,7 @@ export const MobileEmployeeMultiSelect: React.FC<MobileEmployeeMultiSelectProps>
                     <View style={styles.memberInfo}>
                       <Text style={styles.memberName}>{item.full_name}</Text>
                       <Text style={styles.memberMeta}>
+                        {item.company_name ? `${item.company_name} • ` : ''}
                         {item.employee_id ? `${item.employee_id} • ` : ''}
                         {item.designation || item.department || 'Employee'}
                       </Text>
@@ -404,6 +478,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
     paddingVertical: 0,
+  },
+  companyFilterWrapper: {
+    marginBottom: 10,
+  },
+  companyScrollContent: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  companyChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  companyChipActive: {
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
+  },
+  companyChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  companyChipTextActive: {
+    color: '#FFFFFF',
   },
   listContent: {
     paddingHorizontal: 16,

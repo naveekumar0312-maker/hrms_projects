@@ -25,6 +25,8 @@ export interface ManagerTeamEmployee {
   designation: string;
   profile_photo: string | null;
   branch_name: string;
+  company_name?: string;
+  company_id?: number | null;
   status: boolean;
   account_status: string;
   employment_status: string;
@@ -39,6 +41,8 @@ export interface ManagerAttendanceRow {
   department: string;
   designation: string;
   profile_photo: string | null;
+  branch_name?: string;
+  company_name?: string;
   calculated_status: string;
   status_reason: string;
   check_in: string | null;
