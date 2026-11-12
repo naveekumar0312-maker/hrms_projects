@@ -146,7 +146,7 @@
 }
 
 .holiday-page .custom-select-dropdown {
-  z-index: 1000;
+  z-index: 10001;
   border: 1px solid var(--holiday-border);
   border-radius: 12px;
   background: #fff;
