@@ -151,8 +151,52 @@ export default function Holidays() {
 
     try {
       if (editingId !== null) {
-        await api.patch(`/holidays/${editingId}/`, payload);
-        setSuccess('Holiday updated successfully.');
+        if (form.company === 'ALL') {
+          // Update the current holiday and create or update for all other companies
+          const currentHoliday = holidays.find((h) => h.id === editingId);
+          const currentCompId = currentHoliday ? String(currentHoliday.company) : '';
+
+          // 1. Update the current record
+          await api.patch(`/holidays/${editingId}/`, {
+            name: form.name.trim(),
+            date: form.date,
+            description: form.description.trim(),
+            company: currentCompId || String(companies[0]?.id),
+          });
+
+          // 2. Create/sync holiday for all remaining companies on this date
+          const otherCompanies = companies.filter((c) => String(c.id) !== currentCompId);
+          const syncPromises = otherCompanies.map(async (comp) => {
+            try {
+              // check if already exists in loaded holidays
+              const existing = holidays.find(
+                (h) => String(h.company) === String(comp.id) && h.date === form.date
+              );
+              if (existing) {
+                return await api.patch(`/holidays/${existing.id}/`, {
+                  name: form.name.trim(),
+                  date: form.date,
+                  description: form.description.trim(),
+                });
+              } else {
+                return await api.post('/holidays/', {
+                  name: form.name.trim(),
+                  date: form.date,
+                  description: form.description.trim(),
+                  company: String(comp.id),
+                });
+              }
+            } catch (e) {
+              console.error(`Sync holiday failed for company ${comp.name}:`, e);
+              return null;
+            }
+          });
+          await Promise.all(syncPromises);
+          setSuccess('Holiday updated and applied to all companies successfully.');
+        } else {
+          await api.patch(`/holidays/${editingId}/`, payload);
+          setSuccess('Holiday updated successfully.');
+        }
       } else if (form.company === 'ALL') {
         const createPromises = companies.map((comp) =>
           api.post('/holidays/', {
@@ -334,7 +378,7 @@ export default function Holidays() {
                 searchPlaceholder="Search company..."
                 options={[
                   { value: '', label: 'Select company' },
-                  ...(editingId === null ? [{ value: 'ALL', label: 'All Companies' }] : []),
+                  { value: 'ALL', label: 'All Companies' },
                   ...companies.map((company) => ({
                     value: String(company.id),
                     label: company.name,
