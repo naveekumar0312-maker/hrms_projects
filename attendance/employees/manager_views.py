@@ -304,6 +304,35 @@ class ManagerPortalBaseView(views.APIView):
             raise PermissionDenied("No employee profile found for this Reporting Manager account.")
         return employee
 
+    def get_manager_team_queryset(self, manager, status_filter=None):
+        """
+        Returns employees assigned to this manager.
+        If direct_reports are explicitly assigned, returns direct_reports.
+        Otherwise, falls back to all active non-admin employees in the manager's company.
+        """
+        comp_id = None
+        if manager.branch and manager.branch.company_id:
+            comp_id = manager.branch.company_id
+        elif manager.user and manager.user.company_id:
+            comp_id = manager.user.company_id
+
+        reports = manager.direct_reports.all()
+        if reports.exists():
+            qs = reports
+        elif comp_id:
+            qs = Employee.objects.filter(
+                branch__company_id=comp_id
+            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+        else:
+            qs = Employee.objects.none()
+
+        if status_filter is True:
+            qs = qs.filter(status=True)
+        elif status_filter is False:
+            qs = qs.filter(status=False)
+
+        return qs
+
 
 class ManagerProfileView(ManagerPortalBaseView):
     """Returns the logged-in manager's own profile and company identity."""
@@ -326,9 +355,15 @@ class ManagerMyTeamView(ManagerPortalBaseView):
         search = request.query_params.get('search', '').strip()
         status_param = request.query_params.get('status')
 
-        queryset = manager.direct_reports.select_related(
+        status_filter = None
+        if status_param in ('active', 'true', '1'):
+            status_filter = True
+        elif status_param in ('inactive', 'false', '0'):
+            status_filter = False
+
+        queryset = self.get_manager_team_queryset(manager, status_filter=status_filter).select_related(
             'user', 'branch', 'branch__company'
-        ).all()
+        )
 
         if search:
             queryset = queryset.filter(
@@ -338,11 +373,6 @@ class ManagerMyTeamView(ManagerPortalBaseView):
                 Q(designation__icontains=search)
             )
 
-        if status_param in ('active', 'true', '1'):
-            queryset = queryset.filter(status=True)
-        elif status_param in ('inactive', 'false', '0'):
-            queryset = queryset.filter(status=False)
-
         serializer = AssignedEmployeeBriefSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -350,12 +380,12 @@ class ManagerMyTeamView(ManagerPortalBaseView):
 class ManagerTeamEmployeeDetailView(ManagerPortalBaseView):
     """
     Returns complete details of an employee ONLY if they are assigned
-    to the logged-in manager.
+    to the logged-in manager (or within the manager's company team).
     """
     def get(self, request, pk):
         manager = self.get_manager_employee(request)
         try:
-            employee = manager.direct_reports.select_related(
+            employee = self.get_manager_team_queryset(manager).select_related(
                 'user', 'branch', 'branch__company', 'shift'
             ).get(pk=pk)
         except Employee.DoesNotExist:
@@ -381,7 +411,7 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
         else:
             selected_date = timezone.localdate()
 
-        assigned_employees = list(manager.direct_reports.filter(status=True).select_related(
+        assigned_employees = list(self.get_manager_team_queryset(manager, status_filter=True).select_related(
             'branch', 'branch__company', 'shift'
         ))
 
@@ -504,7 +534,7 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
         manager = self.get_manager_employee(request)
         today = timezone.localdate()
 
-        assigned_employees = list(manager.direct_reports.filter(status=True).select_related(
+        assigned_employees = list(self.get_manager_team_queryset(manager, status_filter=True).select_related(
             'branch', 'branch__company', 'shift'
         ))
 

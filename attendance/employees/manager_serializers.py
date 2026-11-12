@@ -297,6 +297,24 @@ class CreateReportingManagerSerializer(serializers.Serializer):
                     joining_date=timezone.localdate(),
                 )
 
+            # Automatically map all active employees of this company who do not have a reporting manager
+            unassigned_company_emps = Employee.objects.filter(
+                branch__company=company,
+                reporting_manager__isnull=True,
+                status=True
+            ).exclude(pk=employee.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+
+            for emp in unassigned_company_emps:
+                emp.reporting_manager = employee
+                emp.save(update_fields=['reporting_manager'])
+                TeamAssignmentHistory.objects.create(
+                    company=company,
+                    manager=employee,
+                    employee=emp,
+                    assigned_by=current_user if current_user and current_user.is_authenticated else None,
+                    is_active=True
+                )
+
         return employee
 
 
