@@ -519,7 +519,7 @@ const Permissions: React.FC = () => {
                 padding: '10px',
                 border: 'none',
                 borderRadius: '9px',
-                background: '#0757B8',
+                background: '#E56108',
                 color: '#fff',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -633,7 +633,7 @@ const Permissions: React.FC = () => {
         }
 
         .permissions-eyebrow {
-          color: #0757B8;
+          color: #E56108;
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 1.5px;
@@ -665,7 +665,7 @@ const Permissions: React.FC = () => {
         .summary-number {
           font-size: 26px;
           font-weight: 800;
-          color: #0757B8;
+          color: #E56108;
         }
 
         .summary-label {
@@ -685,7 +685,7 @@ const Permissions: React.FC = () => {
 
         .permission-alert.success {
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
           border: 1px solid #bfdbfe;
         }
 
@@ -727,7 +727,7 @@ const Permissions: React.FC = () => {
         .refresh-button {
           border: 1px solid #bfdbfe;
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
           padding: 9px 14px;
           border-radius: 9px;
           font-weight: 700;
@@ -786,7 +786,7 @@ const Permissions: React.FC = () => {
           align-items: center;
           justify-content: center;
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
           font-weight: 800;
           flex-shrink: 0;
         }
@@ -801,7 +801,7 @@ const Permissions: React.FC = () => {
           padding: 6px 9px;
           border-radius: 8px;
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
           font-size: 11px;
           font-weight: 800;
           white-space: nowrap;
@@ -828,7 +828,7 @@ const Permissions: React.FC = () => {
 
         .status-badge.approved {
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
         }
 
         .status-badge.rejected {
@@ -853,7 +853,7 @@ const Permissions: React.FC = () => {
         }
 
         .approve-button {
-          background: #0757B8;
+          background: #E56108;
           color: white;
         }
 
@@ -890,7 +890,7 @@ const Permissions: React.FC = () => {
           border: 1px solid #bfdbfe;
           border-radius: 8px;
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
           font-size: 11px;
           font-weight: 800;
           cursor: pointer;
@@ -934,7 +934,7 @@ const Permissions: React.FC = () => {
           align-items: center;
           justify-content: center;
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
           font-size: 22px;
           font-weight: 800;
         }
@@ -943,7 +943,7 @@ const Permissions: React.FC = () => {
           width: 26px;
           height: 26px;
           border: 3px solid #e2e8f0;
-          border-top-color: #0757B8;
+          border-top-color: #E56108;
           border-radius: 50%;
           animation: permissionSpin 0.8s linear infinite;
         }

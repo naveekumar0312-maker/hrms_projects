@@ -86,7 +86,7 @@ const TeamLeaderDashboard: React.FC = () => {
       title: 'Present Today',
       value: summary?.present_today ?? 0,
       icon: UserCheck,
-      color: '#0056B3',
+      color: '#E56108',
       bg: '#f0fdf4',
     },
     {
@@ -124,7 +124,7 @@ const TeamLeaderDashboard: React.FC = () => {
       title: 'Completed Tasks',
       value: summary?.completed_tasks ?? 0,
       icon: CheckCircle2,
-      color: '#0056B3',
+      color: '#E56108',
       bg: '#ecfdf5',
     },
     {
@@ -208,7 +208,7 @@ const TeamLeaderDashboard: React.FC = () => {
       )}
 
       {/* ATTENDANCE SECTION */}
-      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '14px' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', marginBottom: '14px' }}>
         Today's Team Attendance
       </h3>
       <div className="mgr-cards-grid" style={{ marginBottom: '28px' }}>
@@ -229,7 +229,7 @@ const TeamLeaderDashboard: React.FC = () => {
       </div>
 
       {/* TASK MANAGEMENT METRICS */}
-      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '14px' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', marginBottom: '14px' }}>
         Team Tasks Overview
       </h3>
       <div className="mgr-cards-grid" style={{ marginBottom: '32px' }}>

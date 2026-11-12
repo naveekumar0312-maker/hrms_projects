@@ -22,18 +22,18 @@ export const colors = {
   disabled: '#C8CBD5',            // Disabled State Grey
 
   // Primary Action Accent (Yaazh 360 Signature Electric Blue from 360 Logo)
-  primary: '#0056CF',             // Logo 360 Electric Blue
-  primaryDark: '#013F8C',         // Logo Deep Blue Curve
-  primaryLight: '#EBF3FF',        // Soft Blue Tint
-  primaryAlpha: 'rgba(0, 86, 207, 0.08)',
-  primaryGlow: 'rgba(0, 86, 207, 0.28)',
+  primary: '#E56108',             // Logo 360 Electric Blue
+  primaryDark: '#CC5200',         // Logo Deep Blue Curve
+  primaryLight: '#FFF7ED',        // Soft Blue Tint
+  primaryAlpha: 'rgba(229, 97, 8, 0.08)',
+  primaryGlow: 'rgba(229, 97, 8, 0.28)',
 
   // Brand Accents (Yaazh 360 Signature Metallic Gold from Logo)
-  gold: '#FDA817',                // Logo Vibrant Gold
-  goldDark: '#D08623',            // Logo Deep Gold
-  goldLight: '#FEF6E7',           // Soft Gold Tint
-  goldAlpha: 'rgba(253, 168, 23, 0.12)',
-  goldGlow: 'rgba(253, 168, 23, 0.35)',
+  gold: '#E56108',                // Logo Vibrant Gold
+  goldDark: '#CC5200',            // Logo Deep Gold
+  goldLight: '#FFF7ED',           // Soft Gold Tint
+  goldAlpha: 'rgba(229, 97, 8, 0.12)',
+  goldGlow: 'rgba(229, 97, 8, 0.35)',
 
   // Deep Navy (from Logo background curve)
   navy: '#0A192F',                // Deep Yaazh Navy
@@ -43,8 +43,8 @@ export const colors = {
   iconPrimary: '#0A192F',         // Primary Icon
   iconSecondary: '#4A5568',       // Secondary Icon
   iconMuted: '#8C9BAE',           // Muted Icon
-  iconActive: '#0056CF',          // Active Icon Electric Blue
-  iconGold: '#FDA817',            // Gold Accent Icon
+  iconActive: '#E56108',          // Active Icon Electric Blue
+  iconGold: '#E56108',            // Gold Accent Icon
 
   // Functional Statuses
   success: '#10B981',             // Success Green
@@ -54,6 +54,6 @@ export const colors = {
   error: '#EF4444',               // Danger Red
   errorLight: 'rgba(239, 68, 68, 0.12)',
   danger: '#EF4444',
-  info: '#0056CF',                // Info Blue
+  info: '#E56108',                // Info Blue
   infoLight: 'rgba(0, 86, 207, 0.12)',
 };

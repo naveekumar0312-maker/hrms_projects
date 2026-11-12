@@ -132,7 +132,7 @@
 
 .login-split-field-row:focus-within {
   background: #FFFFFF;
-  border-color: #0757B8;
+  border-color: #E56108;
   box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
 }
 
@@ -144,7 +144,7 @@
 }
 
 .login-split-field-row:focus-within .login-split-icon {
-  color: #0757B8;
+  color: #E56108;
 }
 
 .login-split-input {
@@ -197,7 +197,7 @@
   padding: 0;
   font-size: 13.5px;
   font-weight: 600;
-  color: #0757B8;
+  color: #E56108;
   cursor: pointer;
   text-decoration: none;
   font-family: inherit;
@@ -205,7 +205,7 @@
 }
 
 .login-split-forgot-btn:hover {
-  color: #004494;
+  color: #cc5200;
   text-decoration: underline;
 }
 

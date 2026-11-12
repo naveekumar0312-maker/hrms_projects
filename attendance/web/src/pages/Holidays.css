@@ -1,6 +1,6 @@
 .holiday-page {
-  --holiday-green: #0056B3;
-  --holiday-green-dark: #014B9D;
+  --holiday-green: #E56108;
+  --holiday-green-dark: #CC5200;
   --holiday-green-light: #F8F9FC;
   --holiday-text: #172033;
   --holiday-muted: #64748b;
@@ -157,7 +157,7 @@
 .holiday-page .custom-select-option:hover,
 .holiday-page .custom-select-option.selected {
   background: #F8F9FC;
-  color: #014B9D;
+  color: #CC5200;
 }
 
 .holiday-page .attendance-datepicker-wrapper,
@@ -256,7 +256,7 @@
 
 .holiday-page .holiday-description-field textarea:focus {
   background: #fff;
-  border-color: #0056B3;
+  border-color: #E56108;
   box-shadow: 0 0 0 3px rgba(22, 163, 74, .10);
 }
 

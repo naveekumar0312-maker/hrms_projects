@@ -188,13 +188,13 @@
 
 .attendance-custom-calendar .react-datepicker__day--selected,
 .attendance-custom-calendar .react-datepicker__day--keyboard-selected {
-  background: #0056B3 !important;
+  background: #E56108 !important;
   color: #fff !important;
   font-weight: 700 !important;
 }
 
 .attendance-custom-calendar .react-datepicker__day--today {
-  border: 1px solid #0056B3 !important;
+  border: 1px solid #E56108 !important;
   font-weight: 700 !important;
 }
 
@@ -210,7 +210,7 @@
   margin-top: 8px !important;
   border-top: 1px solid #e5eee7 !important;
   background: #F8F9FC !important;
-  color: #014B9D !important;
+  color: #CC5200 !important;
   border-radius: 0 0 10px 10px !important;
   padding: 11px !important;
   font-size: 13px !important;
@@ -267,7 +267,7 @@
 }
 
 .admin-attendance-calendar button:focus-visible {
-  outline: 2px solid #0056B3;
+  outline: 2px solid #E56108;
   outline-offset: 2px;
 }
 
@@ -310,7 +310,7 @@
   top: 50%;
   transform: translateY(-50%);
   padding: 0;
-  color: #014B9D;
+  color: #CC5200;
   fill: none;
   cursor: pointer;
   pointer-events: auto;
@@ -524,7 +524,7 @@
 
 .attendance-custom-calendar .react-datepicker__day--selected,
 .attendance-custom-calendar .react-datepicker__day--keyboard-selected {
-  background: #0056B3;
+  background: #E56108;
   color: #fff;
   border-radius: 6px;
 }

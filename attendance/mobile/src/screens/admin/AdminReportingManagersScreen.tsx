@@ -319,7 +319,7 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
                     onPress={() => openViewModal(item)}
                     activeOpacity={0.7}
                   >
-                    <Eye size={13} color="#0056B3" />
+                    <Eye size={13} color="#E56108" />
                     <Text style={styles.actionPillText}>View</Text>
                   </TouchableOpacity>
 
@@ -576,7 +576,7 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
 
                 <View style={styles.viewRow}>
                   <Text style={styles.viewLabel}>Assigned Staff</Text>
-                  <Text style={[styles.viewValue, { color: '#0056B3', fontFamily: 'Comfortaa_700Bold' }]}>
+                  <Text style={[styles.viewValue, { color: '#E56108', fontFamily: 'Comfortaa_700Bold' }]}>
                     {viewManager.assigned_employees_count || 0} Employees
                   </Text>
                 </View>
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
   actionPillText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#0056B3',
+    color: '#E56108',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',

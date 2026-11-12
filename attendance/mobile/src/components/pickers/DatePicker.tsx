@@ -151,7 +151,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
       >
         <View style={datePickerStyles.triggerLeft}>
           <View style={datePickerStyles.iconContainer}>
-            <Calendar size={16} color="#0757B8" />
+            <Calendar size={16} color="#E56108" />
           </View>
           {value ? (
             <Text style={datePickerStyles.valueText}>{formatDisplay(value)}</Text>
@@ -190,7 +190,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
             {/* Month & Year Navigator */}
             <View style={datePickerStyles.monthNavRow}>
               <TouchableOpacity style={datePickerStyles.navArrowBtn} onPress={prevMonth}>
-                <ChevronLeft size={18} color="#0757B8" />
+                <ChevronLeft size={18} color="#E56108" />
               </TouchableOpacity>
 
               <Text style={datePickerStyles.monthYearDisplay}>
@@ -198,7 +198,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
               </Text>
 
               <TouchableOpacity style={datePickerStyles.navArrowBtn} onPress={nextMonth}>
-                <ChevronRight size={18} color="#0757B8" />
+                <ChevronRight size={18} color="#E56108" />
               </TouchableOpacity>
             </View>
 

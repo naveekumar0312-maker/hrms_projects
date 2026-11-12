@@ -103,7 +103,7 @@ const ManagerDashboard: React.FC = () => {
       title: 'Present Today',
       value: summary?.present_today ?? 0,
       icon: UserCheck,
-      color: '#0056B3',
+      color: '#E56108',
       bg: '#f0fdf4',
     },
     {
@@ -151,7 +151,7 @@ const ManagerDashboard: React.FC = () => {
             height: '48px',
             borderRadius: '12px',
             background: '#ecfdf5',
-            color: '#0056B3',
+            color: '#E56108',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -201,7 +201,7 @@ const ManagerDashboard: React.FC = () => {
       )}
 
       {/* SECTION 1: HIERARCHY OVERVIEW */}
-      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '14px' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', marginBottom: '14px' }}>
         Organization & Team Scope
       </h3>
       <div className="mgr-cards-grid" style={{ marginBottom: '28px' }}>
@@ -222,7 +222,7 @@ const ManagerDashboard: React.FC = () => {
       </div>
 
       {/* SECTION 2: ATTENDANCE OVERVIEW */}
-      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1e293b', marginBottom: '14px' }}>
+      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', marginBottom: '14px' }}>
         Today's Team Attendance
       </h3>
       <div className="mgr-cards-grid" style={{ marginBottom: '32px' }}>

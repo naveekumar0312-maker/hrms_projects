@@ -131,7 +131,7 @@
   padding: 4px 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #1e293b;
+  color: #1C1917;
   background: #f8fafc;
   cursor: pointer;
   outline: none;
@@ -140,7 +140,7 @@
 
 .custom-datepicker-month-select:focus,
 .custom-datepicker-year-select:focus {
-  border-color: #315C55;
+  border-color: #E56108;
 }
 
 /* Isolate all buttons inside the calendar popup from external button styling */

@@ -345,7 +345,7 @@ const TaskManager: React.FC = () => {
                         </div>
 
                         <div>
-                          <div style={{ fontWeight: 600, color: '#1e293b', fontSize: '13px' }}>
+                          <div style={{ fontWeight: 600, color: '#1C1917', fontSize: '13px' }}>
                             {t.assigned_employees[0].full_name}
                             {t.assigned_employees.length > 1 && (
                               <span style={{ color: '#64748b', fontWeight: 500, fontSize: '12px' }}>

@@ -120,7 +120,7 @@
 }
 
 .task-input-title:focus {
-  border-color: #0056B3;
+  border-color: #E56108;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
@@ -140,7 +140,7 @@
 }
 
 .task-textarea-desc:focus {
-  border-color: #0056B3;
+  border-color: #E56108;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
@@ -496,7 +496,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #0056B3;
+  background: #E56108;
   margin-top: 6px;
   flex-shrink: 0;
 }
@@ -695,7 +695,7 @@
   font-size: 13.5px;
   font-weight: 600;
   background-color: #ffffff;
-  color: #1e293b;
+  color: #1C1917;
   cursor: pointer;
   outline: none;
   appearance: none;
@@ -708,7 +708,7 @@
 }
 
 .task-select-modern:focus {
-  border-color: #0056B3;
+  border-color: #E56108;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
@@ -731,7 +731,7 @@
 /* Status Color Palette */
 .status-dot-pending { background-color: #94a3b8; box-shadow: 0 0 0 2px #e2e8f0; } /* Grey: To Do */
 .status-dot-in_progress { background-color: #2563eb; box-shadow: 0 0 0 2px #dbeafe; } /* Blue: In Progress */
-.status-dot-completed { background-color: #0056B3; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.12); } /* Green: Completed */
+.status-dot-completed { background-color: #E56108; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.12); } /* Green: Completed */
 .status-dot-on_hold { background-color: #ea580c; box-shadow: 0 0 0 2px #ffedd5; } /* Orange: On Hold */
 .status-dot-cancelled { background-color: #dc2626; box-shadow: 0 0 0 2px #fee2e2; } /* Red: Cancelled */
 
@@ -739,7 +739,7 @@
 .priority-dot-high,
 .priority-dot-urgent { background-color: #dc2626; box-shadow: 0 0 0 2px #fee2e2; } /* Red: High / Urgent */
 .priority-dot-medium { background-color: #f59e0b; box-shadow: 0 0 0 2px #fef3c7; } /* Orange / Amber: Medium */
-.priority-dot-low { background-color: #0056B3; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.12); } /* Green: Low */
+.priority-dot-low { background-color: #E56108; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.12); } /* Green: Low */
 
 /* Footer Actions */
 .task-panel-left-actions {

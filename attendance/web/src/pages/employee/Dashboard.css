@@ -4,8 +4,8 @@
 ========================================================= */
 
 .employee-dashboard {
-  --dashboard-green: #0056B3; /* Yaazh Royal Blue */
-  --dashboard-green-dark: #014B9D; /* Yaazh Deep Royal Blue */
+  --dashboard-green: #E56108; /* Yaazh Royal Blue */
+  --dashboard-green-dark: #CC5200; /* Yaazh Deep Royal Blue */
   --dashboard-green-light: rgba(0, 86, 179, 0.12); /* Soft Royal Tint */
   --dashboard-green-soft: #F8F9FC; /* Luxury Canvas Tint */
   --dashboard-text: #0f172a;
@@ -67,8 +67,8 @@
     ),
     linear-gradient(
       135deg,
-      #014B9D 0%,
-      #0056B3 48%,
+      #CC5200 0%,
+      #E56108 48%,
       #38BDF8 100%
     );
 
@@ -238,7 +238,7 @@
     linear-gradient(
       145deg,
       #22c55e,
-      #014B9D
+      #CC5200
     );
 
   color: white;
@@ -301,7 +301,7 @@
 
 .status-ontime,
 .status-completed {
-  color: #014B9D;
+  color: #CC5200;
   background: rgba(0, 86, 179, 0.12);
 }
 
@@ -369,7 +369,7 @@
     linear-gradient(
       135deg,
       #22c55e,
-      #014B9D
+      #CC5200
     );
 
   box-shadow:
@@ -531,12 +531,12 @@
 }
 
 .history-icon {
-  color: #014B9D;
+  color: #CC5200;
   background: rgba(0, 86, 179, 0.12);
 }
 
 .reports-icon {
-  color: #014B9D;
+  color: #CC5200;
   background: rgba(0, 86, 179, 0.08);
 }
 
@@ -591,7 +591,7 @@
 
   background: #F8F9FC;
 
-  color: #014B9D;
+  color: #CC5200;
 
   font-size: 0.78rem;
   font-weight: 700;
@@ -646,7 +646,7 @@
 }
 
 .summary-green .summary-card-icon {
-  color: #0056B3;
+  color: #E56108;
   background: rgba(0, 86, 179, 0.12);
 }
 
@@ -676,12 +676,12 @@
 }
 
 .summary-blue .summary-card-icon {
-  color: #014B9D;
+  color: #CC5200;
   background: rgba(0, 86, 179, 0.12);
 }
 
 .summary-status {
-  color: #014B9D !important;
+  color: #CC5200 !important;
 
   padding: 0.35rem 0.75rem;
 
@@ -1345,13 +1345,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  color: #0056B3;
+  color: #E56108;
   background: #F8F9FC;
   border: 1px solid rgba(0, 86, 179, 0.12);
 }
 
 .live-tracking-icon-active {
-  color: #0056B3;
+  color: #E56108;
   animation: pulse-tracking 2s infinite ease-in-out;
 }
 
@@ -1383,7 +1383,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--dashboard-text, #1e293b);
+  color: var(--dashboard-text, #1C1917);
   letter-spacing: -0.01em;
 }
 
@@ -1399,7 +1399,7 @@
 
 .live-tracking-badge.badge-active {
   background: rgba(0, 86, 179, 0.12);
-  color: #014B9D;
+  color: #CC5200;
   border: 1px solid #bbf7d0;
 }
 
@@ -1453,7 +1453,7 @@
 }
 
 .live-tracking-status-text strong {
-  color: #1e293b;
+  color: #1C1917;
   font-weight: 600;
 }
 
@@ -1485,13 +1485,13 @@
 }
 
 .live-tracking-btn-enable {
-  background: #0056B3;
+  background: #E56108;
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
 }
 
 .live-tracking-btn-enable:hover:not(:disabled) {
-  background: #014B9D;
+  background: #CC5200;
   box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
   transform: translateY(-1px);
 }

@@ -338,7 +338,7 @@ const AttendanceDetailsModal: React.FC<
           ? 'Completed'
           : 'Present',
       background: '#E5F8EF',
-      color: '#0056B3',
+      color: '#E56108',
       icon: <CheckCircle2 size={18} />,
     };
   };
@@ -358,7 +358,7 @@ const AttendanceDetailsModal: React.FC<
       return {
         label: 'Approved',
         background: '#E5F8EF',
-        color: '#0056B3',
+        color: '#E56108',
         icon: <CheckCircle2 size={17} />,
       };
     }

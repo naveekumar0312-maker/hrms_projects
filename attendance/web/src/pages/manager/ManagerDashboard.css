@@ -151,7 +151,7 @@
 .mgr-table td {
   padding: 14px 16px;
   border-bottom: 1px solid #f1f5f9;
-  color: #1e293b;
+  color: #1C1917;
   vertical-align: middle;
 }
 
@@ -161,13 +161,13 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary, #0056B3);
+  color: var(--primary, #E56108);
   text-decoration: none;
   transition: color 0.15s;
 }
 
 .mgr-link-btn:hover {
-  color: #014B9D;
+  color: #CC5200;
 }
 
 .mgr-empty-preview {

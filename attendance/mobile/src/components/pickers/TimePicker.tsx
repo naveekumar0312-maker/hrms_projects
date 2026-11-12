@@ -114,7 +114,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
       >
         <View style={timePickerStyles.triggerLeft}>
           <View style={[timePickerStyles.iconContainer, modalVisible && timePickerStyles.iconContainerFocused]}>
-            <Clock size={16} color={modalVisible ? '#FFFFFF' : '#0757B8'} />
+            <Clock size={16} color={modalVisible ? '#FFFFFF' : '#E56108'} />
           </View>
           {value ? (
             <Text style={timePickerStyles.valueText}>{formatDisplayTime(value)}</Text>

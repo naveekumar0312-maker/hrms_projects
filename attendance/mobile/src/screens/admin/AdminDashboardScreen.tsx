@@ -115,7 +115,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
             <View style={styles.metricsGrid}>
               <View style={[styles.metricCard, { backgroundColor: colors.surfaceSecondary }]}>
                 <View style={[styles.iconBox, { backgroundColor: 'rgba(0, 86, 179, 0.12)' }]}>
-                  <Users size={20} color="#0056B3" strokeWidth={2.2} />
+                  <Users size={20} color="#E56108" strokeWidth={2.2} />
                 </View>
                 <Text style={styles.metricVal}>{summary?.total_employees ?? 0}</Text>
                 <Text style={styles.metricLabel}>Total Staff</Text>
@@ -148,7 +148,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
 
             {/* INFO BANNER */}
             <View style={styles.infoBanner}>
-              <TrendingUp size={22} color="#0056B3" strokeWidth={2.2} />
+              <TrendingUp size={22} color="#E56108" strokeWidth={2.2} />
               <View style={styles.infoBannerContent}>
                 <Text style={styles.infoBannerTitle}>Live Web Synchronization</Text>
                 <Text style={styles.infoBannerText}>

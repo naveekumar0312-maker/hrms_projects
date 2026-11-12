@@ -47,7 +47,7 @@ export const MobileTaskDailyReminderModal: React.FC<MobileTaskDailyReminderModal
       case 'HIGH':
         return { bg: '#fef3c7', text: '#d97706' };
       case 'MEDIUM':
-        return { bg: '#e0f2fe', text: '#0284c7' };
+        return { bg: '#e0f2fe', text: '#e56108' };
       default:
         return { bg: '#f1f5f9', text: '#64748b' };
     }

@@ -461,7 +461,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#f1f5f9',
   },
   actionBtn: {
-    backgroundColor: '#0284c7',
+    backgroundColor: '#e56108',
     borderRadius: 8,
     paddingVertical: 11,
     flexDirection: 'row',

@@ -23,7 +23,7 @@
   padding: 13px;
   border-radius: 12px;
   background: #eff6ff;
-  color: #014B9D;
+  color: #CC5200;
 }
 
 .wfh-header h1 {
@@ -88,7 +88,7 @@
 
 .wfh-field textarea:focus {
   outline: none;
-  border-color: #014B9D;
+  border-color: #CC5200;
   box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
 }
 
@@ -107,7 +107,7 @@
 }
 
 .wfh-success {
-  color: #0757B8;
+  color: #E56108;
   background: #F8F9FC;
 }
 
@@ -121,7 +121,7 @@
   padding: 12px 16px;
   border: 0;
   border-radius: 8px;
-  background: #014B9D;
+  background: #CC5200;
   color: #fff;
   font-weight: 600;
   cursor: pointer;
@@ -133,7 +133,7 @@
 }
 
 .wfh-submit:not(:disabled):hover {
-  background: #004494;
+  background: #cc5200;
 }
 
 .wfh-card-head {
@@ -381,7 +381,7 @@
 }
 
 .wfh-field textarea:focus {
-  border-color: #0757B8 !important;
+  border-color: #E56108 !important;
   background: #ffffff;
   box-shadow: 0 0 0 4px rgba(7, 87, 184, 0.1) !important;
 }
@@ -389,14 +389,14 @@
 .wfh-submit {
   min-height: 48px;
   border-radius: 10px;
-  background: #0757B8;
+  background: #E56108;
   box-shadow: 0 4px 10px rgba(7, 87, 184, 0.13);
   font-size: 14px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
 .wfh-submit:not(:disabled):hover {
-  background: #004494;
+  background: #cc5200;
   box-shadow: 0 6px 15px rgba(7, 87, 184, 0.2);
   transform: translateY(-1px);
 }
@@ -420,7 +420,7 @@
   padding: 9px 14px !important;
   border-color: #cbd5e1 !important;
   border-radius: 9px !important;
-  color: #0757B8;
+  color: #E56108;
   font-size: 13px;
   font-weight: 600;
   transition: background 0.2s ease, border-color 0.2s ease;
@@ -467,7 +467,7 @@
 
 .wfh-request-date svg {
   flex-shrink: 0;
-  color: #0757B8;
+  color: #E56108;
 }
 
 .wfh-status {
@@ -632,7 +632,7 @@
 
 .wfh-page .wfh-textarea:focus {
   outline: none;
-  border-color: #0056B3;
+  border-color: #E56108;
   box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
 }
 
@@ -641,7 +641,7 @@
 }
 
 .wfh-page .wfh-submit:not(:disabled):hover {
-  background: #014B9D;
+  background: #CC5200;
   box-shadow: 0 5px 14px rgba(7, 87, 184, 0.18);
   transform: translateY(-1px);
 }

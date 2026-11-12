@@ -88,7 +88,7 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
 
       {loading && !refreshing ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0757B8" />
+          <ActivityIndicator size="large" color="#E56108" />
           <Text style={styles.loadingText}>Connecting to field GPS beacons...</Text>
         </View>
       ) : (
@@ -118,14 +118,14 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
                 </View>
 
                 <View style={styles.batteryRow}>
-                  <Battery size={14} color="#0056B3" />
+                  <Battery size={14} color="#E56108" />
                   <Text style={styles.batteryText}>{item.battery_level ?? 95}%</Text>
                 </View>
               </View>
 
               <View style={styles.infoRow}>
                 <View style={styles.coordCol}>
-                  <MapPin size={13} color="#0757B8" />
+                  <MapPin size={13} color="#E56108" />
                   <Text style={styles.coordText}>
                     {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
                   </Text>
@@ -141,7 +141,7 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
                 onPress={() => openInMaps(item.latitude, item.longitude, item.name)}
                 activeOpacity={0.8}
               >
-                <Navigation size={14} color="#0757B8" />
+                <Navigation size={14} color="#E56108" />
                 <Text style={styles.mapBtnText}>View on External Maps</Text>
               </TouchableOpacity>
             </View>
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   batteryText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#014B9D',
+    color: '#CC5200',
   },
   infoRow: {
     flexDirection: 'row',

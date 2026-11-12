@@ -172,8 +172,8 @@ export default function ManagerDashboardScreen({ navigation }: any) {
                 style={[styles.quickNavCard, { backgroundColor: '#F5F5F5', borderColor: '#E5E5E5' }]}
                 onPress={() => navigation.navigate('ManagerTeamTab')}
               >
-                <Users size={22} color="#0056B3" strokeWidth={2.2} />
-                <Text style={[styles.quickNavText, { color: '#0056B3' }]}>My Team</Text>
+                <Users size={22} color="#E56108" strokeWidth={2.2} />
+                <Text style={[styles.quickNavText, { color: '#E56108' }]}>My Team</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -201,7 +201,7 @@ export default function ManagerDashboardScreen({ navigation }: any) {
             <View style={styles.metricsGrid}>
               <View style={[styles.metricCard, { backgroundColor: '#F5F5F5' }]}>
                 <View style={[styles.iconBox, { backgroundColor: 'rgba(0, 86, 179, 0.12)' }]}>
-                  <Users size={20} color="#0056B3" strokeWidth={2.2} />
+                  <Users size={20} color="#E56108" strokeWidth={2.2} />
                 </View>
                 <Text style={styles.metricVal}>{summary?.total_employees ?? 0}</Text>
                 <Text style={styles.metricLabel}>Total Members</Text>
@@ -250,8 +250,8 @@ export default function ManagerDashboardScreen({ navigation }: any) {
               </View>
 
               <View style={[styles.attendBox, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-                <CalendarCheck size={22} color="#0056CF" strokeWidth={2.2} />
-                <Text style={[styles.attendVal, { color: '#0056CF' }]}>{summary?.pending_approvals ?? 0}</Text>
+                <CalendarCheck size={22} color="#E56108" strokeWidth={2.2} />
+                <Text style={[styles.attendVal, { color: '#E56108' }]}>{summary?.pending_approvals ?? 0}</Text>
                 <Text style={styles.attendLabel}>Pending</Text>
               </View>
             </View>

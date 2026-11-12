@@ -212,7 +212,7 @@ export default function LoginScreen() {
                 >
                   <User
                     size={19}
-                    color={isFocusedIdentifier ? '#0757B8' : '#94A3B8'}
+                    color={isFocusedIdentifier ? '#E56108' : '#94A3B8'}
                     strokeWidth={2}
                     style={styles.fieldIcon}
                   />
@@ -239,7 +239,7 @@ export default function LoginScreen() {
                 >
                   <Lock
                     size={19}
-                    color={isFocusedPassword ? '#0757B8' : '#94A3B8'}
+                    color={isFocusedPassword ? '#E56108' : '#94A3B8'}
                     strokeWidth={2}
                     style={styles.fieldIcon}
                   />
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
 
   fieldRowFocused: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#0757B8',
+    borderColor: '#E56108',
   },
 
   fieldIcon: {
@@ -460,18 +460,18 @@ const styles = StyleSheet.create({
   forgotBtnText: {
     fontSize: 12.5,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#0757B8',
+    color: '#E56108',
   },
 
   /* SUBMIT PILL BUTTON */
   submitPill: {
-    backgroundColor: '#0757B8',
+    backgroundColor: '#E56108',
     paddingVertical: 11,
     paddingHorizontal: 32,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#0757B8',
+    shadowColor: '#E56108',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 10,

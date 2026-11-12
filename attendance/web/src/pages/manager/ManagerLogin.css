@@ -17,7 +17,7 @@
    -------------------------------------------------------------------------- */
 .manager-login-banner {
   flex: 1.15;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1C1917 100%);
   color: #ffffff;
   display: flex;
   flex-direction: column;
@@ -59,7 +59,7 @@
 .manager-banner-logo-badge {
   width: 46px;
   height: 46px;
-  background: #0056B3;
+  background: #E56108;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -131,7 +131,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0056B3;
+  color: #E56108;
 }
 
 .manager-banner-footer {
@@ -272,7 +272,7 @@
 
 .manager-input-wrap input:focus {
   background: #ffffff;
-  border-color: #0056B3;
+  border-color: #E56108;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
@@ -306,7 +306,7 @@
 .manager-submit-btn {
   width: 100%;
   height: 46px;
-  background: #0056B3;
+  background: #E56108;
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -323,7 +323,7 @@
 }
 
 .manager-submit-btn:hover:not(:disabled) {
-  background: #014B9D;
+  background: #CC5200;
   box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
 }
 
@@ -362,7 +362,7 @@
 }
 
 .manager-footer-hint a {
-  color: #0056B3;
+  color: #E56108;
   font-weight: 600;
   text-decoration: none;
   margin-left: 4px;
@@ -370,7 +370,7 @@
 
 .manager-footer-hint a:hover {
   text-decoration: underline;
-  color: #014B9D;
+  color: #CC5200;
 }
 
 /* RESPONSIVENESS */

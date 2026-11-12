@@ -103,7 +103,7 @@ export const RolePendingActionsModal: React.FC<RolePendingActionsModalProps> = (
       case 'ATTENDANCE_PUNCH':
         return { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' };
       default:
-        return { bg: '#eff6ff', color: '#0757B8', border: '#bfdbfe' };
+        return { bg: '#eff6ff', color: '#E56108', border: '#bfdbfe' };
     }
   };
 

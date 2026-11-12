@@ -151,7 +151,7 @@ const CompanyBrandingList = () => {
                   <td style={{ padding: '15px 16px', borderBottom: '1px solid #f1f5f9' }}>{company.slug || ''}</td>
                   <td style={{ padding: '15px 16px', borderBottom: '1px solid #f1f5f9' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      {[company.primary_color || '#E56717', company.left_panel_color || '#315C55', company.login_button_color || '#2563EB'].map((color, index) => (
+                      {[company.primary_color || '#E56717', company.left_panel_color || '#E56108', company.login_button_color || '#2563EB'].map((color, index) => (
                         <span key={index} title={color} style={{ width: 22, height: 22, borderRadius: 6, background: color, border: '1px solid #e5e7eb' }} />
                       ))}
                     </div>

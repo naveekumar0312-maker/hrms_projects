@@ -507,7 +507,7 @@ const Leave: React.FC = () => {
         }
 
         .leave-eyebrow {
-          color: #0757B8;
+          color: #E56108;
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 1.5px;
@@ -537,7 +537,7 @@ const Leave: React.FC = () => {
         }
 
         .leave-summary strong {
-          color: #0757B8;
+          color: #E56108;
           font-size: 26px;
         }
 
@@ -557,7 +557,7 @@ const Leave: React.FC = () => {
 
         .leave-alert.success {
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
         }
 
         .leave-alert.error {
@@ -622,7 +622,7 @@ const Leave: React.FC = () => {
         select:focus,
         input:focus,
         textarea:focus {
-          border-color: #0757B8;
+          border-color: #E56108;
           box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
         }
 
@@ -641,7 +641,7 @@ const Leave: React.FC = () => {
           border: none;
           border-radius: 10px;
           padding: 12px;
-          background: #0757B8;
+          background: #E56108;
           color: white;
           font-size: 13px;
           font-weight: 800;
@@ -717,7 +717,7 @@ const Leave: React.FC = () => {
 
         .status.approved {
           background: #eff6ff;
-          color: #0757B8;
+          color: #E56108;
         }
 
         .status.rejected {
@@ -765,7 +765,7 @@ const Leave: React.FC = () => {
           }
         }
         .leave-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-        .leave-actions button, .leave-modal button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; background: #fff; color: #0757B8; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .leave-actions button, .leave-modal button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; background: #fff; color: #E56108; font-size: 12px; font-weight: 700; cursor: pointer; }
         .leave-actions .delete-action { color: #b23b3b; }
         .leave-modal-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 23, 42, .48); display: flex; align-items: center; justify-content: center; padding: 18px; }
         .leave-modal { width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-sizing: border-box; padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 20px 70px rgba(0,0,0,.2); }
@@ -774,7 +774,7 @@ const Leave: React.FC = () => {
         .leave-modal label { display: block; margin: 12px 0 6px; font-size: 12px; font-weight: 700; color: #334155; }
         .leave-modal input, .leave-modal select, .leave-modal textarea { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
         .leave-modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-        .leave-modal-actions button:first-child { background: #0757B8; color: #fff; }
+        .leave-modal-actions button:first-child { background: #E56108; color: #fff; }
         .leave-modal button:disabled { opacity: .6; cursor: not-allowed; }
       
         /* Consistent professional typography and message fields */

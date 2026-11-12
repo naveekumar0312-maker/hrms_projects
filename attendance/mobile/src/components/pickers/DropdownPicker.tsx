@@ -103,7 +103,7 @@ export const DropdownPicker: React.FC<DropdownPickerProps> = ({
       >
         <View style={dropdownPickerStyles.triggerLeft}>
           <View style={dropdownPickerStyles.iconContainer}>
-            <Layers size={16} color="#0757B8" />
+            <Layers size={16} color="#E56108" />
           </View>
           {multiple && selectedValues.length > 0 && (
             <View style={dropdownPickerStyles.multiBadge}>
@@ -166,7 +166,7 @@ export const DropdownPicker: React.FC<DropdownPickerProps> = ({
             {/* Options List */}
             {loading ? (
               <View style={dropdownPickerStyles.emptyContainer}>
-                <ActivityIndicator size="small" color="#0757B8" />
+                <ActivityIndicator size="small" color="#E56108" />
                 <Text style={dropdownPickerStyles.emptyText}>Loading options...</Text>
               </View>
             ) : (

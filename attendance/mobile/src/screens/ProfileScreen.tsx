@@ -35,7 +35,7 @@ import { resolveMediaUrl } from '../utils/imageUtils';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const HEADER_HEIGHT = 220; // Perfect curved wave header height
 
-const BLUE_ICON_COLOR = '#0757B8'; // Royal Blue for menu icons
+const BLUE_ICON_COLOR = '#E56108'; // Royal Blue for menu icons
 const ARROW_COLOR = '#071F49'; // Deep Navy arrow matching corporate theme
 
 export default function ProfileScreen({ navigation }: any) {
@@ -223,7 +223,7 @@ export default function ProfileScreen({ navigation }: any) {
               onPress={handleUploadPhoto}
               activeOpacity={0.8}
             >
-              <Pencil size={13} color="#0757B8" strokeWidth={2.5} />
+              <Pencil size={13} color="#E56108" strokeWidth={2.5} />
             </TouchableOpacity>
           </View>
 
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#0056B3',
+    backgroundColor: '#E56108',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 12,
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontSize: 34,
-    color: '#0757B8',
+    color: '#E56108',
     fontFamily: 'Comfortaa_700Bold',
   },
   uploadingOverlay: {

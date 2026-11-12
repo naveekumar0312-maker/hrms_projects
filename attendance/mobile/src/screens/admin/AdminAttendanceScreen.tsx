@@ -225,7 +225,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
         </TouchableOpacity>
 
         <View style={styles.dateDisplay}>
-          <CalendarClock size={16} color="#0056B3" />
+          <CalendarClock size={16} color="#E56108" />
           <Text style={styles.dateText}>{selectedDate}</Text>
         </View>
 
@@ -279,7 +279,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
       {/* Summary KPI Badges */}
       <View style={styles.summaryRow}>
         <View style={styles.chip}>
-          <Text style={[styles.chipVal, { color: '#0056B3' }]}>{totalCount}</Text>
+          <Text style={[styles.chipVal, { color: '#E56108' }]}>{totalCount}</Text>
           <Text style={styles.chipLabel}>Total</Text>
         </View>
         <View style={styles.chip}>
@@ -298,7 +298,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0056B3" />
+          <ActivityIndicator size="large" color="#E56108" />
           <Text style={styles.loadingText}>Fetching attendance records...</Text>
         </View>
       ) : (
@@ -364,7 +364,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                     </View>
 
                     <View style={styles.timeCol}>
-                      <Text style={[styles.timeText, { color: '#0056B3', fontFamily: 'Comfortaa_700Bold' }]}>
+                      <Text style={[styles.timeText, { color: '#E56108', fontFamily: 'Comfortaa_700Bold' }]}>
                         Hrs: {item.working_hours || '00:00'}
                       </Text>
                     </View>
@@ -412,7 +412,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                             justifyContent: 'center',
                             paddingVertical: 7,
                             borderRadius: 6,
-                            backgroundColor: '#0056CF',
+                            backgroundColor: '#E56108',
                             gap: 4
                           }}
                           onPress={() => handleApproveRecord(item)}
@@ -458,8 +458,8 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                     onPress={() => setSelectedRecord(item)}
                     activeOpacity={0.7}
                   >
-                    <Eye size={13} color="#0284C7" />
-                    <Text style={[styles.actionBtnText, { color: '#0284C7' }]}>View</Text>
+                    <Eye size={13} color="#E56108" />
+                    <Text style={[styles.actionBtnText, { color: '#E56108' }]}>View</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -467,8 +467,8 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                     onPress={() => openEditModal(item)}
                     activeOpacity={0.7}
                   >
-                    <Pencil size={13} color="#0757B8" />
-                    <Text style={[styles.actionBtnText, { color: '#0757B8' }]}>Edit</Text>
+                    <Pencil size={13} color="#E56108" />
+                    <Text style={[styles.actionBtnText, { color: '#E56108' }]}>Edit</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -525,7 +525,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Status</Text>
-                  <Text style={[styles.detailValue, { fontFamily: 'Comfortaa_700Bold', color: '#0056B3' }]}>
+                  <Text style={[styles.detailValue, { fontFamily: 'Comfortaa_700Bold', color: '#E56108' }]}>
                     {selectedRecord.status}
                   </Text>
                 </View>
@@ -559,8 +559,8 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                       openEditModal(cur);
                     }}
                   >
-                    <Pencil size={15} color="#0757B8" />
-                    <Text style={[styles.actionBtnText, { color: '#0757B8', fontSize: 13 }]}>Edit Record</Text>
+                    <Pencil size={15} color="#E56108" />
+                    <Text style={[styles.actionBtnText, { color: '#E56108', fontSize: 13 }]}>Edit Record</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -790,8 +790,8 @@ const styles = StyleSheet.create({
     borderColor: '#ECEEF3',
   },
   filterPillActive: {
-    backgroundColor: '#0056B3',
-    borderColor: '#0056B3',
+    backgroundColor: '#E56108',
+    borderColor: '#E56108',
   },
   filterPillText: {
     fontSize: 11,
@@ -877,7 +877,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 13,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#0056B3',
+    color: '#E56108',
   },
   nameCol: {
     flex: 1,
@@ -1060,8 +1060,8 @@ const styles = StyleSheet.create({
     borderColor: '#ECEEF3',
   },
   statusSelectPillActive: {
-    backgroundColor: '#0056B3',
-    borderColor: '#0056B3',
+    backgroundColor: '#E56108',
+    borderColor: '#E56108',
   },
   statusSelectText: {
     fontSize: 12,
@@ -1072,7 +1072,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   submitBtn: {
-    backgroundColor: '#0056B3',
+    backgroundColor: '#E56108',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',

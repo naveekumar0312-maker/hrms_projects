@@ -16,7 +16,7 @@ export const dropdownPickerStyles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   requiredStar: {
-    color: '#0056B3',
+    color: '#E56108',
   },
   triggerButton: {
     flexDirection: 'row',
@@ -36,7 +36,7 @@ export const dropdownPickerStyles = StyleSheet.create({
     elevation: 1,
   },
   triggerButtonFocused: {
-    borderColor: '#0056B3',
+    borderColor: '#E56108',
     backgroundColor: '#F8F9FC',
   },
   triggerButtonError: {
@@ -85,7 +85,7 @@ export const dropdownPickerStyles = StyleSheet.create({
   multiBadgeText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#0056B3',
+    color: '#E56108',
   },
   errorText: {
     fontSize: 11,
@@ -202,7 +202,7 @@ export const dropdownPickerStyles = StyleSheet.create({
   },
   optionLabelSelected: {
     fontFamily: 'Comfortaa_700Bold',
-    color: '#0056B3',
+    color: '#E56108',
   },
   optionSub: {
     fontSize: 11,
@@ -214,7 +214,7 @@ export const dropdownPickerStyles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: '#0056B3',
+    backgroundColor: '#E56108',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -261,9 +261,9 @@ export const dropdownPickerStyles = StyleSheet.create({
     flex: 2,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#0056B3',
+    backgroundColor: '#E56108',
     alignItems: 'center',
-    shadowColor: '#0056B3',
+    shadowColor: '#E56108',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

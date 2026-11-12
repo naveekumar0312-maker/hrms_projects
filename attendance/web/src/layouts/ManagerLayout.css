@@ -7,7 +7,7 @@
 
 .mgr-sidebar {
   width: 260px;
-  background: #1e293b;
+  background: #1C1917;
   color: #f8fafc;
   display: flex;
   flex-direction: column;
@@ -70,7 +70,7 @@
 }
 
 .mgr-nav-link.active {
-  background: var(--primary, #315C55);
+  background: var(--primary, #E56108);
   color: #fff;
   font-weight: 600;
 }
@@ -152,7 +152,7 @@
   height: 38px;
   align-items: center;
   justify-content: center;
-  color: #1e293b;
+  color: #1C1917;
   cursor: pointer;
   margin-right: 12px;
 }

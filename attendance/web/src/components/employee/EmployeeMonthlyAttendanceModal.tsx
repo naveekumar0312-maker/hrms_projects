@@ -128,7 +128,7 @@ const getStatusInfo = (status?: string) => {
     case 'ON_TIME':
       return {
         label: 'Present',
-        color: '#0056B3',
+        color: '#E56108',
         background: 'rgba(0, 86, 179, 0.08)',
         border: '#BDE8CB',
         icon: CheckCircle2,
@@ -413,7 +413,7 @@ const EmployeeMonthlyAttendanceModal = ({
             align-items: center;
             justify-content: center;
             background: rgba(0, 86, 179, 0.08);
-            color: #0056B3;
+            color: #E56108;
             flex-shrink: 0;
           }
 
@@ -446,7 +446,7 @@ const EmployeeMonthlyAttendanceModal = ({
 
           .employee-calendar-close:hover {
             background: rgba(0, 86, 179, 0.08);
-            color: #0056B3;
+            color: #E56108;
           }
 
           .employee-calendar-body {
@@ -508,7 +508,7 @@ const EmployeeMonthlyAttendanceModal = ({
 
           .employee-calendar-nav button:hover {
             border-color: #86D49E;
-            color: #0056B3;
+            color: #E56108;
           }
 
           .employee-calendar-weekdays,
@@ -1046,7 +1046,7 @@ const EmployeeMonthlyAttendanceModal = ({
                             style={{
                               borderColor:
                                 selectedDay?.date === cell.date
-                                  ? '#0056B3'
+                                  ? '#E56108'
                                   : info.border,
                               boxShadow:
                                 selectedDay?.date === cell.date
@@ -1083,7 +1083,7 @@ const EmployeeMonthlyAttendanceModal = ({
 
                     <div className="employee-calendar-legend">
                       {[
-                        ['#0056B3', 'Present'],
+                        ['#E56108', 'Present'],
                         ['#DC2626', 'Absent'],
                         ['#B45309', 'Casual Leave'],
                         ['#7C3AED', 'Sick Leave'],
@@ -1231,7 +1231,7 @@ const EmployeeMonthlyAttendanceModal = ({
                         </div>
                         <div
                           className="employee-calendar-stat-value"
-                          style={{ color: '#0056B3' }}
+                          style={{ color: '#E56108' }}
                         >
                           {summary.present || 0}
                         </div>

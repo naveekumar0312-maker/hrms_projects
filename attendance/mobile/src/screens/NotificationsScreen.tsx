@@ -136,7 +136,7 @@ export default function NotificationsScreen({ navigation }: any) {
       disabled={updatingId !== null}
     >
       <View style={[styles.iconCircle, !item.is_read && styles.unreadIconCircle]}>
-        <Bell size={19} color={item.is_read ? '#666666' : '#0757B8'} />
+        <Bell size={19} color={item.is_read ? '#666666' : '#E56108'} />
       </View>
 
       <View style={styles.notificationContent}>
@@ -158,7 +158,7 @@ export default function NotificationsScreen({ navigation }: any) {
       </View>
 
       {updatingId === item.id && (
-        <ActivityIndicator size="small" color="#0757B8" />
+        <ActivityIndicator size="small" color="#E56108" />
       )}
     </TouchableOpacity>
   );
@@ -201,7 +201,7 @@ export default function NotificationsScreen({ navigation }: any) {
 
       {loading ? (
         <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color="#0757B8" />
+          <ActivityIndicator size="large" color="#E56108" />
           <Text style={styles.helperText}>Loading notifications...</Text>
         </View>
       ) : (
@@ -221,7 +221,7 @@ export default function NotificationsScreen({ navigation }: any) {
                 setRefreshing(true);
                 fetchNotifications(false);
               }}
-              colors={['#0757B8']}
+              colors={['#E56108']}
             />
           }
           ListEmptyComponent={
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   header: {
     minHeight: 112,
-    backgroundColor: '#0757B8',
+    backgroundColor: '#E56108',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 18,
@@ -333,7 +333,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#0757B8',
+    backgroundColor: '#E56108',
     marginLeft: 8,
   },
   notificationMessage: {

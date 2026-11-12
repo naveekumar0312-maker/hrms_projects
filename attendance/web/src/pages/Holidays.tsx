@@ -284,7 +284,7 @@ export default function Holidays() {
           <button
             type="button"
             onClick={startCreate}
-            style={{ ...buttonStyle, background: '#0056B3', color: '#FFFFFF' }}
+            style={{ ...buttonStyle, background: '#E56108', color: '#FFFFFF' }}
           >
             <Plus size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} />
             Add Holiday
@@ -304,7 +304,7 @@ export default function Holidays() {
       {success && (
         <div role="status" style={{
           padding: 12, marginBottom: 16, borderRadius: 8,
-          background: '#EFF6FF', color: '#0757B8',
+          background: '#EFF6FF', color: '#E56108',
         }}>
           {success}
         </div>
@@ -425,7 +425,7 @@ export default function Holidays() {
             <button
               type="submit"
               disabled={saving}
-              style={{ ...buttonStyle, background: '#0056B3', color: '#FFFFFF' }}
+              style={{ ...buttonStyle, background: '#E56108', color: '#FFFFFF' }}
             >
               {saving ? 'Saving...' : editingId !== null ? 'Save Changes' : 'Create Holiday'}
             </button>

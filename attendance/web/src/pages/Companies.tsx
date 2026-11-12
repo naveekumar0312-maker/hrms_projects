@@ -359,7 +359,7 @@ const Companies = () => {
                       <XCircle size={16} /> Deactivate
                     </button>
                   ) : (
-                    <button style={{ border: '1px solid #0056B3', background: '#eff6ff', color: '#014B9D' }} onClick={() => setActivateCompany(company)}>
+                    <button style={{ border: '1px solid #E56108', background: '#eff6ff', color: '#CC5200' }} onClick={() => setActivateCompany(company)}>
                       <CheckCircle size={16} /> Activate
                     </button>
                   )}

@@ -220,7 +220,7 @@ const HRAccounts = () => {
         </div>
       )}
       {notice && (
-        <div role="status" style={{ padding: 13, marginBottom: 16, borderRadius: 8, background: '#eff6ff', color: '#0757B8' }}>
+        <div role="status" style={{ padding: 13, marginBottom: 16, borderRadius: 8, background: '#eff6ff', color: '#E56108' }}>
           {notice}
         </div>
       )}
@@ -270,7 +270,7 @@ const HRAccounts = () => {
                     <button type="button" onClick={() => openEdit(account)} style={buttonStyle} title="Edit account">
                       <Pencil size={15} />
                     </button>
-                    <button type="button" onClick={() => void toggleStatus(account)} style={{ ...buttonStyle, color: account.is_active ? '#b91c1c' : '#0757B8' }}>
+                    <button type="button" onClick={() => void toggleStatus(account)} style={{ ...buttonStyle, color: account.is_active ? '#b91c1c' : '#E56108' }}>
                       {account.is_active ? 'Deactivate' : 'Reactivate'}
                     </button>
                   </div>

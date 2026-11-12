@@ -86,7 +86,7 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
-        return { bg: '#ECFDF5', text: '#014B9D', icon: CheckCircle };
+        return { bg: '#ECFDF5', text: '#CC5200', icon: CheckCircle };
       case 'REJECTED':
         return { bg: '#F5F5F5', text: '#000000', icon: XCircle };
       default:
@@ -120,7 +120,7 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0757B8" />
+          <ActivityIndicator size="large" color="#E56108" />
           <Text style={styles.loadingText}>Fetching requests...</Text>
         </View>
       ) : (
@@ -176,7 +176,7 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
                   <Text style={styles.appliedDate}>Applied: {item.applied_at?.split('T')[0] || 'Recent'}</Text>
                   <View style={styles.reviewPrompt}>
                     <Text style={styles.reviewPromptText}>View details</Text>
-                    <ChevronRight size={14} color="#0757B8" />
+                    <ChevronRight size={14} color="#E56108" />
                   </View>
                 </View>
               </TouchableOpacity>
@@ -522,7 +522,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   approveBtn: {
-    backgroundColor: '#0056B3',
+    backgroundColor: '#E56108',
   },
   rejectBtn: {
     backgroundColor: '#EF4444',

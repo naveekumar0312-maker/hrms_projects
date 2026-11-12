@@ -6,7 +6,7 @@
   --bg-page: #F8F9FC;
   --bg-card: rgba(255, 255, 255, 0.95);
   --bg-card-solid: #FFFFFF;
-  --bg-sidebar: #061B3A;
+  --bg-sidebar: #1C1917;
   --bg-sidebar-hover: rgba(229, 97, 8, 0.12);
   --bg-blur: blur(20px);
 
@@ -200,7 +200,7 @@ button {
 }
 
 .nav-link.active {
-  background: linear-gradient(135deg, #0056B3 0%, #014B9D 100%);
+  background: linear-gradient(135deg, #E56108 0%, #CC5200 100%);
   color: #FFFFFF;
   font-weight: 600;
   box-shadow: 0 4px 14px rgba(0, 86, 179, 0.35);

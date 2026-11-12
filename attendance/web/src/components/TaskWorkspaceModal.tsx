@@ -646,7 +646,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
               className="task-mode-tag"
               style={{
                 background: isDraft ? '#f1f5f9' : '#eff6ff',
-                color: isDraft ? '#64748b' : '#0757B8',
+                color: isDraft ? '#64748b' : '#E56108',
               }}
             >
               {isDraft ? 'Draft' : (taskId ? 'Published' : 'New Task')}

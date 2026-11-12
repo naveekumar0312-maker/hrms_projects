@@ -203,7 +203,7 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#0757B8" />
+          <ActivityIndicator size="large" color="#E56108" />
           <Text style={styles.loadingText}>Loading branches...</Text>
         </View>
       ) : (
@@ -218,7 +218,7 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
             <View style={styles.branchCard}>
               <View style={styles.cardTop}>
                 <View style={styles.branchIconBg}>
-                  <GitBranch size={20} color="#0757B8" />
+                  <GitBranch size={20} color="#E56108" />
                 </View>
                 <View style={styles.branchDetails}>
                   <Text style={styles.branchName}>{item.name}</Text>
@@ -242,7 +242,7 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
 
               <View style={styles.geofenceDetails}>
                 <View style={styles.geoCol}>
-                  <Compass size={14} color="#0284C7" />
+                  <Compass size={14} color="#E56108" />
                   <Text style={styles.geoCoord}>
                     {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
                   </Text>
@@ -259,8 +259,8 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
                   onPress={() => openViewModal(item)}
                   activeOpacity={0.7}
                 >
-                  <Eye size={13} color="#0284C7" />
-                  <Text style={[styles.actionBtnText, { color: '#0284C7' }]}>View</Text>
+                  <Eye size={13} color="#E56108" />
+                  <Text style={[styles.actionBtnText, { color: '#E56108' }]}>View</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -268,8 +268,8 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
                   onPress={() => openEditModal(item)}
                   activeOpacity={0.7}
                 >
-                  <Pencil size={13} color="#0757B8" />
-                  <Text style={[styles.actionBtnText, { color: '#0757B8' }]}>Edit</Text>
+                  <Pencil size={13} color="#E56108" />
+                  <Text style={[styles.actionBtnText, { color: '#E56108' }]}>Edit</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -412,7 +412,7 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
                 </View>
                 <View style={styles.viewRow}>
                   <Text style={styles.viewLabel}>Geofence Radius</Text>
-                  <Text style={[styles.viewValue, { color: '#0056B3', fontFamily: 'Comfortaa_700Bold' }]}>{selectedBranch.radius} Meters</Text>
+                  <Text style={[styles.viewValue, { color: '#E56108', fontFamily: 'Comfortaa_700Bold' }]}>{selectedBranch.radius} Meters</Text>
                 </View>
 
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, marginBottom: 10 }}>
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
   actionBtnText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#0056B3',
+    color: '#E56108',
   },
 
   safeArea: {
@@ -491,7 +491,7 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#0056B3',
+    backgroundColor: '#E56108',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   actionPillText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#0056B3',
+    color: '#E56108',
   },
   viewRow: {
     paddingVertical: 10,
@@ -629,7 +629,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   statusTextActive: {
-    color: '#014B9D',
+    color: '#CC5200',
   },
   statusTextInactive: {
     color: '#000000',
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
   geoCoord: {
     fontSize: 12,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#0284C7',
+    color: '#E56108',
   },
   radiusBadge: {
     backgroundColor: colors.surfaceSecondary,

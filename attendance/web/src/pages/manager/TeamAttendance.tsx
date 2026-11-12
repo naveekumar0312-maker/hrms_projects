@@ -192,7 +192,7 @@ const ManagerTeamAttendance: React.FC = () => {
             style={{
               padding: '3px 7px',
               borderRadius: '4px',
-              background: isApproved ? '#94a3b8' : '#0056CF',
+              background: isApproved ? '#94a3b8' : '#E56108',
               color: '#ffffff',
               fontSize: '11px',
               fontWeight: 600,

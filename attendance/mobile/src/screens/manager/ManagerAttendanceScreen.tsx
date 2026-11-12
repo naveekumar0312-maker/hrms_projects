@@ -171,7 +171,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
       case 'ON_LEAVE':
         return '#7C3AED';
       case 'HOLIDAY':
-        return '#0284C7';
+        return '#E56108';
       case 'WEEKLY_OFF':
         return '#4B5563';
       case 'HALF_DAY':
@@ -273,7 +273,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
         <View style={styles.punchBlock}>
           <View style={styles.punchHeader}>
             <View style={styles.punchTypeLeft}>
-              <LogIn size={15} color="#0056CF" />
+              <LogIn size={15} color="#E56108" />
               <Text style={styles.punchTypeTitle}>Check In</Text>
               <Text style={styles.punchTimeText}>
                 {formatAttendanceTime(item.check_in)}
@@ -685,7 +685,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
   },
   chipActive: {
-    backgroundColor: '#0056CF',
+    backgroundColor: '#E56108',
   },
   chipText: {
     fontSize: 12,
@@ -792,7 +792,7 @@ const styles = StyleSheet.create({
   punchTimeText: {
     fontSize: 12,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#0056CF',
+    color: '#E56108',
     marginLeft: 2,
   },
   lateTag: {
@@ -847,7 +847,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   miniApproveBtn: {
-    backgroundColor: '#0056CF',
+    backgroundColor: '#E56108',
   },
   miniBtnDisabled: {
     backgroundColor: '#94A3B8',

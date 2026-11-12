@@ -32,7 +32,7 @@
   width: 72px;
   height: 72px;
   background: rgba(0, 86, 179, 0.12);
-  color: #0056B3;
+  color: #E56108;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -56,7 +56,7 @@
 .personal-alarm-ring-time {
   font-size: 32px;
   font-weight: 800;
-  color: #0056B3;
+  color: #E56108;
   margin: 8px 0;
   letter-spacing: -0.02em;
 }
@@ -70,7 +70,7 @@
 .personal-alarm-stop-btn {
   width: 100%;
   padding: 14px;
-  background: #0056B3;
+  background: #E56108;
   color: #ffffff;
   font-size: 15px;
   font-weight: 700;
@@ -82,7 +82,7 @@
 }
 
 .personal-alarm-stop-btn:hover {
-  background: #014B9D;
+  background: #CC5200;
   transform: translateY(-1px);
 }
 
@@ -134,7 +134,7 @@
   flex: 0 0 44px;
   border-radius: 14px;
   background: #F8F9FC;
-  color: #0056B3;
+  color: #E56108;
   border: 1px solid rgba(0, 86, 179, 0.12);
   display: flex;
   align-items: center;
@@ -142,7 +142,7 @@
 }
 
 .alarm-active-bell {
-  color: #0056B3;
+  color: #E56108;
   animation: bellGentle 2s infinite ease-in-out;
 }
 
@@ -179,7 +179,7 @@
 
 .personal-alarm-status-pill.active {
   background: rgba(0, 86, 179, 0.12);
-  color: #014B9D;
+  color: #CC5200;
   border: 1px solid #bbf7d0;
 }
 
@@ -208,7 +208,7 @@
 }
 
 .personal-alarm-toggle.active {
-  background: #0056B3;
+  background: #E56108;
 }
 
 .personal-alarm-toggle-thumb {
@@ -262,7 +262,7 @@
 }
 
 .alarm-picker-container:focus-within {
-  border-color: #0056B3;
+  border-color: #E56108;
   background: #ffffff;
   box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.12);
 }
@@ -310,7 +310,7 @@
 }
 
 .alarm-ampm-btn.active {
-  background: #0056B3;
+  background: #E56108;
   color: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
@@ -328,14 +328,14 @@
 }
 
 .personal-alarm-saved-display strong {
-  color: #0056B3;
+  color: #E56108;
   font-size: 13px;
   font-weight: 700;
 }
 
 .personal-alarm-save-btn {
   padding: 9px 20px;
-  background: #0056B3;
+  background: #E56108;
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
@@ -347,7 +347,7 @@
 }
 
 .personal-alarm-save-btn:hover:not(:disabled) {
-  background: #014B9D;
+  background: #CC5200;
   box-shadow: 0 4px 10px rgba(22, 163, 74, 0.3);
   transform: translateY(-1px);
 }
@@ -359,7 +359,7 @@
 
 .personal-alarm-success-msg {
   font-size: 12px;
-  color: #014B9D;
+  color: #CC5200;
   background: rgba(0, 86, 179, 0.12);
   border: 1px solid #bbf7d0;
   padding: 6px 12px;
