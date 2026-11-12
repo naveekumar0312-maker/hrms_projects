@@ -29,11 +29,6 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
-    def get_permissions(self):
-        if self.action == 'me':
-            return [permissions.IsAuthenticated()]
-        return super().get_permissions()
-
     def get_queryset(self):
         queryset = super().get_queryset().select_related(
             'user', 'branch', 'branch__company', 'shift'
@@ -101,23 +96,10 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get', 'patch'], permission_classes=[permissions.IsAuthenticated])
     def me(self, request):
-        employee = getattr(request.user, 'employee_profile', None)
-        if not employee:
-            # Auto-create profile if missing for any authenticated user so they have a full profile & photo support
-            from .models import Branch, Employee
-            branch = Branch.objects.first()
-            role_name = getattr(request.user, 'role', None) or ('ADMIN' if request.user.is_superuser else 'EMPLOYEE')
-            desig = 'Super Administrator' if role_name == 'SUPER_ADMIN' else ('HR Manager' if role_name == 'HR' else ('Reporting Manager' if role_name == 'REPORTING_MANAGER' else ('Team Leader' if role_name == 'TEAM_LEADER' else 'Staff')))
-            dept = 'Administration' if role_name in ('SUPER_ADMIN', 'ADMIN') else ('Human Resources' if role_name == 'HR' else ('Management' if role_name == 'REPORTING_MANAGER' else 'General'))
-            employee = Employee.objects.create(
-                user=request.user,
-                employee_id=f"EMP-{role_name}-{request.user.id:03d}",
-                full_name=request.user.get_full_name() or request.user.username,
-                email=request.user.email or f"{request.user.username}@example.com",
-                branch=branch,
-                department=dept,
-                designation=desig
-            )
+        try:
+            employee = request.user.employee_profile
+        except AttributeError:
+            return Response({"detail": "User is not an employee."}, status=status.HTTP_400_BAD_REQUEST)
             
         if request.method == 'GET':
             serializer = self.get_serializer(employee)
@@ -220,17 +202,12 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     leave_by_date[current] = leave
                 current += timedelta(days=1)
 
-        # Active holidays for this employee's company/month
+        # Active holidays for this employee/month
         holiday_records = Holiday.objects.filter(
             date__gte=month_start,
             date__lte=month_end,
             is_active=True
         )
-        emp_company = employee.branch.company if employee.branch else None
-        if emp_company:
-            holiday_records = holiday_records.filter(company=emp_company)
-        else:
-            holiday_records = holiday_records.none()
 
         holiday_by_date = {
             holiday.date: holiday
@@ -307,68 +284,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             }
 
             # -------------------------------------------------
-            # 1. ACTUAL ATTENDANCE RECORD HAS FIRST PRIORITY
-            # (Works on Sundays/Holidays must take priority over Weekly Off or Holiday)
-            # -------------------------------------------------
-            if attendance and attendance.check_in:
-                if attendance.check_in:
-                    item["check_in"] = timezone.localtime(
-                        attendance.check_in
-                    ).isoformat()
-
-                if attendance.check_out:
-                    item["check_out"] = timezone.localtime(
-                        attendance.check_out
-                    ).isoformat()
-
-                item["late_minutes"] = attendance.late_minutes or 0
-                item["early_minutes"] = attendance.early_minutes or 0
-                item["overtime_minutes"] = attendance.overtime_minutes or 0
-                item["working_minutes"] = attendance.working_minutes or 0
-
-                # Current day checked in but not checked out -> WORKING
-                if (
-                    current_date == today
-                    and attendance.check_in
-                    and not attendance.check_out
-                ):
-                    item["status"] = "WORKING"
-                    summary["working"] += 1
-
-                # Completed full attendance -> PRESENT
-                elif attendance.check_in and attendance.check_out:
-                    item["status"] = "PRESENT"
-                    summary["present"] += 1
-
-                # Checked in without checkout on past date -> PRESENT
-                else:
-                    item["status"] = "PRESENT"
-                    summary["present"] += 1
-
-                # Late statistics
-                if attendance.late_minutes and attendance.late_minutes > 0:
-                    summary["late_days"] += 1
-                    summary["total_late_minutes"] += attendance.late_minutes
-
-                # Early checkout statistics
-                if attendance.early_minutes and attendance.early_minutes > 0:
-                    summary["early_checkout_days"] += 1
-                    summary["total_early_minutes"] += attendance.early_minutes
-
-                # Overtime statistics
-                if attendance.overtime_minutes and attendance.overtime_minutes > 0:
-                    summary["overtime_days"] += 1
-                    summary["total_overtime_minutes"] += attendance.overtime_minutes
-
-                summary["total_working_minutes"] += (
-                    attendance.working_minutes or 0
-                )
-
-                days.append(item)
-                continue
-
-            # -------------------------------------------------
-            # 2. APPROVED LEAVE
+            # 1. APPROVED LEAVE HAS PRIORITY
             # -------------------------------------------------
             if leave:
                 leave_type = leave.leave_type
@@ -408,11 +324,28 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     item["status"] = "OTHER_LEAVE"
                     summary["other_leave"] += 1
 
+                # Keep attendance details if attendance exists.
+                if attendance:
+                    if attendance.check_in:
+                        item["check_in"] = timezone.localtime(
+                            attendance.check_in
+                        ).isoformat()
+
+                    if attendance.check_out:
+                        item["check_out"] = timezone.localtime(
+                            attendance.check_out
+                        ).isoformat()
+
+                    item["late_minutes"] = attendance.late_minutes or 0
+                    item["early_minutes"] = attendance.early_minutes or 0
+                    item["overtime_minutes"] = attendance.overtime_minutes or 0
+                    item["working_minutes"] = attendance.working_minutes or 0
+
                 days.append(item)
                 continue
 
             # -------------------------------------------------
-            # 3. HOLIDAY
+            # 2. HOLIDAY
             # -------------------------------------------------
             holiday = holiday_by_date.get(current_date)
 
@@ -426,7 +359,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 continue
 
             # -------------------------------------------------
-            # 4. FUTURE DATE
+            # 3. FUTURE DATE
             # -------------------------------------------------
             if current_date > today:
                 item["status"] = "UPCOMING"
@@ -435,7 +368,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 continue
 
             # -------------------------------------------------
-            # 5. WEEKEND (Sunday)
+            # 3. WEEKEND
             # -------------------------------------------------
             if current_date.weekday() == 6:
                 item["status"] = "WEEKEND"
@@ -443,7 +376,67 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 continue
 
             # -------------------------------------------------
-            # 6. NO ATTENDANCE = ABSENT
+            # 4. ATTENDANCE EXISTS
+            # -------------------------------------------------
+            if attendance:
+                if attendance.check_in:
+                    item["check_in"] = timezone.localtime(
+                        attendance.check_in
+                    ).isoformat()
+
+                if attendance.check_out:
+                    item["check_out"] = timezone.localtime(
+                        attendance.check_out
+                    ).isoformat()
+
+                item["late_minutes"] = attendance.late_minutes or 0
+                item["early_minutes"] = attendance.early_minutes or 0
+                item["overtime_minutes"] = attendance.overtime_minutes or 0
+                item["working_minutes"] = attendance.working_minutes or 0
+
+                # Current day checked in but not checked out
+                if (
+                    current_date == today
+                    and attendance.check_in
+                    and not attendance.check_out
+                ):
+                    item["status"] = "WORKING"
+                    summary["working"] += 1
+
+                # Completed full attendance
+                elif attendance.check_in and attendance.check_out:
+                    item["status"] = "PRESENT"
+                    summary["present"] += 1
+
+                # Previous day incomplete attendance = ABSENT
+                else:
+                    item["status"] = "ABSENT"
+                    summary["absent"] += 1
+
+                # Late statistics
+                if attendance.late_minutes and attendance.late_minutes > 0:
+                    summary["late_days"] += 1
+                    summary["total_late_minutes"] += attendance.late_minutes
+
+                # Early checkout statistics
+                if attendance.early_minutes and attendance.early_minutes > 0:
+                    summary["early_checkout_days"] += 1
+                    summary["total_early_minutes"] += attendance.early_minutes
+
+                # Overtime statistics
+                if attendance.overtime_minutes and attendance.overtime_minutes > 0:
+                    summary["overtime_days"] += 1
+                    summary["total_overtime_minutes"] += attendance.overtime_minutes
+
+                summary["total_working_minutes"] += (
+                    attendance.working_minutes or 0
+                )
+
+                days.append(item)
+                continue
+
+            # -------------------------------------------------
+            # 5. NO ATTENDANCE = ABSENT
             # -------------------------------------------------
             item["status"] = "ABSENT"
             summary["absent"] += 1
