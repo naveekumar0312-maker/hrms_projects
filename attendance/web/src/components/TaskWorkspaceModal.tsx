@@ -15,6 +15,7 @@ import {
   Square,
   Plus,
   Loader2,
+  Building2,
 } from 'lucide-react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
@@ -767,40 +768,31 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
 
                 {/* ASSIGNED EMPLOYEES SELECTION WITH COMPANY FILTER */}
                 <div className="task-field-group">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                     <label className="task-field-label" style={{ margin: 0 }}>
                       Assign Employees <span className="task-required">*</span>
                     </label>
                     {/* Show Company filter when there are multiple companies available */}
                     {Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).length > 1 && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Company:</span>
-                        <select
-                          className="form-control"
-                          style={{
-                            height: '28px',
-                            padding: '2px 8px',
-                            fontSize: '12px',
-                            borderRadius: '6px',
-                            border: '1px solid #cbd5e1',
-                            background: '#f8fafc',
-                            cursor: 'pointer',
-                            color: '#0f172a',
-                            fontWeight: 500,
-                          }}
+                      <div style={{ width: '260px' }}>
+                        <CustomSelect
                           value={selectedCompanyFilter}
-                          onChange={(e) => setSelectedCompanyFilter(e.target.value)}
-                        >
-                          <option value="ALL">All Companies ({teamMembers.length})</option>
-                          {Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).map((compName) => {
-                            const count = teamMembers.filter((m) => m.company_name === compName).length;
-                            return (
-                              <option key={compName} value={compName}>
-                                {compName} ({count})
-                              </option>
-                            );
-                          })}
-                        </select>
+                          onChange={(val) => setSelectedCompanyFilter(val)}
+                          placeholder="Filter by Company"
+                          icon={<Building2 size={15} color="#0284c7" />}
+                          alignRight={true}
+                          direction="down"
+                          options={[
+                            { value: 'ALL', label: `All Companies (${teamMembers.length})` },
+                            ...Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).map((compName) => {
+                              const count = teamMembers.filter((m) => m.company_name === compName).length;
+                              return {
+                                value: compName,
+                                label: `${compName} (${count})`,
+                              };
+                            })
+                          ]}
+                        />
                       </div>
                     )}
                   </div>
