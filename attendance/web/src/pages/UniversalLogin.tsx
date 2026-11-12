@@ -146,9 +146,13 @@ const UniversalLogin = ({ loginMode = 'general' }: UniversalLoginProps) => {
           <form className="login-split-form" onSubmit={handleLogin}>
             {/* Username Input with underline */}
             <div className="login-split-field-row">
+              <label htmlFor="identifier" className="sr-only" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>
+                Username
+              </label>
               <UserIcon className="login-split-icon" size={18} strokeWidth={2} />
               <input
                 id="identifier"
+                name="username"
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
@@ -163,9 +167,13 @@ const UniversalLogin = ({ loginMode = 'general' }: UniversalLoginProps) => {
 
             {/* Password Input with underline */}
             <div className="login-split-field-row">
+              <label htmlFor="password" className="sr-only" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}>
+                Password
+              </label>
               <Lock className="login-split-icon" size={18} strokeWidth={2} />
               <input
                 id="password"
+                name="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

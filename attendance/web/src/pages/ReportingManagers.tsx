@@ -531,7 +531,7 @@ const ReportingManagers: React.FC = () => {
 
                 {/* STATUS */}
                 <div className="rm-form-group">
-                  <label htmlFor="add-manager-status">Status</label>
+                  <label>Status</label>
                   <CustomSelect
                     value={formData.status}
                     onChange={(val) => setFormData({ ...formData, status: val })}
@@ -750,7 +750,7 @@ const ReportingManagers: React.FC = () => {
 
                 {/* STATUS */}
                 <div className="rm-form-group">
-                  <label htmlFor="edit-manager-status">Status</label>
+                  <label>Status</label>
                   <CustomSelect
                     value={formData.status}
                     onChange={(val) => setFormData({ ...formData, status: val })}

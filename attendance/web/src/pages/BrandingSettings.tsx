@@ -368,7 +368,7 @@ const BrandingSettings = () => {
       )}
 
       <section className="branding-panel">
-        <label className="branding-label" htmlFor="branding-company">
+        <label className="branding-label">
           Select company
         </label>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
