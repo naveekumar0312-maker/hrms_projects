@@ -494,8 +494,8 @@ const Leave: React.FC = () => {
         .leave-page {
           min-height: 100%;
           padding: 28px;
-          background: #f5faf7;
-          color: #17352b;
+          background: #f8fafc;
+          color: #0f172a;
         }
 
         .leave-header {
@@ -507,7 +507,7 @@ const Leave: React.FC = () => {
         }
 
         .leave-eyebrow {
-          color: #438b68;
+          color: #0757B8;
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 1.5px;
@@ -522,7 +522,7 @@ const Leave: React.FC = () => {
 
         .leave-header p {
           margin: 7px 0 0;
-          color: #71877d;
+          color: #64748b;
           font-size: 14px;
         }
 
@@ -530,19 +530,19 @@ const Leave: React.FC = () => {
           min-width: 150px;
           padding: 17px 20px;
           background: white;
-          border: 1px solid #dcebe2;
+          border: 1px solid #e2e8f0;
           border-radius: 16px;
           display: flex;
           flex-direction: column;
         }
 
         .leave-summary strong {
-          color: #287a52;
+          color: #0757B8;
           font-size: 26px;
         }
 
         .leave-summary span {
-          color: #789087;
+          color: #64748b;
           font-size: 12px;
           font-weight: 600;
         }
@@ -556,8 +556,8 @@ const Leave: React.FC = () => {
         }
 
         .leave-alert.success {
-          background: #e9f8ef;
-          color: #287a52;
+          background: #eff6ff;
+          color: #0757B8;
         }
 
         .leave-alert.error {
@@ -573,10 +573,10 @@ const Leave: React.FC = () => {
 
         .leave-card {
           background: white;
-          border: 1px solid #dcebe2;
+          border: 1px solid #e2e8f0;
           border-radius: 18px;
           padding: 22px;
-          box-shadow: 0 8px 28px rgba(37, 88, 63, 0.06);
+          box-shadow: 0 8px 28px rgba(7, 87, 184, 0.05);
         }
 
         .card-heading {
@@ -591,14 +591,14 @@ const Leave: React.FC = () => {
 
         .card-heading p {
           margin: 5px 0 0;
-          color: #82958c;
+          color: #64748b;
           font-size: 12px;
         }
 
         form label {
           display: block;
           margin: 0 0 7px;
-          color: #486256;
+          color: #334155;
           font-size: 12px;
           font-weight: 700;
         }
@@ -608,10 +608,10 @@ const Leave: React.FC = () => {
         textarea {
           width: 100%;
           box-sizing: border-box;
-          border: 1px solid #d8e7de;
+          border: 1px solid #cbd5e1;
           border-radius: 10px;
-          background: #fbfdfc;
-          color: #294b3d;
+          background: #ffffff;
+          color: #0f172a;
           padding: 11px 12px;
           font: inherit;
           font-size: 13px;
@@ -622,8 +622,8 @@ const Leave: React.FC = () => {
         select:focus,
         input:focus,
         textarea:focus {
-          border-color: #6aae87;
-          box-shadow: 0 0 0 3px rgba(106, 174, 135, 0.12);
+          border-color: #0757B8;
+          box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
         }
 
         textarea {
@@ -641,7 +641,7 @@ const Leave: React.FC = () => {
           border: none;
           border-radius: 10px;
           padding: 12px;
-          background: #287a52;
+          background: #0757B8;
           color: white;
           font-size: 13px;
           font-weight: 800;
@@ -665,9 +665,9 @@ const Leave: React.FC = () => {
           justify-content: space-between;
           gap: 15px;
           padding: 15px;
-          border: 1px solid #e5eee9;
+          border: 1px solid #e2e8f0;
           border-radius: 12px;
-          background: #fbfdfc;
+          background: #ffffff;
         }
 
         .history-main {
@@ -676,7 +676,7 @@ const Leave: React.FC = () => {
 
         .history-main strong {
           display: block;
-          color: #28503f;
+          color: #0f172a;
           font-size: 13px;
           text-transform: capitalize;
         }
@@ -684,13 +684,13 @@ const Leave: React.FC = () => {
         .history-main span {
           display: block;
           margin-top: 4px;
-          color: #789087;
+          color: #64748b;
           font-size: 11px;
         }
 
         .history-main p {
           margin: 8px 0 0;
-          color: #536c61;
+          color: #475569;
           font-size: 12px;
           line-height: 1.45;
         }
@@ -716,8 +716,8 @@ const Leave: React.FC = () => {
         }
 
         .status.approved {
-          background: #e8f7ee;
-          color: #287a52;
+          background: #eff6ff;
+          color: #0757B8;
         }
 
         .status.rejected {
@@ -730,7 +730,7 @@ const Leave: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #82958c;
+          color: #64748b;
           font-size: 13px;
         }
 
@@ -765,16 +765,16 @@ const Leave: React.FC = () => {
           }
         }
         .leave-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-        .leave-actions button, .leave-modal button { border: 1px solid #d5e5db; border-radius: 8px; padding: 7px 10px; background: #fff; color: #287a52; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .leave-actions button, .leave-modal button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; background: #fff; color: #0757B8; font-size: 12px; font-weight: 700; cursor: pointer; }
         .leave-actions .delete-action { color: #b23b3b; }
-        .leave-modal-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 35, 25, .48); display: flex; align-items: center; justify-content: center; padding: 18px; }
+        .leave-modal-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 23, 42, .48); display: flex; align-items: center; justify-content: center; padding: 18px; }
         .leave-modal { width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-sizing: border-box; padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 20px 70px rgba(0,0,0,.2); }
-        .leave-modal h2 { margin: 0 0 18px; font-size: 20px; color: #17352b; }
-        .leave-modal p { font-size: 13px; line-height: 1.6; color: #536c61; overflow-wrap: anywhere; }
-        .leave-modal label { display: block; margin: 12px 0 6px; font-size: 12px; font-weight: 700; color: #486256; }
+        .leave-modal h2 { margin: 0 0 18px; font-size: 20px; color: #0f172a; }
+        .leave-modal p { font-size: 13px; line-height: 1.6; color: #475569; overflow-wrap: anywhere; }
+        .leave-modal label { display: block; margin: 12px 0 6px; font-size: 12px; font-weight: 700; color: #334155; }
         .leave-modal input, .leave-modal select, .leave-modal textarea { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
         .leave-modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-        .leave-modal-actions button:first-child { background: #287a52; color: #fff; }
+        .leave-modal-actions button:first-child { background: #0757B8; color: #fff; }
         .leave-modal button:disabled { opacity: .6; cursor: not-allowed; }
       
         /* Consistent professional typography and message fields */
@@ -792,9 +792,9 @@ const Leave: React.FC = () => {
           letter-spacing: 0.1px;
           min-height: 112px;
           padding: 14px 15px;
-          color: #294b3d;
-          background: #fcfdfc;
-          border: 1px solid #d8e7de;
+          color: #0f172a;
+          background: #ffffff;
+          border: 1px solid #cbd5e1;
           border-radius: 12px;
           resize: vertical;
           transition: border-color .2s ease, box-shadow .2s ease;

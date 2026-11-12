@@ -414,8 +414,8 @@ const Permission: React.FC = () => {
         .permission-page {
           padding: 24px;
           min-height: 100%;
-          background: #f7fbf8;
-          color: #18352a;
+          background: #f8fafc;
+          color: #0f172a;
         }
 
         .permission-header {
@@ -426,12 +426,12 @@ const Permission: React.FC = () => {
           margin: 0;
           font-size: 28px;
           font-weight: 700;
-          color: #173c2c;
+          color: #0f172a;
         }
 
         .permission-subtitle {
           margin: 6px 0 0;
-          color: #6b7f75;
+          color: #64748b;
           font-size: 14px;
         }
 
@@ -444,17 +444,17 @@ const Permission: React.FC = () => {
 
         .permission-card {
           background: #ffffff;
-          border: 1px solid #e2eee7;
+          border: 1px solid #e2e8f0;
           border-radius: 18px;
           padding: 22px;
-          box-shadow: 0 8px 24px rgba(35, 92, 65, 0.06);
+          box-shadow: 0 8px 24px rgba(7, 87, 184, 0.05);
         }
 
         .permission-card-title {
           margin: 0 0 18px;
           font-size: 18px;
           font-weight: 700;
-          color: #173c2c;
+          color: #0f172a;
         }
 
         .permission-field {
@@ -466,18 +466,18 @@ const Permission: React.FC = () => {
           margin-bottom: 7px;
           font-size: 13px;
           font-weight: 600;
-          color: #355347;
+          color: #334155;
         }
 
         .permission-input,
         .permission-textarea {
           width: 100%;
           box-sizing: border-box;
-          border: 1px solid #d6e5dc;
+          border: 1px solid #cbd5e1;
           border-radius: 11px;
           padding: 11px 13px;
-          background: #fbfdfc;
-          color: #18352a;
+          background: #ffffff;
+          color: #0f172a;
           font-size: 14px;
           outline: none;
         }
@@ -546,8 +546,8 @@ const Permission: React.FC = () => {
 
         .permission-input:focus,
         .permission-textarea:focus {
-          border-color: #36a269;
-          box-shadow: 0 0 0 3px rgba(54, 162, 105, 0.10);
+          border-color: #0757B8;
+          box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
         }
 
         .permission-textarea {
@@ -624,19 +624,19 @@ const Permission: React.FC = () => {
         }
 
         .duration-option {
-          border: 1px solid #d6e5dc;
+          border: 1px solid #cbd5e1;
           background: #ffffff;
           border-radius: 11px;
           padding: 11px;
           cursor: pointer;
           font-weight: 600;
-          color: #426052;
+          color: #334155;
         }
 
         .duration-option.active {
-          background: #eaf8f0;
-          border-color: #36a269;
-          color: #167344;
+          background: #eff6ff;
+          border-color: #0757B8;
+          color: #0757B8;
         }
 
         .permission-submit {
@@ -644,7 +644,7 @@ const Permission: React.FC = () => {
           border: 0;
           border-radius: 11px;
           padding: 12px 16px;
-          background: #24945b;
+          background: #0757B8;
           color: white;
           font-size: 14px;
           font-weight: 700;
@@ -652,7 +652,7 @@ const Permission: React.FC = () => {
         }
 
         .permission-submit:hover {
-          background: #1d7d4d;
+          background: #004494;
         }
 
         .permission-submit:disabled {
@@ -664,26 +664,26 @@ const Permission: React.FC = () => {
           margin-bottom: 20px;
           padding: 16px;
           border-radius: 14px;
-          background: #eef9f2;
-          border: 1px solid #d8efdf;
+          background: #eff6ff;
+          border: 1px solid #bfdbfe;
         }
 
         .usage-label {
           font-size: 12px;
-          color: #557365;
+          color: #475569;
           margin-bottom: 6px;
         }
 
         .usage-value {
           font-size: 24px;
           font-weight: 700;
-          color: #167344;
+          color: #0757B8;
         }
 
         .usage-note {
           margin-top: 4px;
           font-size: 12px;
-          color: #668072;
+          color: #64748b;
         }
 
         .message {
@@ -700,9 +700,9 @@ const Permission: React.FC = () => {
         }
 
         .message.success {
-          background: #eefaf3;
-          color: #167344;
-          border: 1px solid #d4efdd;
+          background: #eff6ff;
+          color: #0757B8;
+          border: 1px solid #bfdbfe;
         }
 
         .permission-table-wrap {
@@ -718,18 +718,18 @@ const Permission: React.FC = () => {
         .permission-table th {
           text-align: left;
           padding: 12px;
-          background: #f5faf7;
-          color: #557365;
+          background: #f1f5f9;
+          color: #475569;
           font-size: 12px;
           font-weight: 700;
-          border-bottom: 1px solid #e3eee7;
+          border-bottom: 1px solid #e2e8f0;
         }
 
         .permission-table td {
           padding: 14px 12px;
-          border-bottom: 1px solid #edf2ef;
+          border-bottom: 1px solid #f1f5f9;
           font-size: 13px;
-          color: #355347;
+          color: #334155;
           vertical-align: top;
         }
 
@@ -747,8 +747,8 @@ const Permission: React.FC = () => {
         }
 
         .status-badge.approved {
-          background: #eaf8f0;
-          color: #167344;
+          background: #eff6ff;
+          color: #0757B8;
         }
 
         .status-badge.rejected {
@@ -759,7 +759,7 @@ const Permission: React.FC = () => {
         .empty-state {
           padding: 35px 20px;
           text-align: center;
-          color: #789084;
+          color: #64748b;
           font-size: 14px;
         }
 
@@ -779,23 +779,23 @@ const Permission: React.FC = () => {
           }
         }
         .permission-row-actions { display: flex; flex-wrap: wrap; gap: 6px; min-width: 150px; }
-        .permission-row-actions button, .permission-modal button { border: 1px solid #d5e5db; border-radius: 8px; padding: 7px 10px; background: #fff; color: #287a52; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .permission-row-actions button, .permission-modal button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; background: #fff; color: #0757B8; font-size: 12px; font-weight: 700; cursor: pointer; }
         .permission-row-actions .permission-delete-action { color: #b23b3b; }
-        .permission-modal-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(15,35,25,.48); display: flex; align-items: center; justify-content: center; padding: 18px; }
+        .permission-modal-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(15,23,42,.48); display: flex; align-items: center; justify-content: center; padding: 18px; }
         .permission-modal { width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto; box-sizing: border-box; padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 20px 70px rgba(0,0,0,.2); }
-        .permission-modal h2 { margin: 0 0 18px; font-size: 20px; color: #17352b; }
-        .permission-modal p { font-size: 13px; line-height: 1.6; color: #536c61; overflow-wrap: anywhere; }
-        .permission-modal label { display: block; margin: 12px 0 6px; font-size: 12px; font-weight: 700; color: #486256; }
+        .permission-modal h2 { margin: 0 0 18px; font-size: 20px; color: #0f172a; }
+        .permission-modal p { font-size: 13px; line-height: 1.6; color: #475569; overflow-wrap: anywhere; }
+        .permission-modal label { display: block; margin: 12px 0 6px; font-size: 12px; font-weight: 700; color: #334155; }
         .permission-modal input, .permission-modal textarea { width: 100%; box-sizing: border-box; margin-bottom: 10px; }
         .permission-modal-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-        .permission-modal-actions button:first-child { background: #287a52; color: #fff; }
+        .permission-modal-actions button:first-child { background: #0757B8; color: #fff; }
         .permission-modal button:disabled { opacity: .6; cursor: not-allowed; }
         .time-picker-field > label {
           display: block;
           margin-bottom: 6px;
           font-size: 12px;
           font-weight: 700;
-          color: #486256;
+          color: #334155;
         }
         .time-picker-controls {
           display: grid;
@@ -808,10 +808,10 @@ const Permission: React.FC = () => {
           width: 100%;
           min-height: 42px;
           padding: 9px 8px;
-          border: 1px solid #d7e4dc;
+          border: 1px solid #cbd5e1;
           border-radius: 8px;
           background: #fff;
-          color: #234637;
+          color: #0f172a;
           font-size: 14px;
         }
       
@@ -830,9 +830,9 @@ const Permission: React.FC = () => {
           letter-spacing: 0.1px;
           min-height: 112px;
           padding: 14px 15px;
-          color: #18352a;
+          color: #0f172a;
           background: #fcfdfc;
-          border: 1px solid #d6e5dc;
+          border: 1px solid #cbd5e1;
           border-radius: 12px;
           resize: vertical;
           transition: border-color .2s ease, box-shadow .2s ease;

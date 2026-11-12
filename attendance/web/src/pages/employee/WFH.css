@@ -22,7 +22,7 @@
   flex-shrink: 0;
   padding: 13px;
   border-radius: 12px;
-  background: #ecfdf5;
+  background: #eff6ff;
   color: #014B9D;
 }
 
@@ -89,7 +89,7 @@
 .wfh-field textarea:focus {
   outline: none;
   border-color: #014B9D;
-  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12);
+  box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
 }
 
 .wfh-message {
@@ -107,7 +107,7 @@
 }
 
 .wfh-success {
-  color: #166534;
+  color: #0757B8;
   background: #F8F9FC;
 }
 
@@ -133,7 +133,7 @@
 }
 
 .wfh-submit:not(:disabled):hover {
-  background: #065f46;
+  background: #004494;
 }
 
 .wfh-card-head {
@@ -295,7 +295,7 @@
 .wfh-page {
   max-width: 1240px;
   padding: 30px 32px;
-  color: #17251e;
+  color: #0f172a;
 }
 
 .wfh-header {
@@ -308,14 +308,14 @@
   height: 56px;
   box-sizing: border-box;
   padding: 0;
-  border: 1px solid #ccefe0;
+  border: 1px solid #bfdbfe;
   border-radius: 15px;
-  background: linear-gradient(145deg, #ecfdf5, #d9f7e9);
-  box-shadow: 0 3px 10px rgba(4, 120, 87, 0.06);
+  background: linear-gradient(145deg, #eff6ff, #d9f7e9);
+  box-shadow: 0 3px 10px rgba(7, 87, 184, 0.06);
 }
 
 .wfh-header h1 {
-  color: #17251e;
+  color: #0f172a;
   font-size: 28px !important;
   font-weight: 750 !important;
   letter-spacing: -0.7px;
@@ -323,7 +323,7 @@
 
 .wfh-header p {
   margin-top: 7px !important;
-  color: #718078 !important;
+  color: #64748b !important;
   font-size: 14px;
 }
 
@@ -334,21 +334,21 @@
 
 .wfh-card {
   padding: 26px;
-  border: 1px solid #e2eae5;
+  border: 1px solid #e2e8f0;
   border-radius: 17px;
   background: #ffffff;
-  box-shadow: 0 5px 20px rgba(24, 45, 33, 0.045);
+  box-shadow: 0 5px 20px rgba(7, 87, 184, 0.045);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .wfh-card:hover {
-  border-color: #d3e6da;
-  box-shadow: 0 8px 26px rgba(24, 45, 33, 0.065);
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 26px rgba(7, 87, 184, 0.065);
 }
 
 .wfh-card h2 {
   margin-bottom: 22px !important;
-  color: #1b3024;
+  color: #0f172a;
   font-size: 20px !important;
   font-weight: 700;
   letter-spacing: -0.35px;
@@ -360,7 +360,7 @@
 
 .wfh-field label {
   margin-bottom: 9px !important;
-  color: #34463a;
+  color: #334155;
   font-size: 13px !important;
   font-weight: 650 !important;
 }
@@ -368,42 +368,42 @@
 .wfh-field textarea {
   min-height: 132px;
   padding: 14px !important;
-  border: 1px solid #d6e0d9 !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 11px !important;
-  background: #fcfdfc;
-  color: #25382c;
+  background: #ffffff;
+  color: #0f172a;
   font-size: 14px;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .wfh-field textarea::placeholder {
-  color: #9aa79e;
+  color: #94a3b8;
 }
 
 .wfh-field textarea:focus {
-  border-color: #07845b !important;
+  border-color: #0757B8 !important;
   background: #ffffff;
-  box-shadow: 0 0 0 4px rgba(7, 132, 91, 0.1) !important;
+  box-shadow: 0 0 0 4px rgba(7, 87, 184, 0.1) !important;
 }
 
 .wfh-submit {
   min-height: 48px;
   border-radius: 10px;
-  background: linear-gradient(100deg, #07845b, #079467);
-  box-shadow: 0 4px 10px rgba(7, 132, 91, 0.13);
+  background: #0757B8;
+  box-shadow: 0 4px 10px rgba(7, 87, 184, 0.13);
   font-size: 14px;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
 }
 
 .wfh-submit:not(:disabled):hover {
-  background: linear-gradient(100deg, #066b49, #07845b);
-  box-shadow: 0 6px 15px rgba(7, 132, 91, 0.2);
+  background: #004494;
+  box-shadow: 0 6px 15px rgba(7, 87, 184, 0.2);
   transform: translateY(-1px);
 }
 
 .wfh-submit:focus-visible,
 .wfh-refresh:focus-visible {
-  outline: 3px solid rgba(7, 132, 91, 0.22);
+  outline: 3px solid rgba(7, 87, 184, 0.22);
   outline-offset: 3px;
 }
 
@@ -418,25 +418,25 @@
 
 .wfh-refresh {
   padding: 9px 14px !important;
-  border-color: #d6e3da !important;
+  border-color: #cbd5e1 !important;
   border-radius: 9px !important;
-  color: #08764f;
+  color: #0757B8;
   font-size: 13px;
   font-weight: 600;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .wfh-refresh:hover {
-  background: #ecfdf5 !important;
-  border-color: #9ed9ba !important;
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
 }
 
 .wfh-empty {
   padding: 42px 16px;
-  border: 1px dashed #dce8df;
+  border: 1px dashed #e2e8f0;
   border-radius: 12px;
-  background: #fbfdfb;
-  color: #718078;
+  background: #ffffff;
+  color: #64748b;
 }
 
 .wfh-request-list {
@@ -445,15 +445,15 @@
 
 .wfh-request {
   padding: 17px;
-  border-color: #e4ebe6;
+  border-color: #e2e8f0;
   border-radius: 12px;
   background: #ffffff;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .wfh-request:hover {
-  border-color: #cfe5d6;
-  background: #fcfefc;
+  border-color: #bfdbfe;
+  background: #ffffff;
 }
 
 .wfh-request-top {
@@ -461,13 +461,13 @@
 }
 
 .wfh-request-date {
-  color: #263b2e;
+  color: #0f172a;
   font-size: 14px;
 }
 
 .wfh-request-date svg {
   flex-shrink: 0;
-  color: #07845b;
+  color: #0757B8;
 }
 
 .wfh-status {
@@ -476,13 +476,13 @@
 }
 
 .wfh-request-reason {
-  color: #59695f;
+  color: #475569;
   font-size: 13px;
   line-height: 1.7;
 }
 
 .wfh-meta {
-  color: #7b8980;
+  color: #64748b;
 }
 
 .wfh-page form [role="alert"],
@@ -501,7 +501,7 @@
 }
 
 .wfh-page form [role="status"] {
-  border-color: #bbf7d0;
+  border-color: #bfdbfe;
 }
 
 .wfh-page .wfh-field input,
@@ -624,7 +624,7 @@
   border: 1px solid #d1d5db;
   border-radius: 10px;
   background: #fff;
-  color: #17251d;
+  color: #0f172a;
   font: inherit;
   line-height: 1.5;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -633,7 +633,7 @@
 .wfh-page .wfh-textarea:focus {
   outline: none;
   border-color: #0056B3;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+  box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
 }
 
 .wfh-page .wfh-submit {
@@ -642,7 +642,7 @@
 
 .wfh-page .wfh-submit:not(:disabled):hover {
   background: #014B9D;
-  box-shadow: 0 5px 14px rgba(22, 163, 74, 0.18);
+  box-shadow: 0 5px 14px rgba(7, 87, 184, 0.18);
   transform: translateY(-1px);
 }
 

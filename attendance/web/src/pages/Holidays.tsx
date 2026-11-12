@@ -246,7 +246,7 @@ export default function Holidays() {
       {success && (
         <div role="status" style={{
           padding: 12, marginBottom: 16, borderRadius: 8,
-          background: '#ECFDF5', color: '#014B9D',
+          background: '#EFF6FF', color: '#0757B8',
         }}>
           {success}
         </div>
