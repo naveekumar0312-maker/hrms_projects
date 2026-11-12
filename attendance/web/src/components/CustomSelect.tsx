@@ -48,11 +48,13 @@ export function CustomSelect({
         setIsOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
+  }, [isOpen]);
 
   useEffect(() => {
     function handleEscape(event: KeyboardEvent) {
@@ -102,19 +104,12 @@ export function CustomSelect({
       </button>
 
       {isOpen && !disabled && (
-        <>
-          <button
-            type="button"
-            className="custom-select-dismiss"
-            aria-label="Close dropdown"
-            onClick={() => setIsOpen(false)}
-          />
-          <div
-            className={`custom-select-dropdown ${
-              alignRight ? "align-right" : ""
-            } ${openUpward ? "open-upward" : ""}`}
-          >
-            {options.length > 5 && (
+        <div
+          className={`custom-select-dropdown ${
+            alignRight ? "align-right" : ""
+          } ${openUpward ? "open-upward" : ""}`}
+        >
+          {options.length > 5 && (
               <div className="custom-select-search-wrapper">
                 <Search size={15} className="custom-select-search-icon" />
                 <input
@@ -163,8 +158,8 @@ export function CustomSelect({
               )}
             </div>
           </div>
-        </>
-      )}
+        )
+      }
     </div>
   );
 }
