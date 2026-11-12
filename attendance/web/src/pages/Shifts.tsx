@@ -406,7 +406,7 @@ const Shifts = () => {
                       <XCircle size={16} /> Deactivate
                     </button>
                   ) : (
-                    <button style={{ border: '1px solid var(--success)', background: '#ecfdf5', color: 'var(--success)' }} onClick={() => setActivateShift(shift)}>
+                    <button style={{ border: '1px solid #0056B3', background: '#eff6ff', color: '#014B9D' }} onClick={() => setActivateShift(shift)}>
                       <CheckCircle size={16} /> Activate
                     </button>
                   )}

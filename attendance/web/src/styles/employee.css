@@ -22,7 +22,7 @@
 .employee-brand {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #16A34A;
+  color: #0757B8;
 }
 
 .employee-nav {
@@ -42,14 +42,14 @@
 }
 
 .employee-nav-item:hover {
-  background-color: #F0FDF4;
-  color: #16A34A;
+  background-color: #EFF6FF;
+  color: #0757B8;
 }
 
 .employee-nav-item.active {
-  background-color: #F0FDF4;
-  color: #16A34A;
-  border-right: 3px solid #16A34A;
+  background-color: #EFF6FF;
+  color: #0757B8;
+  border-right: 3px solid #0757B8;
 }
 
 .employee-sidebar-footer {
@@ -154,6 +154,6 @@
   }
   
   .employee-bottom-nav-item.active {
-    color: #16A34A;
+    color: #0757B8;
   }
 }
