@@ -2,7 +2,7 @@ export const resolveMediaUrl = (url: string | null | undefined): string | null =
   if (!url || typeof url !== 'string' || !url.trim()) return null;
 
   const rawUrl = url.trim();
-  const apiBase = (process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.10:8000/api').replace(/\/api\/?$/, '');
+  const apiBase = (process.env.EXPO_PUBLIC_API_URL || 'https://hrms.yaazh360digitech.in/api').replace(/\/api\/?$/, '');
 
   if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
     try {

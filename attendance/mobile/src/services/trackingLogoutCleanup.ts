@@ -5,7 +5,7 @@ import axios from 'axios';
 
 const TASK_NAME = 'attendance-background-location-task';
 const API_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.10:8000/api';
+  process.env.EXPO_PUBLIC_API_URL || 'https://hrms.yaazh360digitech.in/api';
 
 export async function stopTrackingForLogout() {
   let cleanupError: unknown = null;

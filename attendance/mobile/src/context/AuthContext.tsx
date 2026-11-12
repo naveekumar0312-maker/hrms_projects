@@ -5,7 +5,7 @@ import { Alert } from 'react-native';
 import { stopTrackingForLogout } from '../services/trackingLogoutCleanup';
 
 // Ensure this matches your backend URL when running on Android emulator (10.0.2.2) or iOS (localhost/IP)
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.10:8000/api'; 
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://hrms.yaazh360digitech.in/api'; 
 
 export const api = axios.create({
   baseURL: API_URL,
