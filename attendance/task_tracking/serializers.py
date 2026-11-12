@@ -244,7 +244,9 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         if is_create and user.role == 'EMPLOYEE':
             raise ValidationError("Employees are not authorized to create or assign tasks.")
 
-        if not user.company_id:
+        is_global_mgr = (user.role == 'REPORTING_MANAGER' and emp and emp.branch is None and user.company_id is None)
+
+        if not user.company_id and not is_global_mgr and user.role not in ('SUPER_ADMIN', 'ADMIN'):
             raise ValidationError("User account is not linked to any company.")
 
         assigned_employee_ids = attrs.get('assigned_employee_ids', None)
@@ -263,8 +265,8 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
 
         if employees_to_check and (is_create or 'assigned_employee_ids' in attrs or 'assigned_to' in attrs):
             for target_emp in employees_to_check:
-                # 2. Prevent cross-company assignment
-                if target_emp.branch and target_emp.branch.company_id != user.company_id:
+                # 2. Prevent cross-company assignment (except for Global Manager who manages all companies)
+                if not is_global_mgr and user.company_id and target_emp.branch and target_emp.branch.company_id != user.company_id:
                     raise ValidationError({"assigned_employees": f"Cannot assign tasks to members in another company ({target_emp.full_name})."})
 
                 # 3. Hierarchy validation for Team Leader
@@ -278,9 +280,10 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
                 elif user.role == 'REPORTING_MANAGER':
                     if not emp:
                         raise ValidationError("Reporting Manager profile not found.")
-                    is_direct = (target_emp.reporting_manager_id == emp.id)
-                    is_sub_team = (target_emp.team_leader and target_emp.team_leader.reporting_manager_id == emp.id)
-                    if not (is_direct or is_sub_team):
-                        raise ValidationError({"assigned_employees": f"Reporting Managers can only assign tasks to direct reports or employees under their Team Leaders ({target_emp.full_name})."})
+                    if not is_global_mgr:
+                        is_direct = (target_emp.reporting_manager_id == emp.id)
+                        is_sub_team = (target_emp.team_leader and target_emp.team_leader.reporting_manager_id == emp.id)
+                        if not (is_direct or is_sub_team):
+                            raise ValidationError({"assigned_employees": f"Reporting Managers can only assign tasks to direct reports or employees under their Team Leaders ({target_emp.full_name})."})
 
         return attrs

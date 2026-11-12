@@ -28,9 +28,13 @@ def check_user_task_access(task, user):
             return True
         raise PermissionDenied("You do not have access to tasks outside your company.")
     if user.role == 'REPORTING_MANAGER':
-        if not emp or task.company_id != user.company_id:
+        if not emp:
+            raise PermissionDenied("Reporting Manager profile not found.")
+        is_global = (emp.branch is None and (user.company_id is None))
+        if not is_global and task.company_id != user.company_id and (emp.branch and task.company_id != emp.branch.company_id):
             raise PermissionDenied("You do not have access to this task.")
         if (
+            is_global or
             task.assigned_by_id == user.id or
             task.reporting_manager_id == emp.id or
             (task.team_leader and task.team_leader.reporting_manager_id == emp.id) or
@@ -96,6 +100,12 @@ class TaskViewSet(viewsets.ModelViewSet):
         if user.role == 'REPORTING_MANAGER':
             if not emp:
                 return Task.objects.none()
+            is_global = (emp.branch is None and (user.company_id is None))
+            if is_global:
+                company_param = self.request.query_params.get('company')
+                if company_param:
+                    qs = qs.filter(company_id=company_param)
+                return qs.distinct()
             return qs.filter(
                 Q(company_id=user.company_id) & (
                     Q(reporting_manager=emp) |
@@ -149,12 +159,18 @@ class TaskViewSet(viewsets.ModelViewSet):
                     photo_url = e.profile_photo.url
                 except Exception:
                     photo_url = None
+            comp_id = e.branch.company_id if e.branch and e.branch.company_id else None
+            comp_name = e.branch.company.name if e.branch and e.branch.company else ''
+            branch_name = e.branch.branch_name if e.branch else ''
             return {
                 "id": e.id,
                 "full_name": e.full_name,
                 "employee_id": e.employee_id,
                 "department": e.department,
                 "designation": e.designation,
+                "branch_name": branch_name,
+                "company_id": comp_id,
+                "company_name": comp_name,
                 "role": e.user.role if e.user else 'EMPLOYEE',
                 "team_leader_name": e.team_leader.full_name if e.team_leader else None,
                 "profile_photo_url": photo_url,
@@ -163,12 +179,22 @@ class TaskViewSet(viewsets.ModelViewSet):
         if user.role == 'REPORTING_MANAGER':
             if not emp:
                 return Response([])
+            is_global = (emp.branch is None and (user.company_id is None))
+            if is_global:
+                company_param = request.query_params.get('company')
+                qs = Employee.objects.filter(status=True).exclude(id=emp.id).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+                if company_param:
+                    qs = qs.filter(branch__company_id=company_param)
+                qs = qs.select_related('user', 'team_leader', 'branch', 'branch__company').order_by('branch__company__name', 'branch__branch_name', 'full_name')
+                return Response([_format_emp(e) for e in qs])
+
+            comp_id = user.company_id or (emp.branch.company_id if emp.branch else None)
             qs = Employee.objects.filter(
-                Q(branch__company_id=user.company_id) & (
+                Q(branch__company_id=comp_id) & (
                     Q(reporting_manager=emp) |
                     Q(team_leader__reporting_manager=emp)
                 )
-            ).exclude(id=emp.id).select_related('user', 'team_leader').order_by('full_name')
+            ).exclude(id=emp.id).select_related('user', 'team_leader', 'branch', 'branch__company').order_by('full_name')
 
             return Response([_format_emp(e) for e in qs])
 
@@ -228,8 +254,18 @@ class TaskViewSet(viewsets.ModelViewSet):
         else:
             assignee_name = 'team'
 
+        # Determine task company
+        task_company_id = user.company_id
+        if not task_company_id:
+            if assigned_to and assigned_to.branch and assigned_to.branch.company_id:
+                task_company_id = assigned_to.branch.company_id
+            elif assigned_emps and assigned_emps[0].branch and assigned_emps[0].branch.company_id:
+                task_company_id = assigned_emps[0].branch.company_id
+            elif emp_creator and emp_creator.branch and emp_creator.branch.company_id:
+                task_company_id = emp_creator.branch.company_id
+
         task = serializer.save(
-            company_id=user.company_id or (assigned_to.branch.company_id if assigned_to and assigned_to.branch else None),
+            company_id=task_company_id,
             assigned_by=user,
             reporting_manager=rep_mgr,
             team_leader=tl,

@@ -8,6 +8,9 @@ export interface AssignableMember {
   employee_id?: string;
   designation?: string;
   department?: string;
+  branch_name?: string;
+  company_id?: number | null;
+  company_name?: string;
   role?: string;
   profile_photo_url?: string | null;
 }
@@ -51,7 +54,9 @@ export const EmployeeMultiSelect: React.FC<EmployeeMultiSelectProps> = ({
       m.full_name?.toLowerCase().includes(term) ||
       m.employee_id?.toLowerCase().includes(term) ||
       m.designation?.toLowerCase().includes(term) ||
-      m.department?.toLowerCase().includes(term)
+      m.department?.toLowerCase().includes(term) ||
+      m.company_name?.toLowerCase().includes(term) ||
+      m.branch_name?.toLowerCase().includes(term)
     );
   });
 
@@ -219,6 +224,9 @@ export const EmployeeMultiSelect: React.FC<EmployeeMultiSelectProps> = ({
                     <div className="emp-item-info">
                       <div className="emp-item-name">{m.full_name}</div>
                       <div className="emp-item-meta">
+                        {m.company_name && (
+                          <span style={{ color: '#0369a1', fontWeight: 600 }}>{m.company_name} &bull; </span>
+                        )}
                         {m.employee_id && <span className="emp-meta-id">{m.employee_id}</span>}
                         {m.designation && <span className="emp-meta-desig">&bull; {m.designation}</span>}
                       </div>

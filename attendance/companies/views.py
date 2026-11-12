@@ -20,8 +20,8 @@ class CompanyAccessPermission(BasePermission):
         if user.role in ("SUPER_ADMIN", "ADMIN"):
             return True
 
-        # HR can only read company information.
-        if user.role == "HR" and user.company_id:
+        # HR and Reporting Manager can read company information.
+        if user.role in ("HR", "REPORTING_MANAGER"):
             return request.method in ("GET", "HEAD", "OPTIONS")
 
         return False
@@ -33,13 +33,24 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        queryset = Company.objects.all()
+        queryset = Company.objects.filter(status=True).order_by("id")
 
         if user.role == "HR":
             return queryset.filter(pk=user.company_id)
 
+        if user.role == "REPORTING_MANAGER":
+            emp = getattr(user, 'employee_profile', None)
+            is_global = (emp and emp.branch is None and (user.company_id is None))
+            if is_global:
+                return queryset
+            elif user.company_id:
+                return queryset.filter(pk=user.company_id)
+            elif emp and emp.branch and emp.branch.company_id:
+                return queryset.filter(pk=emp.branch.company_id)
+            return queryset.none()
+
         if user.role in ("SUPER_ADMIN", "ADMIN"):
-            return queryset
+            return Company.objects.all().order_by("id")
 
         return queryset.none()
 

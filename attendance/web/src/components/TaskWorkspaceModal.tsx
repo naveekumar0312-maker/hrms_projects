@@ -58,6 +58,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
 
   // Assignable employees
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [selectedCompanyFilter, setSelectedCompanyFilter] = useState<string>('ALL');
 
   // Task full data for view/edit
   const [taskData, setTaskData] = useState<any>(null);
@@ -764,20 +765,62 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                   )}
                 </div>
 
-                {/* ASSIGNED EMPLOYEES SELECTION */}
+                {/* ASSIGNED EMPLOYEES SELECTION WITH COMPANY FILTER */}
                 <div className="task-field-group">
-                  <label className="task-field-label">
-                    Assign Employees <span className="task-required">*</span>
-                  </label>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label className="task-field-label" style={{ margin: 0 }}>
+                      Assign Employees <span className="task-required">*</span>
+                    </label>
+                    {/* Show Company filter when there are multiple companies available */}
+                    {Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).length > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Company:</span>
+                        <select
+                          className="form-control"
+                          style={{
+                            height: '28px',
+                            padding: '2px 8px',
+                            fontSize: '12px',
+                            borderRadius: '6px',
+                            border: '1px solid #cbd5e1',
+                            background: '#f8fafc',
+                            cursor: 'pointer',
+                            color: '#0f172a',
+                            fontWeight: 500,
+                          }}
+                          value={selectedCompanyFilter}
+                          onChange={(e) => setSelectedCompanyFilter(e.target.value)}
+                        >
+                          <option value="ALL">All Companies ({teamMembers.length})</option>
+                          {Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).map((compName) => {
+                            const count = teamMembers.filter((m) => m.company_name === compName).length;
+                            return (
+                              <option key={compName} value={compName}>
+                                {compName} ({count})
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    )}
+                  </div>
                   <EmployeeMultiSelect
-                    members={teamMembers}
+                    members={
+                      selectedCompanyFilter === 'ALL'
+                        ? teamMembers
+                        : teamMembers.filter((m) => m.company_name === selectedCompanyFilter)
+                    }
                     selectedIds={assignedEmployeeIds}
                     onChange={(ids) => {
                       setAssignedEmployeeIds(ids);
                       setAssignedTo(ids.length > 0 ? String(ids[0]) : '');
                     }}
                     disabled={isEmployee}
-                    placeholder="Search and select employees..."
+                    placeholder={
+                      selectedCompanyFilter === 'ALL'
+                        ? "Search and select employees across companies..."
+                        : `Select employees from ${selectedCompanyFilter}...`
+                    }
                   />
                 </div>
               </div>
