@@ -219,6 +219,9 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   const [timeLogHours, setTimeLogHours] = useState('1.00');
   const [timeLogDesc, setTimeLogDesc] = useState('');
 
+  // Mobile segment toggle ('form' | 'discussion') when task exists
+  const [mobileView, setMobileView] = useState<'form' | 'discussion'>('form');
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const commentsScrollRef = useRef<HTMLDivElement | null>(null);
@@ -645,7 +648,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
             <span
               className="task-mode-tag"
               style={{
-                background: isDraft ? '#f1f5f9' : '#eff6ff',
+                background: isDraft ? '#f1f5f9' : '#fff7ed',
                 color: isDraft ? '#64748b' : '#E56108',
               }}
             >
@@ -657,12 +660,32 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
           </button>
         </div>
 
+        {/* MOBILE VIEW SEGMENT SWITCHER (Only shown when taskId exists) */}
+        {taskId && (
+          <div className="task-mobile-segment-tabs">
+            <button
+              type="button"
+              className={`task-mobile-tab-btn ${mobileView === 'form' ? 'active' : ''}`}
+              onClick={() => setMobileView('form')}
+            >
+              Task Details
+            </button>
+            <button
+              type="button"
+              className={`task-mobile-tab-btn ${mobileView === 'discussion' ? 'active' : ''}`}
+              onClick={() => setMobileView('discussion')}
+            >
+              Discussion & Activity ({comments.length + attachments.length})
+            </button>
+          </div>
+        )}
+
         {/* BODY (TWO COLUMNS) */}
-        <div className="task-workspace-body">
+        <div className={`task-workspace-body ${!taskId ? 'mode-new-task' : ''} mobile-view-${mobileView}`}>
           {/* =================================================================
               LEFT PANEL: TASK DETAILS & CONFIGURATION
              ================================================================= */}
-          <div className="task-panel-left">
+          <div className={`task-panel-left ${taskId && mobileView === 'discussion' ? 'mobile-panel-hidden' : ''}`}>
             <div className="task-panel-left-scroll">
               {errorMsg && (
                 <div className="rm-modal-error">
@@ -938,7 +961,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
           {/* =================================================================
               RIGHT PANEL: COMMUNICATION & ACTIVITY (4 TABS)
              ================================================================= */}
-          <div className="task-panel-right">
+          <div className={`task-panel-right ${(!taskId || mobileView === 'form') ? 'mobile-panel-hidden' : ''}`}>
             {/* TABS HEADER */}
             <div className="task-tabs-header">
               <button

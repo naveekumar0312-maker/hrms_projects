@@ -874,7 +874,51 @@
     padding: 14px;
   }
   .task-comment-composer {
-    padding: 10px 12px;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 16px)) 12px;
+  }
+}
+
+/* Mobile Segment Tabs */
+.task-mobile-segment-tabs {
+  display: none;
+  background: #f8fafc;
+  padding: 6px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 8px;
+}
+.task-mobile-tab-btn {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+.task-mobile-tab-btn.active {
+  background: #ffffff;
+  color: #E56108;
+  border-color: #fdba74;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 1024px) {
+  .task-mobile-segment-tabs {
+    display: flex;
+  }
+  .task-panel-left.mobile-panel-hidden,
+  .task-panel-right.mobile-panel-hidden {
+    display: none !important;
+  }
+  .task-workspace-body.mode-new-task .task-panel-right {
+    display: none !important;
+  }
+  .task-panel-left-actions {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 16px));
   }
 }
 
