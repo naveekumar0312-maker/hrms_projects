@@ -29,6 +29,7 @@ interface ReportingManager {
   user_id: number;
   username: string;
   phone_number?: string;
+  branch?: number;
   branch_name?: string;
   company_id?: number;
   company_name?: string;
@@ -36,6 +37,12 @@ interface ReportingManager {
   account_status: string;
   status: boolean;
   created_at?: string;
+}
+
+interface BranchOption {
+  id: number;
+  branch_name: string;
+  company_id?: number;
 }
 
 const ReportingManagers: React.FC = () => {
@@ -51,6 +58,10 @@ const ReportingManagers: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // Branches list
+  const [branches, setBranches] = useState<BranchOption[]>([]);
+  const [branchesLoading, setBranchesLoading] = useState(false);
+
   // Selected manager for view/edit/delete
   const [selectedManager, setSelectedManager] = useState<ReportingManager | null>(null);
 
@@ -60,6 +71,7 @@ const ReportingManagers: React.FC = () => {
     username: '',
     password: '',
     status: 'ACTIVE',
+    branchId: '',
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -98,6 +110,28 @@ const ReportingManagers: React.FC = () => {
     fetchManagers();
   }, [fetchManagers]);
 
+  // Fetch branches for dropdown
+  const fetchBranches = useCallback(async () => {
+    try {
+      setBranchesLoading(true);
+      const params: any = {};
+      if (user?.role === 'SUPER_ADMIN' && user?.company_id) {
+        params.company = user.company_id;
+      }
+      const res = await api.get('/branches/', { params });
+      const data = res.data?.results ?? res.data ?? [];
+      setBranches(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      console.error('Failed to load branches:', err);
+    } finally {
+      setBranchesLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchBranches();
+  }, [fetchBranches]);
+
   // Flash success helper
   const notifySuccess = (msg: string) => {
     setSuccessMsg(msg);
@@ -115,6 +149,7 @@ const ReportingManagers: React.FC = () => {
       username: '',
       password: '',
       status: 'ACTIVE',
+      branchId: branches.length > 0 ? String(branches[0].id) : '',
     });
     setShowPassword(false);
     setFormError(null);
@@ -144,12 +179,17 @@ const ReportingManagers: React.FC = () => {
 
     try {
       setFormLoading(true);
-      await api.post('/employees/hr/managers/', {
+      const payload: any = {
         full_name: name,
         username: uname,
         password: pwd,
         status: formData.status,
-      });
+      };
+      if (formData.branchId) {
+        payload.branch_id = parseInt(formData.branchId, 10);
+      }
+
+      await api.post('/employees/hr/managers/', payload);
 
       setShowAddModal(false);
       notifySuccess(`Reporting Manager "${name}" created successfully.`);
@@ -166,6 +206,8 @@ const ReportingManagers: React.FC = () => {
         msg = Array.isArray(data.full_name) ? data.full_name[0] : data.full_name;
       } else if (data?.password) {
         msg = Array.isArray(data.password) ? data.password[0] : data.password;
+      } else if (data?.branch_id) {
+        msg = Array.isArray(data.branch_id) ? data.branch_id[0] : data.branch_id;
       } else if (data?.detail) {
         msg = data.detail;
       }
@@ -193,6 +235,7 @@ const ReportingManagers: React.FC = () => {
       username: manager.username || '',
       password: '',
       status: (manager.status && manager.is_active) ? 'ACTIVE' : 'INACTIVE',
+      branchId: manager.branch ? String(manager.branch) : (branches.length > 0 ? String(branches[0].id) : ''),
     });
     setShowPassword(false);
     setFormError(null);
@@ -231,6 +274,9 @@ const ReportingManagers: React.FC = () => {
       if (pwd) {
         payload.password = pwd;
       }
+      if (formData.branchId) {
+        payload.branch_id = parseInt(formData.branchId, 10);
+      }
 
       await api.patch(`/employees/hr/managers/${selectedManager.id}/`, payload);
 
@@ -245,6 +291,8 @@ const ReportingManagers: React.FC = () => {
         msg = data;
       } else if (data?.username) {
         msg = Array.isArray(data.username) ? data.username[0] : data.username;
+      } else if (data?.branch_id) {
+        msg = Array.isArray(data.branch_id) ? data.branch_id[0] : data.branch_id;
       } else if (data?.detail) {
         msg = data.detail;
       }
@@ -346,12 +394,13 @@ const ReportingManagers: React.FC = () => {
           <table className="rm-table">
             <thead>
               <tr>
-                <th style={{ width: '28%' }}>Manager Name</th>
-                <th style={{ width: '18%' }}>Employee ID</th>
-                <th style={{ width: '20%' }}>Company</th>
-                <th style={{ width: '18%' }}>Username</th>
-                <th style={{ width: '10%' }}>Status</th>
-                <th style={{ width: '16%', textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '22%' }}>Manager Name</th>
+                <th style={{ width: '15%' }}>Employee ID</th>
+                <th style={{ width: '16%' }}>Company</th>
+                <th style={{ width: '16%' }}>Branch</th>
+                <th style={{ width: '15%' }}>Username</th>
+                <th style={{ width: '8%' }}>Status</th>
+                <th style={{ width: '12%', textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -381,21 +430,28 @@ const ReportingManagers: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* COLUMN 4: USERNAME */}
+                    {/* COLUMN 4: BRANCH */}
+                    <td>
+                      <span style={{ fontWeight: 500, color: '#475569' }}>
+                        {m.branch_name || '—'}
+                      </span>
+                    </td>
+
+                    {/* COLUMN 5: USERNAME */}
                     <td>
                       <div style={{ fontWeight: 500, color: '#334155' }}>
                         {m.username || '—'}
                       </div>
                     </td>
 
-                    {/* COLUMN 3: STATUS */}
+                    {/* COLUMN 6: STATUS */}
                     <td>
                       <span className={`rm-badge ${isActive ? 'rm-badge-active' : 'rm-badge-inactive'}`}>
                         {isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
 
-                    {/* COLUMN 4: ACTIONS (View, Edit, Delete) */}
+                    {/* COLUMN 7: ACTIONS (View, Edit, Delete) */}
                     <td style={{ textAlign: 'right' }}>
                       <div className="rm-action-btns" style={{ justifyContent: 'flex-end' }}>
                         {/* VIEW ACTION */}
@@ -473,6 +529,20 @@ const ReportingManagers: React.FC = () => {
                     value={user?.company_name || 'Yaazh 360'}
                     disabled
                     style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
+                  />
+                </div>
+
+                {/* BRANCH SELECTION */}
+                <div className="rm-form-group">
+                  <label>Branch *</label>
+                  <CustomSelect
+                    value={formData.branchId}
+                    onChange={(val) => setFormData({ ...formData, branchId: val })}
+                    options={branches.map((b) => ({
+                      value: String(b.id),
+                      label: b.branch_name,
+                    }))}
+                    placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
                   />
                 </div>
 
@@ -614,6 +684,13 @@ const ReportingManagers: React.FC = () => {
                 </div>
 
                 <div className="rm-view-item">
+                  <span className="rm-view-label">
+                    <Building size={14} /> Branch
+                  </span>
+                  <span className="rm-view-val">{selectedManager.branch_name || 'Main Branch'}</span>
+                </div>
+
+                <div className="rm-view-item">
                   <span className="rm-view-label">Account Status</span>
                   <span className="rm-view-val">
                     <span
@@ -694,6 +771,20 @@ const ReportingManagers: React.FC = () => {
                     value={user?.company_name || 'Yaazh 360'}
                     disabled
                     style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
+                  />
+                </div>
+
+                {/* BRANCH SELECTION */}
+                <div className="rm-form-group">
+                  <label>Branch *</label>
+                  <CustomSelect
+                    value={formData.branchId}
+                    onChange={(val) => setFormData({ ...formData, branchId: val })}
+                    options={branches.map((b) => ({
+                      value: String(b.id),
+                      label: b.branch_name,
+                    }))}
+                    placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
                   />
                 </div>
 

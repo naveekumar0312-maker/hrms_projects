@@ -173,6 +173,11 @@ class CreateReportingManagerSerializer(serializers.Serializer):
         allow_null=True,
         help_text="Optional: PK of existing employee to promote."
     )
+    branch_id = serializers.IntegerField(
+        required=False,
+        allow_null=True,
+        help_text="Optional: PK of the branch."
+    )
 
     def validate_username(self, value):
         username = value.strip()
@@ -229,6 +234,17 @@ class CreateReportingManagerSerializer(serializers.Serializer):
 
         attrs['target_company_id'] = int(company_id)
         attrs['existing_employee'] = employee
+
+        branch_pk = attrs.get('branch_id') or self.initial_data.get('branch')
+        if branch_pk:
+            try:
+                branch_obj = Branch.objects.get(pk=branch_pk, company_id=company_id)
+                attrs['target_branch'] = branch_obj
+            except Branch.DoesNotExist:
+                raise ValidationError({"branch_id": "Selected branch does not belong to this company."})
+        else:
+            attrs['target_branch'] = None
+
         return attrs
 
     def save(self, **kwargs):
@@ -239,10 +255,11 @@ class CreateReportingManagerSerializer(serializers.Serializer):
         company_id = validated_data['target_company_id']
         employee = validated_data.get('existing_employee')
         full_name = (validated_data.get('full_name') or '').strip()
+        target_branch = validated_data.get('target_branch')
 
         with transaction.atomic():
             company = Company.objects.get(pk=company_id)
-            branch = Branch.objects.filter(company=company).first()
+            branch = target_branch or Branch.objects.filter(company=company).first()
             if not branch:
                 branch = Branch.objects.create(
                     company=company,
@@ -275,6 +292,8 @@ class CreateReportingManagerSerializer(serializers.Serializer):
                 if full_name:
                     employee.full_name = full_name
                 employee.status = is_active
+                if target_branch:
+                    employee.branch = target_branch
                 employee.save()
             else:
                 user = User.objects.create_user(
@@ -326,12 +345,14 @@ class UpdateReportingManagerSerializer(serializers.Serializer):
       - username (Login Username)
       - password (Optional: updated only when provided)
       - status / account_status (ACTIVE or INACTIVE)
+      - branch_id (Branch PK)
     """
     full_name = serializers.CharField(required=False, max_length=255, trim_whitespace=True)
     username = serializers.CharField(required=False, max_length=150, trim_whitespace=True)
     password = serializers.CharField(required=False, allow_blank=True, min_length=6, write_only=True)
     status = serializers.ChoiceField(choices=['ACTIVE', 'INACTIVE'], required=False)
     account_status = serializers.ChoiceField(choices=['ACTIVE', 'INACTIVE'], required=False)
+    branch_id = serializers.IntegerField(required=False, allow_null=True)
 
     def validate_username(self, value):
         username = value.strip()
@@ -376,6 +397,21 @@ class UpdateReportingManagerSerializer(serializers.Serializer):
             if 'full_name' in validated_data and validated_data['full_name']:
                 instance.full_name = validated_data['full_name'].strip()
                 instance.save(update_fields=['full_name'])
+
+            # Update Branch if provided
+            branch_id = validated_data.get('branch_id') or self.initial_data.get('branch')
+            if branch_id:
+                try:
+                    comp_id = instance.branch.company_id if instance.branch else (user.company_id if user else None)
+                    branch_qs = Branch.objects.filter(pk=branch_id)
+                    if comp_id:
+                        branch_qs = branch_qs.filter(company_id=comp_id)
+                    new_branch = branch_qs.first()
+                    if new_branch:
+                        instance.branch = new_branch
+                        instance.save(update_fields=['branch'])
+                except Exception as e:
+                    logger.warning(f"Failed to update manager branch: {e}")
 
         return instance
 
