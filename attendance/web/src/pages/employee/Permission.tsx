@@ -831,7 +831,7 @@ const Permission: React.FC = () => {
           min-height: 112px;
           padding: 14px 15px;
           color: #0f172a;
-          background: #fcfdfc;
+          background: #ffffff;
           border: 1px solid #cbd5e1;
           border-radius: 12px;
           resize: vertical;
@@ -902,7 +902,7 @@ const Permission: React.FC = () => {
 
         .permission-page textarea::placeholder,
         .permission-page .permission-textarea::placeholder {
-          color: #899a91;
+          color: #94a3b8;
           opacity: 1;
           font-size: 13px;
         }
@@ -910,8 +910,8 @@ const Permission: React.FC = () => {
         .permission-page textarea:focus,
         .permission-page .permission-textarea:focus {
           outline: none;
-          border-color: #29945f;
-          box-shadow: 0 0 0 3px rgba(41, 148, 95, .12);
+          border-color: #0757B8;
+          box-shadow: 0 0 0 3px rgba(7, 87, 184, 0.12);
         }
       `}</style>
 

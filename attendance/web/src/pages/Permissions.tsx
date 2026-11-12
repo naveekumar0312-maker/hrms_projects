@@ -396,7 +396,7 @@ const Permissions: React.FC = () => {
               borderRadius: '18px',
               padding: '24px',
               boxShadow: '0 24px 70px rgba(15,23,42,0.2)',
-              color: '#17352b',
+              color: '#0f172a',
             }}
           >
             <div style={{
@@ -519,7 +519,7 @@ const Permissions: React.FC = () => {
                 padding: '10px',
                 border: 'none',
                 borderRadius: '9px',
-                background: '#287a52',
+                background: '#0757B8',
                 color: '#fff',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -609,7 +609,7 @@ const Permissions: React.FC = () => {
         }
 
         .permissions-page .permissions-table tbody tr:hover {
-          background: #f8fcf9;
+          background: #f8fafc;
         }
 
         @media (max-width: 768px) {
@@ -619,9 +619,9 @@ const Permissions: React.FC = () => {
         }
         .permissions-page {
           padding: 28px;
-          background: #f5faf7;
+          background: #f8fafc;
           min-height: 100%;
-          color: #17352b;
+          color: #0f172a;
         }
 
         .permissions-header {
@@ -633,7 +633,7 @@ const Permissions: React.FC = () => {
         }
 
         .permissions-eyebrow {
-          color: #438b68;
+          color: #0757B8;
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 1.5px;
@@ -649,7 +649,7 @@ const Permissions: React.FC = () => {
 
         .permissions-header p {
           margin: 7px 0 0;
-          color: #70877d;
+          color: #64748b;
           font-size: 14px;
         }
 
@@ -658,20 +658,20 @@ const Permissions: React.FC = () => {
           padding: 18px 20px;
           border-radius: 16px;
           background: #ffffff;
-          border: 1px solid #dcebe2;
-          box-shadow: 0 8px 24px rgba(37, 88, 63, 0.06);
+          border: 1px solid #e2e8f0;
+          box-shadow: 0 8px 24px rgba(7, 87, 184, 0.05);
         }
 
         .summary-number {
           font-size: 26px;
           font-weight: 800;
-          color: #287a52;
+          color: #0757B8;
         }
 
         .summary-label {
           margin-top: 3px;
           font-size: 12px;
-          color: #789087;
+          color: #64748b;
           font-weight: 600;
         }
 
@@ -684,9 +684,9 @@ const Permissions: React.FC = () => {
         }
 
         .permission-alert.success {
-          background: #e9f8ef;
-          color: #287a52;
-          border: 1px solid #c9ead7;
+          background: #eff6ff;
+          color: #0757B8;
+          border: 1px solid #bfdbfe;
         }
 
         .permission-alert.error {
@@ -697,9 +697,9 @@ const Permissions: React.FC = () => {
 
         .permissions-card {
           background: #ffffff;
-          border: 1px solid #dcebe2;
+          border: 1px solid #e2e8f0;
           border-radius: 18px;
-          box-shadow: 0 8px 28px rgba(37, 88, 63, 0.06);
+          box-shadow: 0 8px 28px rgba(7, 87, 184, 0.05);
           overflow: hidden;
         }
 
@@ -709,7 +709,7 @@ const Permissions: React.FC = () => {
           align-items: center;
           justify-content: space-between;
           gap: 18px;
-          border-bottom: 1px solid #e7f0eb;
+          border-bottom: 1px solid #e2e8f0;
         }
 
         .card-top h2 {
@@ -720,14 +720,14 @@ const Permissions: React.FC = () => {
 
         .card-top p {
           margin: 5px 0 0;
-          color: #80948b;
+          color: #64748b;
           font-size: 12px;
         }
 
         .refresh-button {
-          border: 1px solid #cfe4d8;
-          background: #f4fbf7;
-          color: #287a52;
+          border: 1px solid #bfdbfe;
+          background: #eff6ff;
+          color: #0757B8;
           padding: 9px 14px;
           border-radius: 9px;
           font-weight: 700;
@@ -753,21 +753,21 @@ const Permissions: React.FC = () => {
         .permissions-table th {
           padding: 14px 18px;
           text-align: left;
-          background: #f8fcf9;
-          color: #70877d;
+          background: #f8fafc;
+          color: #64748b;
           font-size: 11px;
           text-transform: uppercase;
           letter-spacing: 0.7px;
           font-weight: 800;
-          border-bottom: 1px solid #e5eee9;
+          border-bottom: 1px solid #e2e8f0;
           white-space: nowrap;
         }
 
         .permissions-table td {
           padding: 15px 18px;
-          border-bottom: 1px solid #edf3ef;
+          border-bottom: 1px solid #f1f5f9;
           font-size: 13px;
-          color: #405b50;
+          color: #334155;
           vertical-align: middle;
         }
 
@@ -785,14 +785,14 @@ const Permissions: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #dff3e7;
-          color: #287a52;
+          background: #eff6ff;
+          color: #0757B8;
           font-weight: 800;
           flex-shrink: 0;
         }
 
         .employee-cell strong {
-          color: #214438;
+          color: #0f172a;
           font-size: 13px;
         }
 
@@ -800,8 +800,8 @@ const Permissions: React.FC = () => {
           display: inline-flex;
           padding: 6px 9px;
           border-radius: 8px;
-          background: #edf8f1;
-          color: #287a52;
+          background: #eff6ff;
+          color: #0757B8;
           font-size: 11px;
           font-weight: 800;
           white-space: nowrap;
@@ -827,8 +827,8 @@ const Permissions: React.FC = () => {
         }
 
         .status-badge.approved {
-          background: #e8f7ee;
-          color: #287a52;
+          background: #eff6ff;
+          color: #0757B8;
         }
 
         .status-badge.rejected {
@@ -853,7 +853,7 @@ const Permissions: React.FC = () => {
         }
 
         .approve-button {
-          background: #287a52;
+          background: #0757B8;
           color: white;
         }
 
@@ -887,17 +887,17 @@ const Permissions: React.FC = () => {
 
         .view-button {
           padding: 6px 12px;
-          border: 1px solid #cfe4d8;
+          border: 1px solid #bfdbfe;
           border-radius: 8px;
-          background: #f4fbf7;
-          color: #287a52;
+          background: #eff6ff;
+          color: #0757B8;
           font-size: 11px;
           font-weight: 800;
           cursor: pointer;
         }
 
         .action-completed {
-          color: #9aaa9f;
+          color: #94a3b8;
           font-size: 11px;
           font-weight: 700;
         }
@@ -908,7 +908,7 @@ const Permissions: React.FC = () => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          color: #82958c;
+          color: #64748b;
         }
 
         .permissions-state p {
@@ -918,7 +918,7 @@ const Permissions: React.FC = () => {
 
         .permissions-state.empty h3 {
           margin: 12px 0 0;
-          color: #38584b;
+          color: #334155;
           font-size: 16px;
         }
 
@@ -933,8 +933,8 @@ const Permissions: React.FC = () => {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #e7f6ed;
-          color: #287a52;
+          background: #eff6ff;
+          color: #0757B8;
           font-size: 22px;
           font-weight: 800;
         }
@@ -942,8 +942,8 @@ const Permissions: React.FC = () => {
         .loader {
           width: 26px;
           height: 26px;
-          border: 3px solid #dcebe2;
-          border-top-color: #287a52;
+          border: 3px solid #e2e8f0;
+          border-top-color: #0757B8;
           border-radius: 50%;
           animation: permissionSpin 0.8s linear infinite;
         }
@@ -1032,7 +1032,7 @@ const Permissions: React.FC = () => {
         }
 
         .permissions-page .permissions-table tbody tr:hover {
-          background: #f8fcf9;
+          background: #f8fafc;
         }
 
         @media (max-width: 768px) {
