@@ -307,28 +307,30 @@ class ManagerPortalBaseView(views.APIView):
 
     def get_manager_team_queryset(self, manager, status_filter=None):
         """
-        Returns employees assigned to this manager.
-        If direct_reports are explicitly assigned, returns direct_reports.
-        Otherwise:
-        - If manager is assigned to a specific company: returns all active non-admin employees in that company.
-        - If manager is 'All Companies' (no branch/company restriction): returns all active non-admin employees across all companies!
+        Returns employees assigned to this manager according to the strict scope:
+        1. If manager is assigned to a specific branch:
+           Strictly returns employees belonging to that branch only!
+        2. Else if manager is assigned to a specific company (no branch):
+           Strictly returns employees belonging to that company only!
+        3. Else (Global Access Manager - All Companies / no branch & no company):
+           Returns employees across all companies/branches!
         """
-        comp_id = None
-        if manager.branch and manager.branch.company_id:
-            comp_id = manager.branch.company_id
-        elif manager.user and manager.user.company_id:
-            comp_id = manager.user.company_id
-
-        reports = manager.direct_reports.all()
-        if reports.exists():
-            qs = reports
-        elif comp_id:
+        if manager.branch:
+            # Strictly scoped to this branch only
             qs = Employee.objects.filter(
-                branch__company_id=comp_id
+                branch=manager.branch
+            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+        elif manager.user and manager.user.company_id:
+            # Scoped to company
+            qs = Employee.objects.filter(
+                branch__company_id=manager.user.company_id
             ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
         else:
-            # All Companies manager!
-            qs = Employee.objects.filter().exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+            # Global Access: all employees across all companies
+            qs = Employee.objects.filter(
+            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by(
+                'branch__company__name', 'branch__branch_name', 'full_name'
+            )
 
         if status_filter is True:
             qs = qs.filter(status=True)
@@ -502,6 +504,8 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
                 "full_name": emp.full_name,
                 "department": emp.department,
                 "designation": emp.designation,
+                "branch_name": emp.branch.branch_name if emp.branch else '',
+                "company_name": emp.branch.company.name if (emp.branch and emp.branch.company) else '',
                 "profile_photo": emp.profile_photo.url if emp.profile_photo else None,
                 "calculated_status": calculated_status,
                 "status_reason": reason,

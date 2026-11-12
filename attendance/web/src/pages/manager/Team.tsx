@@ -22,6 +22,8 @@ interface TeamEmployee {
   designation: string;
   profile_photo: string | null;
   branch_name: string;
+  company_name?: string;
+  company_id?: number;
   status: boolean;
   account_status: string;
   employment_status: string;
@@ -206,6 +208,7 @@ const ManagerTeam: React.FC = () => {
               <tr>
                 <th>Employee</th>
                 <th>Employee Code</th>
+                <th>Company / Branch</th>
                 <th>Department</th>
                 <th>Designation / Role</th>
                 <th>Status</th>
@@ -233,6 +236,16 @@ const ManagerTeam: React.FC = () => {
                       </div>
                     </td>
                     <td><code>{m.employee_id}</code></td>
+                    <td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '13px' }}>
+                          {m.company_name || 'Yaazh 360'}
+                        </span>
+                        <span style={{ color: '#64748b', fontSize: '12px' }}>
+                          {m.branch_name || 'Main Branch'}
+                        </span>
+                      </div>
+                    </td>
                     <td>{m.department || 'General'}</td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

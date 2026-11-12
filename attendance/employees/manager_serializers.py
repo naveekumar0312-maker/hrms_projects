@@ -119,12 +119,21 @@ class ReportingManagerSerializer(serializers.ModelSerializer):
         return 'ACTIVE' if obj.status else 'INACTIVE'
 
     def get_assigned_employee_count(self, obj):
-        return obj.direct_reports.filter(status=True).count()
+        if obj.branch:
+            return Employee.objects.filter(branch=obj.branch, status=True).exclude(pk=obj.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).count()
+        if obj.user and obj.user.company_id:
+            return Employee.objects.filter(branch__company_id=obj.user.company_id, status=True).exclude(pk=obj.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).count()
+        return Employee.objects.filter(status=True).exclude(pk=obj.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).count()
 
     def get_assigned_employees(self, obj):
         if self.context.get('include_employees', False):
-            reports = obj.direct_reports.select_related('user', 'branch', 'branch__company').all()
-            return AssignedEmployeeBriefSerializer(reports, many=True).data
+            if obj.branch:
+                reports = Employee.objects.filter(branch=obj.branch, status=True).exclude(pk=obj.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+            elif obj.user and obj.user.company_id:
+                reports = Employee.objects.filter(branch__company_id=obj.user.company_id, status=True).exclude(pk=obj.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+            else:
+                reports = Employee.objects.filter(status=True).exclude(pk=obj.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by('branch__company__name', 'branch__branch_name', 'full_name')
+            return AssignedEmployeeBriefSerializer(reports.select_related('user', 'branch', 'branch__company'), many=True).data
         return []
 
 
@@ -357,16 +366,20 @@ class CreateReportingManagerSerializer(serializers.Serializer):
 
             # Auto-mapping logic
             if is_all_companies:
-                unassigned_emps = Employee.objects.filter(
+                # Global Manager: do not hardcode direct_reports FKs, dynamic scoping handles all company employees
+                pass
+            elif branch:
+                # When a specific branch is selected, strictly map employees of that branch
+                unassigned_branch_emps = Employee.objects.filter(
+                    branch=branch,
                     reporting_manager__isnull=True,
                     status=True
                 ).exclude(pk=employee.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
-                for emp in unassigned_emps:
+                for emp in unassigned_branch_emps:
                     emp.reporting_manager = employee
                     emp.save(update_fields=['reporting_manager'])
-                    emp_comp = (emp.branch.company if emp.branch and emp.branch.company else None)
                     TeamAssignmentHistory.objects.create(
-                        company=emp_comp,
+                        company=branch.company if branch else None,
                         manager=employee,
                         employee=emp,
                         assigned_by=current_user if current_user and current_user.is_authenticated else None,

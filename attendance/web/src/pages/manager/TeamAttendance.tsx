@@ -16,6 +16,8 @@ interface TeamAttendanceRow {
   full_name: string;
   department: string;
   designation: string;
+  branch_name?: string;
+  company_name?: string;
   profile_photo: string | null;
   calculated_status: string;
   status_reason: string;
@@ -358,6 +360,7 @@ const ManagerTeamAttendance: React.FC = () => {
               <tr>
                 <th>Employee</th>
                 <th>Code</th>
+                <th>Company / Branch</th>
                 <th>Department</th>
                 <th>Status</th>
                 <th style={{ minWidth: '180px' }}>Check In (Approval)</th>
@@ -383,6 +386,16 @@ const ManagerTeamAttendance: React.FC = () => {
                     </div>
                   </td>
                   <td><strong>{row.employee_code}</strong></td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <span style={{ fontWeight: 600, color: '#0f172a', fontSize: '13px' }}>
+                        {row.company_name || 'Yaazh 360'}
+                      </span>
+                      <span style={{ color: '#64748b', fontSize: '12px' }}>
+                        {row.branch_name || 'Main Branch'}
+                      </span>
+                    </div>
+                  </td>
                   <td>{row.department || '--'}</td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
