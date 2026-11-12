@@ -12,6 +12,7 @@ import {
 import { AuthContext } from '../context/AuthContext';
 import api from '../api';
 import './ManagerLayout.css';
+import NotificationBell from '../components/NotificationBell';
 import { RolePendingActionsModal } from '../components/RolePendingActionsModal';
 import type {
   PendingActionItem,
@@ -184,7 +185,7 @@ const ManagerLayout: React.FC = () => {
 
       {/* Main Content */}
       <div className="mgr-main">
-        <header className="mgr-topbar">
+        <header className="mgr-topbar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <button
               type="button"
@@ -198,6 +199,10 @@ const ManagerLayout: React.FC = () => {
             <div style={{ fontWeight: 600, fontSize: '15px', color: '#0f172a' }}>
               Welcome, {profile?.full_name || user?.username}
             </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <NotificationBell />
           </div>
         </header>
 

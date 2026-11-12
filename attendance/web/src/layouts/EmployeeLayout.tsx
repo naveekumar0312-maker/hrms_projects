@@ -500,24 +500,16 @@ const EmployeeTopHeader = ({
         </div>
 
 
-        <div className="push-controls-wrapper desktop-push-controls" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <NotificationBell />
-          
-        </div>
-        <div className="mobile-employee-header-actions">
-          <NotificationBell />
-          
-        </div>
-
-        {/* Employee Profile */}
+        {/* Notification Bell & Employee Profile */}
         <div
           className="employee-header-profile"
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.75rem',
+            gap: '0.85rem',
           }}
         >
+          <NotificationBell />
 
           {/* Avatar */}
           <div

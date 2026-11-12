@@ -44,6 +44,12 @@ class NotificationListView(APIView):
         queryset = visible_notifications_for(request.user)
 
         unread_count = queryset.filter(is_read=False).count()
+
+        # If unread_only=true, filter out seen/read notifications so they disappear
+        unread_only = request.query_params.get('unread_only', '').lower() in ('true', '1')
+        if unread_only:
+            queryset = queryset.filter(is_read=False)
+
         limit = min(max(int(request.query_params.get('limit', 50)), 1), 100)
         items = queryset[:limit]
 

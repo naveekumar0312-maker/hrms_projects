@@ -27,19 +27,19 @@ export default function NotificationBell() {
 
   const fetchNotifications = useCallback(async () => {
     try {
-      const response = await api.get('/notifications/?limit=50');
+      // unread_only=true: seen/read notifications disappear from the list
+      const response = await api.get('/notifications/?limit=50&unread_only=true');
       const data = response.data as NotificationResponse | NotificationItem[];
 
       // The shared API interceptor may unwrap "results" into an array.
       const list = Array.isArray(data) ? data : data?.results;
       if (!Array.isArray(list)) return;
 
-      setItems(list);
+      // Filter only unread notifications so read items are removed immediately
+      const unreadList = list.filter(item => !item.is_read);
+      setItems(unreadList);
       setUnread(
-        Array.isArray(data) && Array.isArray(list)
-          ? list.filter(item => !item.is_read).length
-          : (data as NotificationResponse).unread_count ??
-            list.filter(item => !item.is_read).length
+        (data as NotificationResponse)?.unread_count ?? unreadList.length
       );
       setError('');
     } catch {
@@ -55,6 +55,9 @@ export default function NotificationBell() {
 
   const markRead = async (id: number) => {
     try {
+      // Optimistically remove from list immediately
+      setItems(prev => prev.filter(item => item.id !== id));
+      setUnread(prev => Math.max(0, prev - 1));
       await api.patch(`/notifications/${id}/read/`);
       await fetchNotifications();
     } catch {
@@ -64,6 +67,9 @@ export default function NotificationBell() {
 
   const markAllRead = async () => {
     try {
+      // Optimistically clear all notifications
+      setItems([]);
+      setUnread(0);
       await api.post('/notifications/read-all/');
       await fetchNotifications();
     } catch {

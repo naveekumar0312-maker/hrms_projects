@@ -584,18 +584,16 @@ const TopHeader = ({
           </div>
         </div>
 
-        <div className="push-controls-wrapper desktop-push-controls" style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <NotificationBell />
-          
-        </div>
-        {/* Admin Profile */}
+        {/* Notification Bell & Admin Profile */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.75rem',
+            gap: '0.85rem',
           }}
         >
+          <NotificationBell />
+
           <div
             className="avatar"
             style={{
@@ -799,11 +797,6 @@ const AdminLayout = () => {
           toggleSidebar={toggleSidebar}
           isSidebarOpen={sidebarOpen}
         />
-
-        <div className="admin-mobile-push-controls">
-          <NotificationBell />
-          
-        </div>
 
         <main className="page-content">
           <Outlet />
