@@ -45,6 +45,11 @@ interface BranchOption {
   company_id?: number;
 }
 
+interface CompanyOption {
+  id: number;
+  name: string;
+}
+
 const ReportingManagers: React.FC = () => {
   const { user } = useContext(AuthContext);
   const [managers, setManagers] = useState<ReportingManager[]>([]);
@@ -58,7 +63,8 @@ const ReportingManagers: React.FC = () => {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Branches list
+  // Companies & Branches list
+  const [companies, setCompanies] = useState<CompanyOption[]>([]);
   const [branches, setBranches] = useState<BranchOption[]>([]);
   const [branchesLoading, setBranchesLoading] = useState(false);
 
@@ -71,6 +77,7 @@ const ReportingManagers: React.FC = () => {
     username: '',
     password: '',
     status: 'ACTIVE',
+    companyId: 'ALL',
     branchId: '',
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -110,27 +117,28 @@ const ReportingManagers: React.FC = () => {
     fetchManagers();
   }, [fetchManagers]);
 
-  // Fetch branches for dropdown
-  const fetchBranches = useCallback(async () => {
+  // Fetch companies & branches
+  const fetchCompaniesAndBranches = useCallback(async () => {
     try {
       setBranchesLoading(true);
-      const params: any = {};
-      if (user?.role === 'SUPER_ADMIN' && user?.company_id) {
-        params.company = user.company_id;
-      }
-      const res = await api.get('/branches/', { params });
-      const data = res.data?.results ?? res.data ?? [];
-      setBranches(Array.isArray(data) ? data : []);
+      const [compRes, branchRes] = await Promise.all([
+        api.get('/companies/'),
+        api.get('/branches/'),
+      ]);
+      const compData = compRes.data?.results ?? compRes.data ?? [];
+      const branchData = branchRes.data?.results ?? branchRes.data ?? [];
+      setCompanies(Array.isArray(compData) ? compData : []);
+      setBranches(Array.isArray(branchData) ? branchData : []);
     } catch (err: any) {
-      console.error('Failed to load branches:', err);
+      console.error('Failed to load companies/branches:', err);
     } finally {
       setBranchesLoading(false);
     }
-  }, [user]);
+  }, []);
 
   useEffect(() => {
-    fetchBranches();
-  }, [fetchBranches]);
+    fetchCompaniesAndBranches();
+  }, [fetchCompaniesAndBranches]);
 
   // Flash success helper
   const notifySuccess = (msg: string) => {
@@ -144,12 +152,14 @@ const ReportingManagers: React.FC = () => {
   // 1. ADD MANAGER
   // ---------------------------------------------------------------------------
   const handleOpenAdd = () => {
+    const defaultCompany = user?.role === 'SUPER_ADMIN' ? 'ALL' : String(user?.company_id || 'ALL');
     setFormData({
       fullName: '',
       username: '',
       password: '',
       status: 'ACTIVE',
-      branchId: branches.length > 0 ? String(branches[0].id) : '',
+      companyId: defaultCompany,
+      branchId: '',
     });
     setShowPassword(false);
     setFormError(null);
@@ -184,8 +194,9 @@ const ReportingManagers: React.FC = () => {
         username: uname,
         password: pwd,
         status: formData.status,
+        company_id: formData.companyId,
       };
-      if (formData.branchId) {
+      if (formData.companyId !== 'ALL' && formData.branchId) {
         payload.branch_id = parseInt(formData.branchId, 10);
       }
 
@@ -230,12 +241,14 @@ const ReportingManagers: React.FC = () => {
   // ---------------------------------------------------------------------------
   const handleOpenEdit = (manager: ReportingManager) => {
     setSelectedManager(manager);
+    const mgrCompany = manager.company_id ? String(manager.company_id) : 'ALL';
     setFormData({
       fullName: manager.full_name || '',
       username: manager.username || '',
       password: '',
       status: (manager.status && manager.is_active) ? 'ACTIVE' : 'INACTIVE',
-      branchId: manager.branch ? String(manager.branch) : (branches.length > 0 ? String(branches[0].id) : ''),
+      companyId: mgrCompany,
+      branchId: manager.branch ? String(manager.branch) : '',
     });
     setShowPassword(false);
     setFormError(null);
@@ -270,11 +283,14 @@ const ReportingManagers: React.FC = () => {
         full_name: name,
         username: uname,
         status: formData.status,
+        company_id: formData.companyId,
       };
       if (pwd) {
         payload.password = pwd;
       }
-      if (formData.branchId) {
+      if (formData.companyId === 'ALL') {
+        payload.branch_id = 0; // Clear branch
+      } else if (formData.branchId) {
         payload.branch_id = parseInt(formData.branchId, 10);
       }
 
@@ -520,30 +536,69 @@ const ReportingManagers: React.FC = () => {
                   </div>
                 )}
 
-                {/* READ-ONLY COMPANY AUTOMATICALLY ASSIGNED */}
+                {/* COMPANY SELECTION (ALL COMPANIES OR SPECIFIC COMPANY) */}
                 <div className="rm-form-group">
-                  <label>Company (Automatically Assigned)</label>
-                  <input
-                    type="text"
-                    className="rm-input"
-                    value={user?.company_name || 'Yaazh 360'}
-                    disabled
-                    style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
-                  />
+                  <label>Company *</label>
+                  {user?.role === 'SUPER_ADMIN' ? (
+                    <CustomSelect
+                      value={formData.companyId}
+                      onChange={(val) => {
+                        setFormData({
+                          ...formData,
+                          companyId: val,
+                          branchId: '', // Reset branch when company changes
+                        });
+                      }}
+                      options={[
+                        { value: 'ALL', label: 'All Companies (Global Access)' },
+                        ...companies.map((c) => ({
+                          value: String(c.id),
+                          label: c.name,
+                        })),
+                      ]}
+                      placeholder="Select company"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className="rm-input"
+                      value={user?.company_name || 'Yaazh 360'}
+                      disabled
+                      style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
+                    />
+                  )}
                 </div>
 
                 {/* BRANCH SELECTION */}
                 <div className="rm-form-group">
-                  <label>Branch *</label>
-                  <CustomSelect
-                    value={formData.branchId}
-                    onChange={(val) => setFormData({ ...formData, branchId: val })}
-                    options={branches.map((b) => ({
-                      value: String(b.id),
-                      label: b.branch_name,
-                    }))}
-                    placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
-                  />
+                  <label>
+                    Branch {formData.companyId === 'ALL' ? '(All Branches Covered)' : '*'}
+                  </label>
+                  {formData.companyId === 'ALL' ? (
+                    <input
+                      type="text"
+                      className="rm-input"
+                      value="All Branches (Global Access Across All Companies)"
+                      disabled
+                      style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
+                    />
+                  ) : (
+                    <CustomSelect
+                      value={formData.branchId}
+                      onChange={(val) => setFormData({ ...formData, branchId: val })}
+                      options={branches
+                        .filter(
+                          (b) =>
+                            !b.company_id ||
+                            String(b.company_id) === formData.companyId
+                        )
+                        .map((b) => ({
+                          value: String(b.id),
+                          label: b.branch_name,
+                        }))}
+                      placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
+                    />
+                  )}
                 </div>
 
                 {/* MANAGER NAME */}
@@ -762,30 +817,69 @@ const ReportingManagers: React.FC = () => {
                   </div>
                 )}
 
-                {/* READ-ONLY COMPANY AUTOMATICALLY ASSIGNED */}
+                {/* COMPANY SELECTION (ALL COMPANIES OR SPECIFIC COMPANY) */}
                 <div className="rm-form-group">
-                  <label>Company (Automatically Assigned)</label>
-                  <input
-                    type="text"
-                    className="rm-input"
-                    value={user?.company_name || 'Yaazh 360'}
-                    disabled
-                    style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
-                  />
+                  <label>Company *</label>
+                  {user?.role === 'SUPER_ADMIN' ? (
+                    <CustomSelect
+                      value={formData.companyId}
+                      onChange={(val) => {
+                        setFormData({
+                          ...formData,
+                          companyId: val,
+                          branchId: '', // Reset branch when company changes
+                        });
+                      }}
+                      options={[
+                        { value: 'ALL', label: 'All Companies (Global Access)' },
+                        ...companies.map((c) => ({
+                          value: String(c.id),
+                          label: c.name,
+                        })),
+                      ]}
+                      placeholder="Select company"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      className="rm-input"
+                      value={user?.company_name || 'Yaazh 360'}
+                      disabled
+                      style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
+                    />
+                  )}
                 </div>
 
                 {/* BRANCH SELECTION */}
                 <div className="rm-form-group">
-                  <label>Branch *</label>
-                  <CustomSelect
-                    value={formData.branchId}
-                    onChange={(val) => setFormData({ ...formData, branchId: val })}
-                    options={branches.map((b) => ({
-                      value: String(b.id),
-                      label: b.branch_name,
-                    }))}
-                    placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
-                  />
+                  <label>
+                    Branch {formData.companyId === 'ALL' ? '(All Branches Covered)' : '*'}
+                  </label>
+                  {formData.companyId === 'ALL' ? (
+                    <input
+                      type="text"
+                      className="rm-input"
+                      value="All Branches (Global Access Across All Companies)"
+                      disabled
+                      style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
+                    />
+                  ) : (
+                    <CustomSelect
+                      value={formData.branchId}
+                      onChange={(val) => setFormData({ ...formData, branchId: val })}
+                      options={branches
+                        .filter(
+                          (b) =>
+                            !b.company_id ||
+                            String(b.company_id) === formData.companyId
+                        )
+                        .map((b) => ({
+                          value: String(b.id),
+                          label: b.branch_name,
+                        }))}
+                      placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
+                    />
+                  )}
                 </div>
 
                 {/* MANAGER NAME */}

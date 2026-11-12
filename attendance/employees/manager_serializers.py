@@ -62,8 +62,9 @@ class ReportingManagerSerializer(serializers.ModelSerializer):
     is_active = serializers.BooleanField(source='user.is_active', read_only=True)
     account_status = serializers.SerializerMethodField()
     branch_name = serializers.CharField(source='branch.branch_name', read_only=True, default='')
-    company_id = serializers.IntegerField(source='branch.company_id', read_only=True, default=None)
-    company_name = serializers.CharField(source='branch.company.name', read_only=True, default='')
+    company_id = serializers.SerializerMethodField()
+    company_name = serializers.SerializerMethodField()
+    is_all_companies = serializers.SerializerMethodField()
     assigned_employee_count = serializers.SerializerMethodField()
     assigned_employees = serializers.SerializerMethodField()
 
@@ -85,6 +86,7 @@ class ReportingManagerSerializer(serializers.ModelSerializer):
             'branch_name',
             'company_id',
             'company_name',
+            'is_all_companies',
             'is_active',
             'account_status',
             'status',
@@ -93,6 +95,23 @@ class ReportingManagerSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+
+    def get_company_id(self, obj):
+        if obj.branch and obj.branch.company_id:
+            return obj.branch.company_id
+        if obj.user and obj.user.company_id:
+            return obj.user.company_id
+        return None
+
+    def get_company_name(self, obj):
+        if obj.branch and obj.branch.company:
+            return obj.branch.company.name
+        if obj.user and obj.user.company:
+            return obj.user.company.name
+        return 'All Companies'
+
+    def get_is_all_companies(self, obj):
+        return (obj.branch is None and (obj.user is None or obj.user.company is None))
 
     def get_account_status(self, obj):
         if obj.user and not obj.user.is_active:
@@ -178,6 +197,11 @@ class CreateReportingManagerSerializer(serializers.Serializer):
         allow_null=True,
         help_text="Optional: PK of the branch."
     )
+    company_id = serializers.CharField(
+        required=False,
+        allow_null=True,
+        help_text="Optional: PK of the company or 'ALL'."
+    )
 
     def validate_username(self, value):
         username = value.strip()
@@ -203,18 +227,22 @@ class CreateReportingManagerSerializer(serializers.Serializer):
         current_user = request.user if request else None
 
         # Determine target company
+        raw_company = self.initial_data.get('company_id') or self.initial_data.get('company') or (request.query_params.get('company') if request else None)
+        is_all_companies = (str(raw_company).upper() in ('ALL', 'ALL_COMPANIES', '0', '-1'))
+
         company_id = None
         if current_user and current_user.role == 'HR':
             company_id = current_user.company_id
-        elif current_user and current_user.role in ('SUPER_ADMIN', 'ADMIN'):
-            company_id = request.query_params.get('company') or self.initial_data.get('company_id')
+            is_all_companies = False
+        elif not is_all_companies:
+            if raw_company:
+                try:
+                    company_id = int(raw_company)
+                except (ValueError, TypeError):
+                    company_id = None
             if not company_id:
-                # Default to first active company or company associated with existing branch
                 first_comp = Company.objects.filter(status=True).first()
                 company_id = first_comp.id if first_comp else None
-
-        if not company_id:
-            raise ValidationError({"detail": "Cannot determine company for manager creation."})
 
         employee_pk = attrs.get('employee_id')
         employee = None
@@ -224,7 +252,7 @@ class CreateReportingManagerSerializer(serializers.Serializer):
             except Employee.DoesNotExist:
                 raise ValidationError({"employee_id": "Employee not found."})
 
-            if employee.branch and employee.branch.company_id != int(company_id):
+            if not is_all_companies and company_id and employee.branch and employee.branch.company_id != int(company_id):
                 raise PermissionDenied("Employee belongs to another company.")
         else:
             # Manager name required when creating new
@@ -232,16 +260,23 @@ class CreateReportingManagerSerializer(serializers.Serializer):
             if not manager_name:
                 raise ValidationError({"full_name": "Manager Name is required."})
 
-        attrs['target_company_id'] = int(company_id)
+        attrs['is_all_companies'] = is_all_companies
+        attrs['target_company_id'] = int(company_id) if company_id else None
         attrs['existing_employee'] = employee
 
         branch_pk = attrs.get('branch_id') or self.initial_data.get('branch')
-        if branch_pk:
+        if branch_pk and not is_all_companies and company_id:
             try:
                 branch_obj = Branch.objects.get(pk=branch_pk, company_id=company_id)
                 attrs['target_branch'] = branch_obj
             except Branch.DoesNotExist:
                 raise ValidationError({"branch_id": "Selected branch does not belong to this company."})
+        elif branch_pk and is_all_companies:
+            try:
+                branch_obj = Branch.objects.get(pk=branch_pk)
+                attrs['target_branch'] = branch_obj
+            except Branch.DoesNotExist:
+                attrs['target_branch'] = None
         else:
             attrs['target_branch'] = None
 
@@ -252,22 +287,27 @@ class CreateReportingManagerSerializer(serializers.Serializer):
         username = validated_data['username']
         password = validated_data['password']
         is_active = (validated_data.get('status', 'ACTIVE') == 'ACTIVE')
-        company_id = validated_data['target_company_id']
+        is_all_companies = validated_data.get('is_all_companies', False)
+        company_id = validated_data.get('target_company_id')
         employee = validated_data.get('existing_employee')
         full_name = (validated_data.get('full_name') or '').strip()
         target_branch = validated_data.get('target_branch')
+        request = self.context.get('request')
+        current_user = request.user if request else None
 
         with transaction.atomic():
-            company = Company.objects.get(pk=company_id)
-            branch = target_branch or Branch.objects.filter(company=company).first()
-            if not branch:
-                branch = Branch.objects.create(
-                    company=company,
-                    branch_name=f"{company.name} Main Branch",
-                    city="HQ",
-                    state="HQ",
-                    country="India"
-                )
+            company = Company.objects.filter(pk=company_id).first() if company_id and not is_all_companies else None
+            branch = target_branch
+            if not is_all_companies and company and not branch:
+                branch = Branch.objects.filter(company=company).first()
+                if not branch:
+                    branch = Branch.objects.create(
+                        company=company,
+                        branch_name=f"{company.name} Main Branch",
+                        city="HQ",
+                        state="HQ",
+                        country="India"
+                    )
 
             if employee:
                 user = employee.user
@@ -292,8 +332,7 @@ class CreateReportingManagerSerializer(serializers.Serializer):
                 if full_name:
                     employee.full_name = full_name
                 employee.status = is_active
-                if target_branch:
-                    employee.branch = target_branch
+                employee.branch = branch
                 employee.save()
             else:
                 user = User.objects.create_user(
@@ -316,23 +355,40 @@ class CreateReportingManagerSerializer(serializers.Serializer):
                     joining_date=timezone.localdate(),
                 )
 
-            # Automatically map all active employees of this company who do not have a reporting manager
-            unassigned_company_emps = Employee.objects.filter(
-                branch__company=company,
-                reporting_manager__isnull=True,
-                status=True
-            ).exclude(pk=employee.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+            # Auto-mapping logic
+            if is_all_companies:
+                unassigned_emps = Employee.objects.filter(
+                    reporting_manager__isnull=True,
+                    status=True
+                ).exclude(pk=employee.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+                for emp in unassigned_emps:
+                    emp.reporting_manager = employee
+                    emp.save(update_fields=['reporting_manager'])
+                    emp_comp = (emp.branch.company if emp.branch and emp.branch.company else None)
+                    TeamAssignmentHistory.objects.create(
+                        company=emp_comp,
+                        manager=employee,
+                        employee=emp,
+                        assigned_by=current_user if current_user and current_user.is_authenticated else None,
+                        is_active=True
+                    )
+            elif company:
+                unassigned_company_emps = Employee.objects.filter(
+                    branch__company=company,
+                    reporting_manager__isnull=True,
+                    status=True
+                ).exclude(pk=employee.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
 
-            for emp in unassigned_company_emps:
-                emp.reporting_manager = employee
-                emp.save(update_fields=['reporting_manager'])
-                TeamAssignmentHistory.objects.create(
-                    company=company,
-                    manager=employee,
-                    employee=emp,
-                    assigned_by=current_user if current_user and current_user.is_authenticated else None,
-                    is_active=True
-                )
+                for emp in unassigned_company_emps:
+                    emp.reporting_manager = employee
+                    emp.save(update_fields=['reporting_manager'])
+                    TeamAssignmentHistory.objects.create(
+                        company=company,
+                        manager=employee,
+                        employee=emp,
+                        assigned_by=current_user if current_user and current_user.is_authenticated else None,
+                        is_active=True
+                    )
 
         return employee
 
@@ -345,7 +401,8 @@ class UpdateReportingManagerSerializer(serializers.Serializer):
       - username (Login Username)
       - password (Optional: updated only when provided)
       - status / account_status (ACTIVE or INACTIVE)
-      - branch_id (Branch PK)
+      - branch_id (Branch PK or 0/null for None)
+      - company_id (Company PK or 'ALL')
     """
     full_name = serializers.CharField(required=False, max_length=255, trim_whitespace=True)
     username = serializers.CharField(required=False, max_length=150, trim_whitespace=True)
@@ -353,6 +410,7 @@ class UpdateReportingManagerSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=['ACTIVE', 'INACTIVE'], required=False)
     account_status = serializers.ChoiceField(choices=['ACTIVE', 'INACTIVE'], required=False)
     branch_id = serializers.IntegerField(required=False, allow_null=True)
+    company_id = serializers.CharField(required=False, allow_null=True)
 
     def validate_username(self, value):
         username = value.strip()
@@ -398,20 +456,41 @@ class UpdateReportingManagerSerializer(serializers.Serializer):
                 instance.full_name = validated_data['full_name'].strip()
                 instance.save(update_fields=['full_name'])
 
+            # Check company update
+            raw_company = self.initial_data.get('company_id') or self.initial_data.get('company')
+            if raw_company is not None:
+                if str(raw_company).upper() in ('ALL', 'ALL_COMPANIES', '0', '-1'):
+                    instance.branch = None
+                    instance.save(update_fields=['branch'])
+                    if user:
+                        user.company = None
+                        user.save(update_fields=['company'])
+                else:
+                    try:
+                        new_comp = Company.objects.filter(pk=int(raw_company)).first()
+                        if new_comp and user:
+                            user.company = new_comp
+                            user.save(update_fields=['company'])
+                    except (ValueError, TypeError):
+                        pass
+
             # Update Branch if provided
             branch_id = validated_data.get('branch_id') or self.initial_data.get('branch')
-            if branch_id:
-                try:
-                    comp_id = instance.branch.company_id if instance.branch else (user.company_id if user else None)
-                    branch_qs = Branch.objects.filter(pk=branch_id)
-                    if comp_id:
-                        branch_qs = branch_qs.filter(company_id=comp_id)
-                    new_branch = branch_qs.first()
-                    if new_branch:
-                        instance.branch = new_branch
-                        instance.save(update_fields=['branch'])
-                except Exception as e:
-                    logger.warning(f"Failed to update manager branch: {e}")
+            if branch_id is not None:
+                if branch_id in (0, '0', -1, '-1', None, ''):
+                    instance.branch = None
+                    instance.save(update_fields=['branch'])
+                else:
+                    try:
+                        new_branch = Branch.objects.filter(pk=branch_id).first()
+                        if new_branch:
+                            instance.branch = new_branch
+                            instance.save(update_fields=['branch'])
+                            if user and new_branch.company:
+                                user.company = new_branch.company
+                                user.save(update_fields=['company'])
+                    except Exception as e:
+                        logger.warning(f"Failed to update manager branch: {e}")
 
         return instance
 

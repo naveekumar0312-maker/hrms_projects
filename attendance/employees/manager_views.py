@@ -83,7 +83,8 @@ class ReportingManagerViewSet(viewsets.ViewSet):
         ).prefetch_related('direct_reports')
 
         if company_id:
-            queryset = queryset.filter(branch__company_id=company_id)
+            # Include managers explicitly in this company AND global managers (branch is None or user.company is None)
+            queryset = queryset.filter(Q(branch__company_id=company_id) | Q(branch__isnull=True, user__company__isnull=True))
         elif request.user.role == 'HR':
             return Response([])
 
@@ -308,7 +309,9 @@ class ManagerPortalBaseView(views.APIView):
         """
         Returns employees assigned to this manager.
         If direct_reports are explicitly assigned, returns direct_reports.
-        Otherwise, falls back to all active non-admin employees in the manager's company.
+        Otherwise:
+        - If manager is assigned to a specific company: returns all active non-admin employees in that company.
+        - If manager is 'All Companies' (no branch/company restriction): returns all active non-admin employees across all companies!
         """
         comp_id = None
         if manager.branch and manager.branch.company_id:
@@ -324,7 +327,8 @@ class ManagerPortalBaseView(views.APIView):
                 branch__company_id=comp_id
             ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
         else:
-            qs = Employee.objects.none()
+            # All Companies manager!
+            qs = Employee.objects.filter().exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
 
         if status_filter is True:
             qs = qs.filter(status=True)
