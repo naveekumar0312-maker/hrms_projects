@@ -2197,16 +2197,16 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        if hasattr(user, 'employee_profile'):
-            return queryset.filter(employee=user.employee_profile)
+        if user.role in ('SUPER_ADMIN', 'ADMIN'):
+            return queryset
 
         if user.role == 'HR':
             if not user.company_id:
                 return queryset.none()
             return queryset.filter(employee__branch__company_id=user.company_id)
 
-        if user.role in ('SUPER_ADMIN', 'ADMIN'):
-            return queryset
+        if hasattr(user, 'employee_profile'):
+            return queryset.filter(employee=user.employee_profile)
 
         return queryset.none()
 
@@ -2450,16 +2450,16 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        if hasattr(user, 'employee_profile'):
-            return queryset.filter(employee=user.employee_profile)
+        if user.role in ('SUPER_ADMIN', 'ADMIN'):
+            return queryset
 
         if user.role == 'HR':
             if not user.company_id:
                 return queryset.none()
             return queryset.filter(employee__branch__company_id=user.company_id)
 
-        if user.role in ('SUPER_ADMIN', 'ADMIN'):
-            return queryset
+        if hasattr(user, 'employee_profile'):
+            return queryset.filter(employee=user.employee_profile)
 
         return queryset.none()
 
@@ -2623,8 +2623,8 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
 
         user = self.request.user
 
-        if hasattr(user, 'employee_profile'):
-            return queryset.filter(employee=user.employee_profile)
+        if user.role in ('SUPER_ADMIN', 'ADMIN'):
+            return queryset
 
         if user.role == 'HR':
             if not user.company_id:
@@ -2633,8 +2633,8 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
                 employee__branch__company_id=user.company_id
             )
 
-        if user.role in ('SUPER_ADMIN', 'ADMIN'):
-            return queryset
+        if hasattr(user, 'employee_profile'):
+            return queryset.filter(employee=user.employee_profile)
 
         return queryset.none()
 
