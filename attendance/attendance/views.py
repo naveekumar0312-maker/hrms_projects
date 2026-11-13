@@ -816,19 +816,47 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         employee = user.employee_profile
         today_date = timezone.localdate()
         
+        # Calculate shift details for grace/late check
+        branch = employee.branch
+        policy = getattr(branch, 'attendance_policy', None)
+        shift_start_time = employee.shift.start_time if employee.shift else (policy.start_time if policy else time(9, 0))
+        shift_end_time = employee.shift.end_time if employee.shift else (policy.end_time if policy else time(18, 0))
+
+        from attendance.services import get_cycle_for_date
+        _, _, month_start, month_end = get_cycle_for_date(today_date)
+        next_month = month_end + timedelta(days=1)
+        grace_used_count = Attendance.objects.filter(
+            employee=employee,
+            date__gte=month_start,
+            date__lt=next_month,
+            grace_used=True
+        ).exclude(date=today_date).count()
+
+        meta_info = {
+            "shift_start_time": shift_start_time.strftime("%H:%M:%S"),
+            "shift_end_time": shift_end_time.strftime("%H:%M:%S"),
+            "grace_used_count": grace_used_count,
+            "max_grace_allowed": 3,
+            "grace_limit_minutes": 15,
+            "on_time_limit_minutes": 5
+        }
+
         attendance = Attendance.objects.filter(employee=employee, date=today_date).first()
         
         if not attendance:
-            return Response({
+            resp = {
                 "date": str(today_date),
                 "check_in": None,
                 "check_out": None,
                 "status": "NOT_CHECKED_IN"
-            })
+            }
+            resp.update(meta_info)
+            return Response(resp)
             
         serializer = self.get_serializer(attendance)
         data = serializer.data
         data["date"] = str(today_date)
+        data.update(meta_info)
         return Response(data)
 
     @action(detail=False, methods=['get'])
@@ -1846,6 +1874,16 @@ class CheckInView(views.APIView):
                     late_minutes = actual_late_minutes
                     grace_used = False
 
+        late_reason = (serializer.validated_data.get('late_reason') or '').strip()
+
+        # If employee is arriving past the grace window (or exceeded 3 grace days), late_reason is required.
+        if attendance_status == 'LATE' and not late_reason:
+            return Response({
+                "code": "LATE_REASON_REQUIRED",
+                "error": f"You are checking in late by {late_minutes} minutes. Please provide a reason for late arrival to proceed with Check-In.",
+                "late_minutes": late_minutes
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         attendance_mode = 'WFH' if approved_wfh else 'OFFICE'
 
         if attendance:
@@ -1858,6 +1896,8 @@ class CheckInView(views.APIView):
             attendance.check_in_photo = photo
             attendance.status = attendance_status
             attendance.late_minutes = late_minutes
+            if late_reason:
+                attendance.late_reason = late_reason
             attendance.grace_used = grace_used
             attendance.save()
         else:
@@ -1873,6 +1913,7 @@ class CheckInView(views.APIView):
                 check_in_photo=photo,
                 status=attendance_status,
                 late_minutes=late_minutes,
+                late_reason=late_reason or None,
                 grace_used=grace_used
             )
 

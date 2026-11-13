@@ -91,6 +91,7 @@ class Attendance(models.Model):
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='WORKING')
     late_minutes = models.IntegerField(default=0)
+    late_reason = models.TextField(null=True, blank=True)
     grace_used = models.BooleanField(default=False)
     early_minutes = models.IntegerField(default=0)
     overtime_minutes = models.IntegerField(default=0)

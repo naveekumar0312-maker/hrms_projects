@@ -7,7 +7,7 @@ export interface LocationData {
   accuracy: number;
 }
 
-export const checkIn = async (location: LocationData, photoUri: string) => {
+export const checkIn = async (location: LocationData, photoUri: string, lateReason?: string) => {
   const latitude = Number(location.latitude.toFixed(6));
   const longitude = Number(location.longitude.toFixed(6));
   const accuracy = Number(location.accuracy?.toFixed(2) ?? 0);
@@ -22,6 +22,9 @@ export const checkIn = async (location: LocationData, photoUri: string) => {
   formData.append('latitude', latitude.toString());
   formData.append('longitude', longitude.toString());
   formData.append('accuracy', accuracy.toString());
+  if (lateReason && lateReason.trim()) {
+    formData.append('late_reason', lateReason.trim());
+  }
 
   // Handle file properly for React Native FormData
   const filename = photoUri.split('/').pop() || 'photo.jpg';

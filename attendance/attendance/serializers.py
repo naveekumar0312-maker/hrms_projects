@@ -287,6 +287,8 @@ class AttendanceSerializer(serializers.ModelSerializer):
         else:
             response['working_hours'] = None
 
+        response['late_reason'] = getattr(instance, 'late_reason', None)
+
         # Provide direct API endpoints for photos as robust fallbacks
         if instance.check_in_photo:
             response['check_in_photo_endpoint'] = f"/api/attendance/{instance.id}/check-in-photo/"
@@ -305,6 +307,7 @@ class CheckInSerializer(serializers.Serializer):
     longitude = serializers.DecimalField(max_digits=9, decimal_places=6)
     accuracy = serializers.FloatField()
     photo = serializers.ImageField()
+    late_reason = serializers.CharField(required=False, allow_blank=True, allow_null=True)
 
 class CheckOutSerializer(serializers.Serializer):
     latitude = serializers.DecimalField(max_digits=9, decimal_places=6)

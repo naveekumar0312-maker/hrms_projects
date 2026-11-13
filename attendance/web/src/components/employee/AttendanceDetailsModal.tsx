@@ -1064,6 +1064,11 @@ const AttendanceDetailsModal: React.FC<
                         {formatLateDuration(
                           record.late_minutes
                         )}
+                        {(record as any).late_reason && (
+                          <div style={{ marginTop: '4px', fontStyle: 'italic', color: '#B45309' }}>
+                            Reason: {(record as any).late_reason}
+                          </div>
+                        )}
 
                       </div>
                     )}

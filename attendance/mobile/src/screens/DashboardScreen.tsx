@@ -1,12 +1,12 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Dimensions, Image, AppState } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Dimensions, Image, AppState, Modal, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { Camera, CameraView, CameraType } from 'expo-camera';
 import { AuthContext, api } from '../context/AuthContext';
-import { MapPin, Target, Clock, Calendar, BarChart, User, LogIn, LogOut, ChevronRight, CheckCircle, XCircle, House, Bell, SwitchCamera, RefreshCw, CalendarDays, SlidersHorizontal, Search, FileText, Palmtree } from 'lucide-react-native';
+import { MapPin, Target, Clock, Calendar, BarChart, User, LogIn, LogOut, ChevronRight, CheckCircle, XCircle, House, Bell, SwitchCamera, RefreshCw, CalendarDays, SlidersHorizontal, Search, FileText, Palmtree, AlertCircle } from 'lucide-react-native';
 import { AppSearchBar } from '../components/AppSearchBar';
 import { CategoryBubblesRow } from '../components/CategoryBubblesRow';
 import { checkIn, checkOut, getHistory, getTodayAttendance } from '../services/attendanceService';
@@ -102,6 +102,12 @@ export default function DashboardScreen({ navigation }: any) {
   const [sharingEnabled, setSharingEnabled] = useState(false);
   const [sharingLoading, setSharingLoading] = useState(false);
   const [sharingStatusLoading, setSharingStatusLoading] = useState(false);
+
+  // Late Reason Modal State
+  const [showLateReasonModal, setShowLateReasonModal] = useState(false);
+  const [lateReasonText, setLateReasonText] = useState('');
+  const [pendingLateMinutes, setPendingLateMinutes] = useState(0);
+  const [pendingPhotoUri, setPendingPhotoUri] = useState<string | null>(null);
 
   // Daily Task Reminder Pop-up State
   const [assignedTasks, setAssignedTasks] = useState<MobileTask[]>([]);
@@ -500,7 +506,7 @@ export default function DashboardScreen({ navigation }: any) {
     setCapturedPhotoUri(null);
   };
 
-  const submitAttendance = async (photoUri: string) => {
+  const submitAttendance = async (photoUri: string, reason?: string) => {
     if (loadingAction) return; // Prevent double tap
     try {
       setLoadingAction(true);
@@ -515,19 +521,43 @@ export default function DashboardScreen({ navigation }: any) {
       }
 
       if (currentAction === 'CHECK_IN') {
-        await checkIn(locationData, photoUri);
+        await checkIn(locationData, photoUri, reason);
         showSuccess('Check-In Successful!', 'Your check-in attendance has been recorded successfully.');
       } else {
         await checkOut(locationData, photoUri);
         showSuccess('Check-Out Successful!', 'Your check-out attendance has been recorded successfully.');
       }
+      setShowLateReasonModal(false);
+      setLateReasonText('');
+      setPendingPhotoUri(null);
+      setCurrentAction(null);
       await fetchData();
     } catch (error: any) {
-      showError('Attendance Failed', error.message || 'Validation failed.');
+      if (error?.response?.data?.code === 'LATE_REASON_REQUIRED') {
+        const mins = error.response.data.late_minutes || 0;
+        setPendingLateMinutes(mins);
+        setPendingPhotoUri(photoUri);
+        setShowLateReasonModal(true);
+      } else {
+        showError('Attendance Failed', error.message || 'Validation failed.');
+        setCurrentAction(null);
+      }
     } finally {
-      setCurrentAction(null);
       setLoadingAction(false);
     }
+  };
+
+  const handleConfirmLateReason = async () => {
+    if (!lateReasonText.trim()) {
+      showError('Reason Required', 'Please enter a valid reason for late check-in.');
+      return;
+    }
+    if (!pendingPhotoUri) {
+      showError('Error', 'Photo session expired, please take a photo again.');
+      setShowLateReasonModal(false);
+      return;
+    }
+    await submitAttendance(pendingPhotoUri, lateReasonText.trim());
   };
 
   if (capturedPhotoUri) {
@@ -1068,6 +1098,88 @@ export default function DashboardScreen({ navigation }: any) {
         <View style={{ height: 40 }} />
       </ScrollView>
 
+      {/* LATE REASON MODAL */}
+      <Modal
+        visible={showLateReasonModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!loadingAction) {
+            setShowLateReasonModal(false);
+            setLateReasonText('');
+            setPendingPhotoUri(null);
+            setCurrentAction(null);
+          }
+        }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.lateModalOverlay}
+        >
+          <View style={styles.lateModalCard}>
+            <View style={styles.lateModalHeader}>
+              <View style={styles.lateModalIconBg}>
+                <AlertCircle size={26} color="#DC2626" strokeWidth={2.2} />
+              </View>
+              <View style={styles.lateModalHeaderTextWrapper}>
+                <Text style={styles.lateModalTitle}>Late Arrival Notice</Text>
+                <Text style={styles.lateModalSubtitle}>
+                  {pendingLateMinutes > 0
+                    ? `You are checking in ${pendingLateMinutes} mins late.`
+                    : 'You have exceeded the standard grace window.'}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.lateModalInstruction}>
+              Please explain why you arrived late today. This reason will be recorded on your attendance entry.
+            </Text>
+
+            <TextInput
+              style={styles.lateReasonInput}
+              placeholder="e.g. Heavy traffic, emergency at home..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={3}
+              value={lateReasonText}
+              onChangeText={setLateReasonText}
+              editable={!loadingAction}
+              textAlignVertical="top"
+            />
+
+            <View style={styles.lateModalActions}>
+              <TouchableOpacity
+                style={styles.lateModalCancelBtn}
+                onPress={() => {
+                  setShowLateReasonModal(false);
+                  setLateReasonText('');
+                  setPendingPhotoUri(null);
+                  setCurrentAction(null);
+                }}
+                disabled={loadingAction}
+              >
+                <Text style={styles.lateModalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.lateModalSubmitBtn,
+                  (!lateReasonText.trim() || loadingAction) && styles.lateModalSubmitBtnDisabled,
+                ]}
+                onPress={handleConfirmLateReason}
+                disabled={!lateReasonText.trim() || loadingAction}
+              >
+                {loadingAction ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.lateModalSubmitText}>Submit & Check In</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* DAILY TASK REMINDER MODAL */}
       <MobileTaskDailyReminderModal
         visible={showTaskReminder}
@@ -1093,6 +1205,105 @@ export default function DashboardScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
+  lateModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  lateModalCard: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  lateModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  lateModalIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  lateModalHeaderTextWrapper: {
+    flex: 1,
+  },
+  lateModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  lateModalSubtitle: {
+    fontSize: 13,
+    color: '#DC2626',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  lateModalInstruction: {
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  lateReasonInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#111827',
+    minHeight: 80,
+    marginBottom: 18,
+  },
+  lateModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  lateModalCancelBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lateModalCancelText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '600',
+  },
+  lateModalSubmitBtn: {
+    backgroundColor: '#E56108',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 130,
+  },
+  lateModalSubmitBtnDisabled: {
+    backgroundColor: '#FDBA74',
+  },
+  lateModalSubmitText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
   safeArea: { flex: 1, backgroundColor: COLORS.background },
   container: { flex: 1 },
   scrollContent: { paddingBottom: 120 },
