@@ -1749,18 +1749,12 @@ class CheckInView(views.APIView):
         lon = serializer.validated_data['longitude']
         acc = serializer.validated_data['accuracy']
         photo = serializer.validated_data['photo']
-        from attendance.services import normalize_image_orientation
+        from attendance.services import normalize_image_orientation, update_location_name_async
         photo = normalize_image_orientation(photo)
 
-        # Reverse geocoding must never block attendance marking.
-        try:
-            location_name = reverse_geocode(float(lat), float(lon))
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                "Reverse geocoding failed: %s", e
-            )
-            location_name = None
+        # Do not block attendance response with synchronous Nominatim geocoding.
+        # Location name is resolved in background thread.
+        location_name = None
 
         max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
         if acc > max_accuracy:
@@ -1882,6 +1876,8 @@ class CheckInView(views.APIView):
                 grace_used=grace_used
             )
 
+        update_location_name_async(attendance.pk, float(lat), float(lon), is_check_in=True)
+
         return Response(AttendanceSerializer(attendance).data, status=status.HTTP_201_CREATED)
 
 
@@ -1930,18 +1926,12 @@ class CheckOutView(views.APIView):
         lon = serializer.validated_data['longitude']
         acc = serializer.validated_data['accuracy']
         photo = serializer.validated_data['photo']
-        from attendance.services import normalize_image_orientation
+        from attendance.services import normalize_image_orientation, update_location_name_async
         photo = normalize_image_orientation(photo)
 
-        # Reverse geocoding must never block attendance marking.
-        try:
-            location_name = reverse_geocode(float(lat), float(lon))
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                "Reverse geocoding failed: %s", e
-            )
-            location_name = None
+        # Do not block attendance response with synchronous Nominatim geocoding.
+        # Location name is resolved in background thread.
+        location_name = None
         
         max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
         if acc > max_accuracy:
@@ -2036,6 +2026,8 @@ class CheckOutView(views.APIView):
         else:
             attendance.status = 'COMPLETED'
         attendance.save()
+
+        update_location_name_async(attendance.pk, float(lat), float(lon), is_check_in=False)
 
         # Remove this employee's pending shift-end reminder after checkout.
         from notifications.models import Notification

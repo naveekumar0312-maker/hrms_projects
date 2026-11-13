@@ -101,10 +101,35 @@ def reverse_geocode(latitude, longitude):
         return None
 
 
+def update_location_name_async(attendance_id, latitude, longitude, is_check_in=True):
+    """
+    Run reverse geocoding asynchronously in a background thread so check-in/out returns instantly.
+    """
+    import threading
+
+    def _worker():
+        try:
+            from attendance.models import Attendance
+            loc_name = reverse_geocode(latitude, longitude)
+            if loc_name:
+                update_fields = {}
+                if is_check_in:
+                    update_fields['check_in_location_name'] = loc_name
+                else:
+                    update_fields['check_out_location_name'] = loc_name
+                Attendance.objects.filter(pk=attendance_id).update(**update_fields)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning("Async reverse geocode update failed: %s", e)
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+
+
 def normalize_image_orientation(uploaded_file):
     """
     Ensure uploaded photo has correct upright orientation according to its EXIF metadata.
-    Avoids double rotation/mirroring, fixes tilt, and preserves aspect ratio & image format.
+    Downscales huge mobile photos to max 1280px and saves at quality 80 for blazing fast processing.
     """
     if not uploaded_file:
         return uploaded_file
@@ -119,10 +144,13 @@ def normalize_image_orientation(uploaded_file):
         
         # ImageOps.exif_transpose rotates the image according to EXIF orientation tag
         transposed = ImageOps.exif_transpose(img)
-        
-        if transposed is None or transposed == img:
-            uploaded_file.seek(0)
-            return uploaded_file
+        if transposed is None:
+            transposed = img
+
+        # Resize if dimensions are excessively large (camera photos are often 4000x3000px)
+        max_dimension = 1280
+        if max(transposed.size) > max_dimension:
+            transposed.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
 
         buf = io.BytesIO()
         img_format = img.format or 'JPEG'
@@ -131,7 +159,7 @@ def normalize_image_orientation(uploaded_file):
         if save_format.upper() == 'JPEG' and transposed.mode in ('RGBA', 'P'):
             transposed = transposed.convert('RGB')
             
-        transposed.save(buf, format=save_format, quality=90)
+        transposed.save(buf, format=save_format, quality=80, optimize=True)
         buf.seek(0)
 
         new_name = uploaded_file.name

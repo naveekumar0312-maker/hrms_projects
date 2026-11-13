@@ -446,8 +446,8 @@ export default function DashboardScreen({ navigation }: any) {
       });
 
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 0.85,
-        skipProcessing: false,
+        quality: 0.5,
+        skipProcessing: true,
       });
 
       if (!photo?.uri) {
