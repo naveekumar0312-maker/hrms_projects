@@ -19,9 +19,11 @@ export default function PushNotificationRegistration() {
 
     const registerPush = async () => {
       try {
-        const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+        const vapidKey =
+          import.meta.env.VITE_FIREBASE_VAPID_KEY ||
+          'BP9eG6WH11RWz1ff7GyniYgTqXZH7HQwA5PMDjIqIDT__KXts2GpF8AhT81xnHKW-mrR4qmmzhmU6R4NQ8rKioA';
         if (!vapidKey || vapidKey === 'REPLACE_WITH_VAPID_PUBLIC_KEY') {
-          console.error('[PushRegistration] VAPID key is not configured.');
+          console.warn('[PushRegistration] VAPID key is not configured; push notifications skipped.');
           return;
         }
 

@@ -30,18 +30,22 @@ def get_viewable_employees(request):
     user = request.user
 
     if user.role in ("SUPER_ADMIN", "ADMIN"):
-        return Employee.objects.filter(
-            status=True,
-            employment_status="ACTIVE",
-            work_type="FIELD",
-        )
+        return Employee.objects.filter(status=True)
 
     if user.role == "HR" and user.company_id:
         return Employee.objects.filter(
             branch__company_id=user.company_id,
             status=True,
-            employment_status="ACTIVE",
-            work_type="FIELD",
+        )
+
+    if user.role in ("REPORTING_MANAGER", "TEAM_LEADER"):
+        emp = getattr(user, "employee_profile", None)
+        if not emp:
+            return Employee.objects.none()
+        comp_id = user.company_id or (emp.branch.company_id if emp.branch else None)
+        return Employee.objects.filter(
+            branch__company_id=comp_id,
+            status=True,
         )
 
     raise PermissionDenied(
