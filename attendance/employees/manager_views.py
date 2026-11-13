@@ -740,7 +740,15 @@ class TeamLeaderTeamAssignmentView(views.APIView):
         except Employee.DoesNotExist:
             return Response({"detail": "Team Leader not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        if team_leader.branch and team_leader.branch.company_id != request.user.company_id:
+        # Resolve manager's company ID
+        manager_company_id = request.user.company_id
+        if not manager_company_id and manager_emp.branch:
+            manager_company_id = manager_emp.branch.company_id
+        if not manager_company_id and team_leader.branch:
+            # Fallback to team leader's company if manager is an overall company RM
+            manager_company_id = team_leader.branch.company_id
+
+        if team_leader.branch and manager_company_id and team_leader.branch.company_id != manager_company_id:
             raise PermissionDenied("Team Leader belongs to a different company.")
 
         employee_ids = request.data.get('employee_ids', [])
@@ -749,10 +757,9 @@ class TeamLeaderTeamAssignmentView(views.APIView):
         if not isinstance(employee_ids, list):
             return Response({"detail": "employee_ids must be a list."}, status=status.HTTP_400_BAD_REQUEST)
 
-        valid_employees = Employee.objects.filter(
-            id__in=employee_ids,
-            branch__company_id=request.user.company_id
-        )
+        valid_employees = Employee.objects.filter(id__in=employee_ids)
+        if manager_company_id:
+            valid_employees = valid_employees.filter(branch__company_id=manager_company_id)
 
         if action == 'assign':
             # Cannot assign team leader to their own team
