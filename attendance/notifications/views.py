@@ -81,3 +81,74 @@ class NotificationReadAllView(APIView):
         ).update(is_read=True)
 
         return Response({'updated': updated})
+
+
+class RequestLocationEnableView(APIView):
+    """
+    Allows Admin or HR to send a notification/alert to an employee requesting them
+    to enable GPS Location Sharing.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        if user.role not in ('SUPER_ADMIN', 'ADMIN', 'HR'):
+            return Response(
+                {"detail": "Only admins and HR can request location sharing."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        employee_id = request.data.get('employee_id')
+        custom_message = (request.data.get('message') or '').strip()
+
+        if not employee_id:
+            return Response(
+                {"detail": "employee_id is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        from employees.models import Employee
+        employee = Employee.objects.filter(pk=employee_id).select_related('user', 'branch').first()
+        if not employee:
+            return Response(
+                {"detail": "Employee not found."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if not employee.user:
+            return Response(
+                {"detail": "Employee does not have an active user account."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check company restriction for HR
+        if user.role == 'HR' and user.company_id:
+            if not employee.branch or employee.branch.company_id != user.company_id:
+                return Response(
+                    {"detail": "You can only notify employees in your assigned company."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        from django.utils import timezone
+        import time
+        today = timezone.localdate()
+        title = "Turn On Location Sharing"
+        msg = custom_message or f"Hello {employee.full_name}, your manager/HR requests you to enable GPS location sharing in the app for live operations."
+        request_key = f"loc_req_{int(time.time())}"
+
+        from .services import _create_and_push
+        notification = _create_and_push(
+            recipient=employee.user,
+            employee=employee,
+            event='LOCATION_REQUIRED',
+            event_date=today,
+            request_key=request_key,
+            title=title,
+            message=msg,
+        )
+
+        return Response({
+            "success": True,
+            "message": f"Location sharing request notification sent to {employee.full_name}.",
+            "notification_id": notification.id
+        }, status=status.HTTP_201_CREATED)

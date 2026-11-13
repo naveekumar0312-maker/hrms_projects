@@ -16,6 +16,7 @@ class Notification(models.Model):
         ('WFH_APPLIED', 'WFH request applied'),
         ('WFH_APPROVED', 'WFH request approved'),
         ('WFH_REJECTED', 'WFH request rejected'),
+        ('LOCATION_REQUIRED', 'Location sharing required'),
     ]
 
     recipient = models.ForeignKey(

@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { Bell, CheckCheck, ArrowLeft, Clock } from 'lucide-react-native';
+import { Bell, CheckCheck, ArrowLeft, Clock, MapPin } from 'lucide-react-native';
 import { api } from '../context/AuthContext';
 import { useAppMessage } from '../context/MessageContext';
 import { COLORS } from '../constants/theme';
@@ -130,13 +130,32 @@ export default function NotificationsScreen({ navigation }: any) {
 
   const renderItem = ({ item }: { item: NotificationItem }) => (
     <TouchableOpacity
-      style={[styles.notificationCard, !item.is_read && styles.unreadCard]}
+      style={[
+        styles.notificationCard,
+        !item.is_read && styles.unreadCard,
+        item.event === 'LOCATION_REQUIRED' && { borderColor: '#FCA5A5', backgroundColor: '#FFF5F5' },
+      ]}
       activeOpacity={0.75}
-      onPress={() => markAsRead(item)}
+      onPress={() => {
+        markAsRead(item);
+        if (item.event === 'LOCATION_REQUIRED') {
+          navigation.navigate('Dashboard' as any);
+        }
+      }}
       disabled={updatingId !== null}
     >
-      <View style={[styles.iconCircle, !item.is_read && styles.unreadIconCircle]}>
-        <Bell size={19} color={item.is_read ? '#666666' : '#E56108'} />
+      <View
+        style={[
+          styles.iconCircle,
+          !item.is_read && styles.unreadIconCircle,
+          item.event === 'LOCATION_REQUIRED' && { backgroundColor: '#FEE2E2' },
+        ]}
+      >
+        {item.event === 'LOCATION_REQUIRED' ? (
+          <MapPin size={19} color="#DC2626" />
+        ) : (
+          <Bell size={19} color={item.is_read ? '#666666' : '#E56108'} />
+        )}
       </View>
 
       <View style={styles.notificationContent}>

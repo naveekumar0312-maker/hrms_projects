@@ -25,6 +25,9 @@ import {
   Pause,
   Route,
   History,
+  Send,
+  BellRing,
+  X,
 } from 'lucide-react';
 import api from '../api';
 import { employeeService } from '../services/employeeService';
@@ -466,6 +469,13 @@ const LiveLocations: React.FC = () => {
   const [locationName, setLocationName] = useState('Location unavailable');
   const [focusedTimelinePoint, setFocusedTimelinePoint] = useState<MapPoint | null>(null);
 
+  // Request Location Modal State
+  const [requestTargetEmployee, setRequestTargetEmployee] = useState<EmployeeProfile | null>(null);
+  const [requestLocationMessage, setRequestLocationMessage] = useState('');
+  const [sendingRequest, setSendingRequest] = useState(false);
+  const [requestSuccessMsg, setRequestSuccessMsg] = useState('');
+  const [requestErrorMsg, setRequestErrorMsg] = useState('');
+
   const loadEmployees = useCallback(async () => {
     setEmployeesLoading(true);
     try {
@@ -508,6 +518,15 @@ const LiveLocations: React.FC = () => {
     const workType = (item.work_type || '').trim().toUpperCase();
     return ['FIELD', 'MARKETING'].includes(workType);
   }), [employees]);
+
+  // Employees who are NOT currently sharing location
+  const notSharingEmployees = useMemo(() => {
+    const sharingIds = new Set(locations.map((loc) => loc.id));
+    const sharingEmpIds = new Set(locations.map((loc) => loc.employee_id));
+    return filteredEmployees.filter(
+      (emp) => !sharingIds.has(emp.id) && !sharingEmpIds.has(emp.employee_id)
+    );
+  }, [filteredEmployees, locations]);
 
   const selectedLiveLocation = useMemo(
     () => selected ? locations.find((item) => item.id === selected.id || item.employee_id === selected.employee_id) || null : null,
@@ -694,6 +713,29 @@ const LiveLocations: React.FC = () => {
     setIsPlaying(false);
     setPlaybackIndex(0);
     setSelected(employee || null);
+  };
+
+  const handleSendLocationRequest = async () => {
+    if (!requestTargetEmployee) return;
+    setSendingRequest(true);
+    setRequestSuccessMsg('');
+    setRequestErrorMsg('');
+    try {
+      await api.post('/notifications/request-location/', {
+        employee_id: requestTargetEmployee.id,
+        message: requestLocationMessage.trim() || undefined,
+      });
+      setRequestSuccessMsg(`Notification sent to ${employeeName(requestTargetEmployee)} to turn on location!`);
+      setTimeout(() => {
+        setRequestTargetEmployee(null);
+        setRequestLocationMessage('');
+        setRequestSuccessMsg('');
+      }, 2000);
+    } catch (err: any) {
+      setRequestErrorMsg(err?.response?.data?.detail || 'Failed to send notification request.');
+    } finally {
+      setSendingRequest(false);
+    }
   };
 
   return (
@@ -927,6 +969,197 @@ const LiveLocations: React.FC = () => {
           {!loading && locations.length === 0 && <div className="live-list-empty">No employees are currently sharing a location.</div>}
         </div>
       </section>
+
+      {/* NOT SHARING / LOCATION OFF SECTION */}
+      {notSharingEmployees.length > 0 && (
+        <section className="live-employee-panel live-not-sharing-panel" style={{ marginTop: '20px' }}>
+          <div className="live-panel-heading">
+            <div>
+              <h2 style={{ color: '#DC2626', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertCircle size={20} color="#DC2626" />
+                Location Turned Off ({notSharingEmployees.length})
+              </h2>
+              <p>Active field/marketing employees who have NOT enabled location sharing today</p>
+            </div>
+            <span className="live-history-count" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+              Action Required
+            </span>
+          </div>
+
+          <div className="live-sharing-grid">
+            {notSharingEmployees.map((emp) => (
+              <div
+                key={emp.id}
+                className="live-sharing-card live-not-sharing-card"
+                style={{
+                  borderColor: '#FECACA',
+                  background: '#FFF5F5',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span className="live-avatar" style={{ background: '#FCA5A5', color: '#7F1D1D' }}>
+                    {(emp.full_name || 'E').trim().charAt(0).toUpperCase()}
+                  </span>
+                  <span className="live-employee-info">
+                    <strong style={{ color: '#991B1B' }}>{emp.full_name}</strong>
+                    <span>{emp.employee_id} - {getEmployeeBranch(emp)}</span>
+                    <small style={{ color: '#DC2626' }}>GPS is currently turned OFF</small>
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  style={{
+                    backgroundColor: '#E56108',
+                    color: '#FFF',
+                    border: 'none',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                  onClick={() => {
+                    setRequestTargetEmployee(emp);
+                    setRequestLocationMessage(
+                      `Hello ${emp.full_name}, please turn ON your GPS Location Sharing in the mobile app for work tracking.`
+                    );
+                    setRequestSuccessMsg('');
+                    setRequestErrorMsg('');
+                  }}
+                >
+                  <BellRing size={14} /> Send Alert
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* REQUEST LOCATION SHARING POPUP MODAL */}
+      {requestTargetEmployee && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 99999,
+            padding: '20px',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: '#FFF',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '460px',
+              width: '100%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '20px', background: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <BellRing size={20} color="#DC2626" />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '17px', color: '#111827' }}>Request Location Sharing</h3>
+                  <small style={{ color: '#6B7280' }}>Send in-app notification to {employeeName(requestTargetEmployee)}</small>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRequestTargetEmployee(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {requestSuccessMsg && (
+              <div style={{ padding: '12px', background: '#ECFDF5', color: '#065F46', borderRadius: '8px', marginBottom: '14px', fontSize: '13px' }}>
+                {requestSuccessMsg}
+              </div>
+            )}
+
+            {requestErrorMsg && (
+              <div style={{ padding: '12px', background: '#FEF2F2', color: '#991B1B', borderRadius: '8px', marginBottom: '14px', fontSize: '13px' }}>
+                {requestErrorMsg}
+              </div>
+            )}
+
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
+              Message for Employee:
+            </label>
+            <textarea
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: '8px',
+                border: '1.5px solid #E5E7EB',
+                fontSize: '14px',
+                minHeight: '80px',
+                marginBottom: '18px',
+                boxSizing: 'border-box',
+                resize: 'vertical',
+              }}
+              value={requestLocationMessage}
+              onChange={(e) => setRequestLocationMessage(e.target.value)}
+              placeholder="Enter message to employee..."
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid #D1D5DB',
+                  background: '#FFF',
+                  color: '#4B5563',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
+                onClick={() => setRequestTargetEmployee(null)}
+                disabled={sendingRequest}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: '#E56108',
+                  color: '#FFF',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+                onClick={handleSendLocationRequest}
+                disabled={sendingRequest}
+              >
+                <Send size={15} /> {sendingRequest ? 'Sending...' : 'Send Notification'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selected && <div className="live-selected-details live-selected-summary">
         <h3>Selected Employee Details</h3>
