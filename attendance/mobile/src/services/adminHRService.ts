@@ -176,21 +176,29 @@ export interface LiveLocationItem {
 // ---------------- API FUNCTIONS ---------------- //
 
 export const fetchAdminDashboardStats = async (companyId?: number): Promise<DashboardStats> => {
-  const params = companyId ? { company_id: companyId } : {};
+  const params: any = {};
+  if (companyId) {
+    params.company = companyId;
+    params.company_id = companyId;
+  }
   const response = await api.get('/attendance/dashboard/', { params });
   const data = response.data;
   const summary = data?.summary || {};
+  const total = summary.total_staff || summary.total_employees || 0;
+  const present = summary.present_today || summary.present || 0;
+  const calcPercentage = total > 0 ? Math.round((present / total) * 100) : 0;
+
   return {
     date: summary.date || new Date().toISOString().split('T')[0],
-    total_staff: summary.total_staff || summary.total_employees || 0,
-    present_today: summary.present_today || summary.present || 0,
+    total_staff: total,
+    present_today: present,
     late_today: summary.late_today || summary.late || 0,
     absent_today: summary.absent_today || summary.absent || 0,
     on_leave_today: summary.on_leave_today || summary.on_leave || 0,
     pending_leave_requests: data?.pending_leaves_count ?? summary.pending_leaves_count ?? 0,
     pending_permission_requests: data?.pending_permissions_count ?? summary.pending_permissions_count ?? 0,
     pending_wfh_requests: data?.pending_wfh_count ?? summary.pending_wfh_count ?? 0,
-    present_percentage: summary.present_percentage || 0,
+    present_percentage: summary.present_percentage ?? calcPercentage,
     trend: data?.trend || [],
     status_distribution: data?.status_distribution || {},
   };

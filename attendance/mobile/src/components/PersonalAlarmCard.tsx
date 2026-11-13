@@ -410,7 +410,7 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
                 {/* Hour Column */}
                 <View style={styles.pickerColumn}>
                   <Text style={styles.columnLabel}>Hour</Text>
-                  <ScrollView style={styles.columnScrollView} showsVerticalScrollIndicator={false}>
+                  <ScrollView style={styles.columnScrollView} showsVerticalScrollIndicator={true} nestedScrollEnabled={true}>
                     {hoursList.map((h) => {
                       const isSelected = modalHour === h;
                       return (
@@ -431,7 +431,7 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
                 {/* Minute Column */}
                 <View style={styles.pickerColumn}>
                   <Text style={styles.columnLabel}>Minute</Text>
-                  <ScrollView style={styles.columnScrollView} showsVerticalScrollIndicator={false}>
+                  <ScrollView style={styles.columnScrollView} showsVerticalScrollIndicator={true} nestedScrollEnabled={true}>
                     {minutesList.map((m) => {
                       const isSelected = modalMinute === m;
                       return (
@@ -558,14 +558,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 0,
     borderWidth: 1,
     borderColor: '#F0F0F0',
-    elevation: 3,
+    elevation: 2,
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.04,
     shadowRadius: 8,
   },
   cardHeader: {
@@ -745,14 +746,14 @@ const styles = StyleSheet.create({
     borderColor: '#DDDDDD',
     borderRadius: 10,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     fontSize: 14,
     color: '#000000',
     marginBottom: 6,
   },
   pickerColumnsContainer: {
     flexDirection: 'row',
-    height: 150,
+    height: 190,
     backgroundColor: '#F9FAFB',
     borderRadius: 12,
     borderWidth: 1,
@@ -778,7 +779,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pickerItem: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },

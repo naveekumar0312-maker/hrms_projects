@@ -1394,20 +1394,48 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         recent = attendance_qs.select_related('employee', 'employee__branch', 'employee__shift').order_by('-check_in')[:20]
         recent_data = AttendanceSerializer(recent, many=True).data
 
+        # Count pending approvals for Leaves, Permissions, and WFH
+        pending_leaves_qs = LeaveRequest.objects.filter(status='PENDING')
+        pending_permissions_qs = PermissionRequest.objects.filter(status='PENDING')
+        pending_wfh_qs = WFHRequest.objects.filter(status='PENDING')
+
+        if company_id:
+            pending_leaves_qs = pending_leaves_qs.filter(employee__branch__company_id=company_id)
+            pending_permissions_qs = pending_permissions_qs.filter(employee__branch__company_id=company_id)
+            pending_wfh_qs = pending_wfh_qs.filter(employee__branch__company_id=company_id)
+        if branch_id:
+            pending_leaves_qs = pending_leaves_qs.filter(employee__branch_id=branch_id)
+            pending_permissions_qs = pending_permissions_qs.filter(employee__branch_id=branch_id)
+            pending_wfh_qs = pending_wfh_qs.filter(employee__branch_id=branch_id)
+
+        pending_leaves_count = pending_leaves_qs.count()
+        pending_permissions_count = pending_permissions_qs.count()
+        pending_wfh_count = pending_wfh_qs.count()
+
         return Response({
             "start_date": str(start_date),
             "end_date": str(end_date),
             "summary": {
                 "total_employees": total_employees,
+                "total_staff": total_employees,
                 "present": present,
+                "present_today": present,
                 "working": working,
                 "late": late,
+                "late_today": late,
                 "absent": absent,
+                "absent_today": absent,
                 "completed": checked_out,
                 "pending": pending,
                 "approved": approved,
-                "rejected": rejected
+                "rejected": rejected,
+                "pending_leaves_count": pending_leaves_count,
+                "pending_permissions_count": pending_permissions_count,
+                "pending_wfh_count": pending_wfh_count,
             },
+            "pending_leaves_count": pending_leaves_count,
+            "pending_permissions_count": pending_permissions_count,
+            "pending_wfh_count": pending_wfh_count,
             "attendance_trend": attendance_trend,
             "status_distribution": status_distribution,
             "branch_summary": branch_summary,
@@ -2321,17 +2349,25 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user.role in ('SUPER_ADMIN', 'ADMIN'):
-            return queryset
-
-        if user.role == 'HR':
+            pass
+        elif user.role == 'HR':
             if not user.company_id:
                 return queryset.none()
-            return queryset.filter(employee__branch__company_id=user.company_id)
+            queryset = queryset.filter(employee__branch__company_id=user.company_id)
+        elif hasattr(user, 'employee_profile'):
+            queryset = queryset.filter(employee=user.employee_profile)
+        else:
+            return queryset.none()
 
-        if hasattr(user, 'employee_profile'):
-            return queryset.filter(employee=user.employee_profile)
+        status_param = self.request.query_params.get('status')
+        if status_param and status_param.upper() != 'ALL':
+            queryset = queryset.filter(status=status_param.upper())
 
-        return queryset.none()
+        company_param = self.request.query_params.get('company')
+        if company_param and user.role in ('SUPER_ADMIN', 'ADMIN'):
+            queryset = queryset.filter(employee__branch__company_id=company_param)
+
+        return queryset
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -2574,17 +2610,25 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user.role in ('SUPER_ADMIN', 'ADMIN'):
-            return queryset
-
-        if user.role == 'HR':
+            pass
+        elif user.role == 'HR':
             if not user.company_id:
                 return queryset.none()
-            return queryset.filter(employee__branch__company_id=user.company_id)
+            queryset = queryset.filter(employee__branch__company_id=user.company_id)
+        elif hasattr(user, 'employee_profile'):
+            queryset = queryset.filter(employee=user.employee_profile)
+        else:
+            return queryset.none()
 
-        if hasattr(user, 'employee_profile'):
-            return queryset.filter(employee=user.employee_profile)
+        status_param = self.request.query_params.get('status')
+        if status_param and status_param.upper() != 'ALL':
+            queryset = queryset.filter(status=status_param.upper())
 
-        return queryset.none()
+        company_param = self.request.query_params.get('company')
+        if company_param and user.role in ('SUPER_ADMIN', 'ADMIN'):
+            queryset = queryset.filter(employee__branch__company_id=company_param)
+
+        return queryset
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -2747,19 +2791,25 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
         user = self.request.user
 
         if user.role in ('SUPER_ADMIN', 'ADMIN'):
-            return queryset
-
-        if user.role == 'HR':
+            pass
+        elif user.role == 'HR':
             if not user.company_id:
                 return queryset.none()
-            return queryset.filter(
-                employee__branch__company_id=user.company_id
-            )
+            queryset = queryset.filter(employee__branch__company_id=user.company_id)
+        elif hasattr(user, 'employee_profile'):
+            queryset = queryset.filter(employee=user.employee_profile)
+        else:
+            return queryset.none()
 
-        if hasattr(user, 'employee_profile'):
-            return queryset.filter(employee=user.employee_profile)
+        status_param = self.request.query_params.get('status')
+        if status_param and status_param.upper() != 'ALL':
+            queryset = queryset.filter(status=status_param.upper())
 
-        return queryset.none()
+        company_param = self.request.query_params.get('company')
+        if company_param and user.role in ('SUPER_ADMIN', 'ADMIN'):
+            queryset = queryset.filter(employee__branch__company_id=company_param)
+
+        return queryset
 
     def _check_modification_permission(self, instance):
         user = self.request.user
