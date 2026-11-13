@@ -1688,7 +1688,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def get_check_in_photo(self, request, pk=None):
         import os
         from django.http import FileResponse, Http404
-        attendance = self.get_object()
+        attendance = Attendance.objects.filter(pk=pk).first()
+        if not attendance:
+            raise Http404("Attendance record not found.")
         if not attendance.check_in_photo:
             raise Http404("No punch in photo found.")
         try:
@@ -1700,7 +1702,9 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def get_check_out_photo(self, request, pk=None):
         import os
         from django.http import FileResponse, Http404
-        attendance = self.get_object()
+        attendance = Attendance.objects.filter(pk=pk).first()
+        if not attendance:
+            raise Http404("Attendance record not found.")
         if not attendance.check_out_photo:
             raise Http404("No punch out photo found.")
         try:
