@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.utils import timezone
 from companies.models import Company
 from .models import (
     Attendance,
@@ -192,13 +193,14 @@ class AttendanceSerializer(serializers.ModelSerializer):
                 ),
             }
         # Format check-in and check-out to ISO strings and map keys
+        # Use timezone.localtime so timezone offset matches user's local timezone (+05:30)
         if instance.check_in:
-            response['check_in_time'] = instance.check_in.isoformat()
+            response['check_in_time'] = timezone.localtime(instance.check_in).isoformat()
         else:
             response['check_in_time'] = None
             
         if instance.check_out:
-            response['check_out_time'] = instance.check_out.isoformat()
+            response['check_out_time'] = timezone.localtime(instance.check_out).isoformat()
         else:
             response['check_out_time'] = None
             

@@ -536,6 +536,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
         # ---------------------------------------------------------
         # Add employees with no attendance and no approved leave.
+        # Exclude administrative users (e.g. SUPER_ADMIN, ADMIN) who do not undergo shift attendance.
         #
         # Today:
         #   Shift not finished -> PENDING ATTENDANCE
@@ -549,6 +550,10 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         # ---------------------------------------------------------
         employee_qs = Employee.objects.filter(
             status=True
+        ).exclude(
+            user__role__in=['SUPER_ADMIN', 'ADMIN']
+        ).exclude(
+            employee_id__istartswith='EMP-SUPERADMIN'
         ).select_related(
             'user',
             'branch',
@@ -1137,7 +1142,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 )
 
         
-        employees = Employee.objects.filter(status=True)
+        employees = Employee.objects.filter(
+            status=True
+        ).exclude(
+            user__role__in=['SUPER_ADMIN', 'ADMIN']
+        ).exclude(
+            employee_id__istartswith='EMP-SUPERADMIN'
+        )
         if company_id:
             employees = employees.filter(branch__company_id=company_id)
         if branch_id:
@@ -1968,10 +1979,20 @@ class CheckInView(views.APIView):
 
         # If employee is arriving past the grace window (or exceeded 3 grace days), late_reason is required.
         if attendance_status == 'LATE' and not late_reason:
+            hrs = late_minutes // 60
+            mins = late_minutes % 60
+            if hrs > 0 and mins > 0:
+                time_str = f"{hrs} hour{'s' if hrs > 1 else ''} {mins} minute{'s' if mins > 1 else ''}"
+            elif hrs > 0:
+                time_str = f"{hrs} hour{'s' if hrs > 1 else ''}"
+            else:
+                time_str = f"{mins} minute{'s' if mins > 1 else ''}"
+
             return Response({
                 "code": "LATE_REASON_REQUIRED",
-                "error": f"You are checking in late by {late_minutes} minutes. Please provide a reason for late arrival to proceed with Check-In.",
-                "late_minutes": late_minutes
+                "error": f"You are checking in late by {time_str}. Please provide a reason for late arrival to proceed with Check-In.",
+                "late_minutes": late_minutes,
+                "late_formatted": time_str
             }, status=status.HTTP_400_BAD_REQUEST)
 
         attendance_mode = 'WFH' if approved_wfh else 'OFFICE'

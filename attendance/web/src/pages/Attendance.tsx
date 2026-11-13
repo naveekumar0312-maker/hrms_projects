@@ -507,7 +507,12 @@ const Attendance = () => {
   }, [branches, selectedCompany]);
 
   const visibleRecords = useMemo(() => {
-    let result = [...records];
+    // Exclude superadmin/system administrative account from attendance/absent lists
+    let result = records.filter((record) => {
+      const code = String(record.employee?.employee_id || '').toUpperCase();
+      const name = String(record.employee?.full_name || record.employee?.name || '').toLowerCase();
+      return !code.startsWith('EMP-SUPERADMIN') && name !== 'admin';
+    });
 
     if (selectedDate) {
       result = result.filter(

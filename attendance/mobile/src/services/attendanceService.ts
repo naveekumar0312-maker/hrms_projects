@@ -58,6 +58,9 @@ export const checkIn = async (location: LocationData, photoUri: string, lateReas
     
     if (error.response?.status && error.response?.data) {
       const data = error.response.data;
+      if (data.code === 'LATE_REASON_REQUIRED') {
+        throw error;
+      }
       if (data.code === 'GPS_ACCURACY_TOO_LOW') {
         throw new Error("GPS accuracy is too low. Please move to an open area, turn on GPS, and try again.");
       }
@@ -119,6 +122,9 @@ export const checkOut = async (location: LocationData, photoUri: string) => {
     }
     if (error.response?.status && error.response?.data) {
       const data = error.response.data;
+      if (data.code === 'LATE_REASON_REQUIRED') {
+        throw error;
+      }
       if (data.code === 'GPS_ACCURACY_TOO_LOW') {
         throw new Error("GPS accuracy is too low. Please move to an open area, turn on GPS, and try again.");
       }

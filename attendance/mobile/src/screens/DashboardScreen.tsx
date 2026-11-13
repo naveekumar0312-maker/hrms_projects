@@ -499,6 +499,15 @@ export default function DashboardScreen({ navigation }: any) {
     setCameraVisible(true);
   };
 
+  const formatLateDuration = (minutes: number) => {
+    if (!minutes || minutes <= 0) return '0 mins';
+    const hrs = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hrs > 0 && mins > 0) return `${hrs} hr${hrs > 1 ? 's' : ''} ${mins} min${mins > 1 ? 's' : ''}`;
+    if (hrs > 0) return `${hrs} hr${hrs > 1 ? 's' : ''}`;
+    return `${mins} min${mins > 1 ? 's' : ''}`;
+  };
+
   const confirmCapturedPhoto = async () => {
     if (!capturedPhotoUri || loadingAction) return;
 
@@ -1125,7 +1134,7 @@ export default function DashboardScreen({ navigation }: any) {
                 <Text style={styles.lateModalTitle}>Late Arrival Notice</Text>
                 <Text style={styles.lateModalSubtitle}>
                   {pendingLateMinutes > 0
-                    ? `You are checking in ${pendingLateMinutes} mins late.`
+                    ? `You are checking in ${formatLateDuration(pendingLateMinutes)} late.`
                     : 'You have exceeded the standard grace window.'}
                 </Text>
               </View>
