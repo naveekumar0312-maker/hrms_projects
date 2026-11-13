@@ -193,9 +193,11 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
   };
 
   const dateFilteredRecords = records.filter((r) => {
-    // Exclude super admin dummy records if any
-    const empId = r.employee?.employee_id || '';
-    if (empId.toUpperCase().includes('SUPERADMIN')) return false;
+    // Exclude super admin/admin records from attendance lists
+    const empId = (r.employee?.employee_id || '').toUpperCase().replace(/[-_]/g, '');
+    const empName = (r.employee?.full_name || '').toLowerCase().trim();
+    const role = (r.employee?.role || r.employee?.user?.role || '').toUpperCase();
+    if (empId.includes('SUPERADMIN') || empName === 'admin' || role === 'SUPER_ADMIN' || role === 'ADMIN') return false;
 
     // Filter strictly by selected date
     if (r.date && r.date !== selectedDate) return false;
