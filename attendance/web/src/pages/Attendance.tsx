@@ -2825,13 +2825,35 @@ const Attendance = () => {
                           Punch In PHOTO
                         </div>
 
-                        {viewRecord.check_in_photo ? (
+                        {(viewRecord.check_in_photo || (viewRecord as any).check_in_photo_endpoint) ? (
                           <img
-                            src={`${viewRecord.check_in_photo}?t=${Date.now()}`}
+                            src={
+                              viewRecord.check_in_photo
+                                ? `${viewRecord.check_in_photo}?t=${Date.now()}`
+                                : ((viewRecord as any).check_in_photo_endpoint || '')
+                            }
                             alt="Punch In"
                             className="attendance-img"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              const fallbackEndpoint = (viewRecord as any).check_in_photo_endpoint || (viewRecord.id ? `/api/attendance/${viewRecord.id}/check-in-photo/` : null);
+                              if (fallbackEndpoint && !target.src.includes('/check-in-photo/')) {
+                                target.src = fallbackEndpoint;
+                              } else {
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent && !parent.querySelector('.photo-error-fallback')) {
+                                  const fallback = document.createElement('div');
+                                  fallback.className = 'attendance-img photo-error-fallback';
+                                  fallback.style.cssText = 'display:flex;align-items:center;justify-content:center;background:#f8fafc;border:1px dashed #cbd5e1;color:#94a3b8;font-size:12px;padding:12px;text-align:center;';
+                                  fallback.innerText = 'Punch In photo unavailable';
+                                  parent.appendChild(fallback);
+                                }
+                              }
+                            }}
                             onClick={() =>
                               setPreviewImage(
+                                (viewRecord as any).check_in_photo_endpoint ||
                                 viewRecord.check_in_photo ||
                                   null
                               )
@@ -3038,13 +3060,35 @@ const Attendance = () => {
                           Punch Out PHOTO
                         </div>
 
-                        {viewRecord.check_out_photo ? (
+                        {(viewRecord.check_out_photo || (viewRecord as any).check_out_photo_endpoint) ? (
                           <img
-                            src={`${viewRecord.check_out_photo}?t=${Date.now()}`}
+                            src={
+                              viewRecord.check_out_photo
+                                ? `${viewRecord.check_out_photo}?t=${Date.now()}`
+                                : ((viewRecord as any).check_out_photo_endpoint || '')
+                            }
                             alt="Punch Out"
                             className="attendance-img"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              const fallbackEndpoint = (viewRecord as any).check_out_photo_endpoint || (viewRecord.id ? `/api/attendance/${viewRecord.id}/check-out-photo/` : null);
+                              if (fallbackEndpoint && !target.src.includes('/check-out-photo/')) {
+                                target.src = fallbackEndpoint;
+                              } else {
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent && !parent.querySelector('.photo-error-fallback')) {
+                                  const fallback = document.createElement('div');
+                                  fallback.className = 'attendance-img photo-error-fallback';
+                                  fallback.style.cssText = 'display:flex;align-items:center;justify-content:center;background:#f8fafc;border:1px dashed #cbd5e1;color:#94a3b8;font-size:12px;padding:12px;text-align:center;';
+                                  fallback.innerText = 'Punch Out photo unavailable';
+                                  parent.appendChild(fallback);
+                                }
+                              }
+                            }}
                             onClick={() =>
                               setPreviewImage(
+                                (viewRecord as any).check_out_photo_endpoint ||
                                 viewRecord.check_out_photo ||
                                   null
                               )

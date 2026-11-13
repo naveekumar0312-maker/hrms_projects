@@ -1684,6 +1684,30 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(attendance, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='check-in-photo')
+    def get_check_in_photo(self, request, pk=None):
+        import os
+        from django.http import FileResponse, Http404
+        attendance = self.get_object()
+        if not attendance.check_in_photo:
+            raise Http404("No punch in photo found.")
+        try:
+            return FileResponse(attendance.check_in_photo.open('rb'), content_type='image/jpeg')
+        except Exception:
+            raise Http404("Photo file not found on disk.")
+
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='check-out-photo')
+    def get_check_out_photo(self, request, pk=None):
+        import os
+        from django.http import FileResponse, Http404
+        attendance = self.get_object()
+        if not attendance.check_out_photo:
+            raise Http404("No punch out photo found.")
+        try:
+            return FileResponse(attendance.check_out_photo.open('rb'), content_type='image/jpeg')
+        except Exception:
+            raise Http404("Photo file not found on disk.")
+
 from rest_framework.parsers import MultiPartParser, FormParser
 
 class CheckInView(views.APIView):

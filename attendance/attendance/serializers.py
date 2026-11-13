@@ -287,6 +287,17 @@ class AttendanceSerializer(serializers.ModelSerializer):
         else:
             response['working_hours'] = None
 
+        # Provide direct API endpoints for photos as robust fallbacks
+        if instance.check_in_photo:
+            response['check_in_photo_endpoint'] = f"/api/attendance/{instance.id}/check-in-photo/"
+        else:
+            response['check_in_photo_endpoint'] = None
+
+        if instance.check_out_photo:
+            response['check_out_photo_endpoint'] = f"/api/attendance/{instance.id}/check-out-photo/"
+        else:
+            response['check_out_photo_endpoint'] = None
+
         return response
 
 class CheckInSerializer(serializers.Serializer):

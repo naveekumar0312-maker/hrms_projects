@@ -1207,6 +1207,22 @@ const AttendanceDetailsModal: React.FC<
                           }
                           alt="Check In"
                           className="attendance-detail-photo"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallbackUrl = record?.id ? `/api/attendance/${record.id}/check-in-photo/` : '';
+                            if (fallbackUrl && !target.src.includes('/check-in-photo/')) {
+                              target.src = fallbackUrl;
+                            } else {
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent && !parent.querySelector('.attendance-detail-no-photo')) {
+                                const fallback = document.createElement('div');
+                                fallback.className = 'attendance-detail-no-photo';
+                                fallback.innerHTML = '<span>No Check In photo</span>';
+                                parent.appendChild(fallback);
+                              }
+                            }
+                          }}
                         />
 
                       ) : (
@@ -1240,6 +1256,22 @@ const AttendanceDetailsModal: React.FC<
                           }
                           alt="Check Out"
                           className="attendance-detail-photo"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            const fallbackUrl = record?.id ? `/api/attendance/${record.id}/check-out-photo/` : '';
+                            if (fallbackUrl && !target.src.includes('/check-out-photo/')) {
+                              target.src = fallbackUrl;
+                            } else {
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent && !parent.querySelector('.attendance-detail-no-photo')) {
+                                const fallback = document.createElement('div');
+                                fallback.className = 'attendance-detail-no-photo';
+                                fallback.innerHTML = '<span>No Check Out photo</span>';
+                                parent.appendChild(fallback);
+                              }
+                            }
+                          }}
                         />
 
                       ) : (
