@@ -135,11 +135,9 @@ export default function HistoryScreen({ navigation }: any) {
   }, [cycleInfo, report]);
 
   // Filter history records for employee:
-  // User asked: "present absent late venam holiday kattanum for employee"
-  // So we show Holiday records + all relevant working/holiday schedule items
+  // Show all continuous cycle days from 26th to 25th with full details
   const historyRecords = useMemo(() => {
     return calendarDays
-      .filter((day: any) => day.status !== 'FUTURE')
       .map((day: any) => {
         if (day.record) {
           return day.record;
@@ -167,6 +165,15 @@ export default function HistoryScreen({ navigation }: any) {
     return calendarDays.filter((d: any) => d.status === 'HOLIDAY');
   }, [calendarDays]);
 
+  const cycleWorkingDaysCount = useMemo(() => {
+    if (report?.summary?.working_days && report.summary.working_days > 0) {
+      return report.summary.working_days;
+    }
+    // Calculate total scheduled working days in this cycle (excluding Sundays and Holidays)
+    const workingDays = calendarDays.filter((d: any) => d.status !== 'WEEKEND' && d.status !== 'WEEKLY_OFF' && d.status !== 'HOLIDAY');
+    return workingDays.length;
+  }, [calendarDays, report]);
+
   const handleMonthSelect = (monthIdx: number) => {
     const newDate = new Date(currentDate);
     newDate.setMonth(monthIdx);
@@ -183,6 +190,7 @@ export default function HistoryScreen({ navigation }: any) {
     if (status === 'PERMISSION') return <View style={[styles.dot, { backgroundColor: '#0284C7' }]} />;
     if (status === 'ABSENT') return <View style={[styles.dot, { backgroundColor: '#8E9BAE' }]} />;
     if (status === 'ON_LEAVE' || status === 'HALF DAY' || status === 'HALF_DAY') return <View style={[styles.dot, { backgroundColor: COLORS.navy }]} />;
+    if (status === 'FUTURE' || status === 'PENDING') return <View style={[styles.dot, { backgroundColor: '#CBD5E1' }]} />;
     return <View style={[styles.dot, { backgroundColor: '#E5E9F0' }]} />;
   };
 
@@ -213,6 +221,12 @@ export default function HistoryScreen({ navigation }: any) {
     }
     if (status === 'ABSENT') {
       return { bg: '#F0F4F8', text: '#5A6A80', label: 'Absent' };
+    }
+    if (status === 'FUTURE') {
+      return { bg: '#F1F5F9', text: '#64748B', label: 'Working Day' };
+    }
+    if (status === 'PENDING') {
+      return { bg: '#FEF3C7', text: '#D97706', label: 'Pending' };
     }
     return { bg: '#F8F9FC', text: COLORS.primary, label: status || 'Day Off' };
   };
@@ -321,7 +335,7 @@ export default function HistoryScreen({ navigation }: any) {
               <CalendarIcon size={18} color={COLORS.primary} strokeWidth={2.2} />
             </View>
             <Text style={styles.summaryLabel}>Working Days</Text>
-            <Text style={styles.summaryValue}>{report?.summary?.working_days || 0}</Text>
+            <Text style={styles.summaryValue}>{cycleWorkingDaysCount}</Text>
           </View>
 
           {/* Cycle Days Total */}
