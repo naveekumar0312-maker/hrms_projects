@@ -301,6 +301,15 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         else:
             return queryset.none()
 
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            queryset = queryset.filter(date=date_param)
+        else:
+            start_date_param = self.request.query_params.get('start_date')
+            end_date_param = self.request.query_params.get('end_date')
+            if start_date_param and end_date_param:
+                queryset = queryset.filter(date__range=[start_date_param, end_date_param])
+
         return queryset.order_by('-date', '-check_in')
 
     def list(self, request, *args, **kwargs):

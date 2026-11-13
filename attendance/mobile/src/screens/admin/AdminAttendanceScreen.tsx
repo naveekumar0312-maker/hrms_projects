@@ -14,7 +14,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   CalendarClock,
@@ -50,6 +52,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
   const [records, setRecords] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'ABSENT' | 'PENDING'>('ALL');
+  const [refreshing, setRefreshing] = useState(false);
   
   // Modals: View & Edit
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
@@ -104,7 +107,13 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
       console.error('Failed fetching attendance records:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadAttendance(selectedDate);
   };
 
   useEffect(() => {
@@ -175,38 +184,76 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
     );
   };
 
-  const filteredRecords = records.filter((r) => {
+  const isPresentRecord = (r: any) => {
+    return ['PRESENT', 'COMPLETED', 'ON_TIME', 'WORKING'].includes(r.status);
+  };
+
+  const isPendingRecord = (r: any) => {
+    return r.approval_status === 'PENDING' || r.status === 'PENDING';
+  };
+
+  const dateFilteredRecords = records.filter((r) => {
+    // Exclude super admin dummy records if any
+    const empId = r.employee?.employee_id || '';
+    if (empId.toUpperCase().includes('SUPERADMIN')) return false;
+
+    // Filter strictly by selected date
+    if (r.date && r.date !== selectedDate) return false;
+
+    return true;
+  });
+
+  const filteredRecords = dateFilteredRecords.filter((r) => {
     const empName = (r.employee?.full_name || '').toLowerCase();
     const empId = (r.employee?.employee_id || '').toLowerCase();
     const query = searchQuery.toLowerCase();
     const matchSearch = empName.includes(query) || empId.includes(query);
 
-    if (statusFilter === 'ALL') return matchSearch;
-    return matchSearch && r.status === statusFilter;
+    if (!matchSearch) return false;
+
+    if (statusFilter === 'ALL') return true;
+    if (statusFilter === 'PRESENT') return isPresentRecord(r);
+    if (statusFilter === 'LATE') return r.status === 'LATE';
+    if (statusFilter === 'ABSENT') return r.status === 'ABSENT';
+    if (statusFilter === 'PENDING') return isPendingRecord(r);
+
+    return r.status === statusFilter;
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'PRESENT':
-        return { bg: '#E8F5E9', text: '#2E7D32', label: 'Present' };
-      case 'LATE':
-        return { bg: '#FFF8E1', text: '#F57F17', label: 'Late' };
-      case 'ABSENT':
-        return { bg: '#FFEBEE', text: '#C62828', label: 'Absent' };
-      case 'HALF_DAY':
-        return { bg: '#E0F7FA', text: '#00838F', label: 'Half Day' };
-      default:
-        return { bg: '#F5F5F5', text: '#616161', label: status || 'Pending' };
+  const getStatusBadge = (status: string, approvalStatus?: string) => {
+    if (['PRESENT', 'COMPLETED', 'ON_TIME', 'WORKING'].includes(status)) {
+      return { bg: '#E8F5E9', text: '#2E7D32', label: 'Present' };
     }
+    if (status === 'LATE') {
+      return { bg: '#FFF8E1', text: '#F57F17', label: 'Late' };
+    }
+    if (status === 'ABSENT') {
+      return { bg: '#FFEBEE', text: '#C62828', label: 'Absent' };
+    }
+    if (status === 'ON_LEAVE') {
+      return { bg: '#E0F2FE', text: '#0284C7', label: 'On Leave' };
+    }
+    if (status === 'HOLIDAY') {
+      return { bg: '#FEF3C7', text: '#D97706', label: 'Holiday' };
+    }
+    if (status === 'WEEKLY_OFF') {
+      return { bg: '#F3F4F6', text: '#6B7280', label: 'Weekly Off' };
+    }
+    if (status === 'PENDING' || approvalStatus === 'PENDING') {
+      return { bg: '#FFFBEB', text: '#D97706', label: 'Pending' };
+    }
+    return { bg: '#F5F5F5', text: '#616161', label: status || 'Pending' };
   };
 
-  const totalCount = records.length;
-  const presentCount = records.filter((r) => r.status === 'PRESENT').length;
-  const lateCount = records.filter((r) => r.status === 'LATE').length;
-  const absentCount = records.filter((r) => r.status === 'ABSENT').length;
+  const totalCount = dateFilteredRecords.length;
+  const presentCount = dateFilteredRecords.filter(isPresentRecord).length;
+  const lateCount = dateFilteredRecords.filter((r) => r.status === 'LATE').length;
+  const absentCount = dateFilteredRecords.filter((r) => r.status === 'ABSENT').length;
+  const pendingCount = dateFilteredRecords.filter(isPendingRecord).length;
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
+      <StatusBar style="dark" hidden={false} />
       <AdminHRHeader
         title="Attendance Records"
         subtitle={`${filteredRecords.length} records on ${selectedDate}`}
@@ -294,6 +341,10 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
           <Text style={[styles.chipVal, { color: '#FF3B30' }]}>{absentCount}</Text>
           <Text style={styles.chipLabel}>Absent</Text>
         </View>
+        <View style={styles.chip}>
+          <Text style={[styles.chipVal, { color: '#D97706' }]}>{pendingCount}</Text>
+          <Text style={styles.chipLabel}>Pending</Text>
+        </View>
       </View>
 
       {loading ? (
@@ -306,9 +357,16 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
           data={filteredRecords}
           keyExtractor={(item) => String(item.id || item.employee?.id)}
           contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#E56108']}
+            />
+          }
           renderItem={({ item }) => {
             const emp = item.employee || {};
-            const badge = getStatusBadge(item.status);
+            const badge = getStatusBadge(item.status, item.approval_status);
             return (
               <View style={styles.card}>
                 <TouchableOpacity
@@ -494,6 +552,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
 
       {/* Attendance Detail Modal */}
       <Modal statusBarTranslucent visible={!!selectedRecord} animationType="fade" transparent>
+        <StatusBar style="dark" hidden={false} />
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>

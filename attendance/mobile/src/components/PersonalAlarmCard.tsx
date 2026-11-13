@@ -11,6 +11,7 @@ import {
   TextInput,
   Alert,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import {
   Bell,
   BellOff,
@@ -381,6 +382,7 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
         animationType="fade"
         onRequestClose={() => setEditModalVisible(false)}
       >
+        <StatusBar style="dark" hidden={false} />
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             {/* Modal Header */}

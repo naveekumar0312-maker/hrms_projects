@@ -664,6 +664,7 @@ export const TasksScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
+      <StatusBar style="dark" hidden={false} />
       <AppHeader
         title="Tasks"
         subtitle="Manage and track assigned project tasks"

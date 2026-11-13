@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import {
   CheckCircle2,
   AlertCircle,
@@ -102,6 +103,7 @@ export const AppMessageModal: React.FC<AppMessageModalProps> = ({
       onRequestClose={handleBackdropPress}
       statusBarTranslucent
     >
+      <StatusBar style="dark" hidden={false} />
       <Pressable style={styles.backdrop} onPress={handleBackdropPress}>
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
           <View style={[styles.iconWrapper, { backgroundColor: getIconBackground() }]}>

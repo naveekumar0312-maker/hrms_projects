@@ -8,6 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import {
   Bell,
   Calendar,
@@ -124,6 +125,7 @@ export const MobileRolePendingActionsModal: React.FC<MobileRolePendingActionsMod
       animationType="slide"
       onRequestClose={onClose}
     >
+      <StatusBar style="dark" hidden={false} />
       <View style={styles.overlay}>
         <View style={styles.container}>
           {/* Grabber */}

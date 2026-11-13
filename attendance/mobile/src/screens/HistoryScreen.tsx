@@ -444,6 +444,7 @@ export default function HistoryScreen({ navigation }: any) {
 
       {/* MONTH PICKER MODAL */}
       <Modal statusBarTranslucent visible={showMonthPicker} transparent animationType="fade">
+        <StatusBar style="dark" hidden={false} />
         <View style={styles.modalOverlay}>
           <View style={styles.monthPickerCard}>
             <Text style={styles.modalTitle}>Select Pay Cycle</Text>
@@ -469,6 +470,7 @@ export default function HistoryScreen({ navigation }: any) {
 
       {/* DATE DETAILS MODAL */}
       <Modal statusBarTranslucent visible={!!selectedRecord} transparent animationType="slide">
+        <StatusBar style="dark" hidden={false} />
         <View style={styles.modalOverlay}>
           <View style={styles.detailsCard}>
             {selectedRecord && (
