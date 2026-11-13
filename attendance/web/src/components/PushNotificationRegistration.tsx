@@ -1,4 +1,4 @@
-﻿import { useContext, useEffect } from 'react';
+import { useContext, useEffect } from 'react';
 import { getToken, onMessage } from 'firebase/messaging';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';

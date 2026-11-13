@@ -729,7 +729,14 @@ class TeamLeaderTeamAssignmentView(views.APIView):
             raise PermissionDenied("Reporting Manager profile not found.")
 
         try:
-            team_leader = Employee.objects.select_related('user', 'branch').get(pk=pk, user__role='TEAM_LEADER')
+            team_leader = Employee.objects.select_related('user', 'branch').get(pk=pk)
+            is_tl = (
+                (team_leader.user and team_leader.user.role == 'TEAM_LEADER') or
+                'team leader' in (team_leader.designation or '').lower() or
+                'lead' in (team_leader.designation or '').lower()
+            )
+            if not is_tl:
+                return Response({"detail": "Employee is not a Team Leader."}, status=status.HTTP_400_BAD_REQUEST)
         except Employee.DoesNotExist:
             return Response({"detail": "Team Leader not found."}, status=status.HTTP_404_NOT_FOUND)
 

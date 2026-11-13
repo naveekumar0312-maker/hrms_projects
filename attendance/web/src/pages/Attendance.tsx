@@ -509,9 +509,11 @@ const Attendance = () => {
   const visibleRecords = useMemo(() => {
     // Exclude superadmin/system administrative account from attendance/absent lists
     let result = records.filter((record) => {
-      const code = String(record.employee?.employee_id || '').toUpperCase();
-      const name = String(record.employee?.full_name || record.employee?.name || '').toLowerCase();
-      return !code.startsWith('EMP-SUPERADMIN') && name !== 'admin';
+      const code = String(record.employee?.employee_id || '').toUpperCase().replace(/[-_]/g, '');
+      const name = String(record.employee?.full_name || record.employee?.name || '').trim().toLowerCase();
+      const empAny = record.employee as any;
+      const role = String(empAny?.role || empAny?.user?.role || '').toUpperCase();
+      return !code.includes('EMPSUPERADMIN') && name !== 'admin' && role !== 'SUPER_ADMIN' && role !== 'ADMIN';
     });
 
     if (selectedDate) {

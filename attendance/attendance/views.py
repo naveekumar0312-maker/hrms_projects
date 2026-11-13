@@ -562,7 +562,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         ).exclude(
             user__role__in=['SUPER_ADMIN', 'ADMIN']
         ).exclude(
-            employee_id__istartswith='EMP-SUPERADMIN'
+            employee_id__icontains='SUPER_ADMIN'
+        ).exclude(
+            employee_id__icontains='SUPERADMIN'
+        ).exclude(
+            full_name__iexact='admin'
         ).select_related(
             'user',
             'branch',
@@ -1156,7 +1160,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         ).exclude(
             user__role__in=['SUPER_ADMIN', 'ADMIN']
         ).exclude(
-            employee_id__istartswith='EMP-SUPERADMIN'
+            employee_id__icontains='SUPER_ADMIN'
+        ).exclude(
+            employee_id__icontains='SUPERADMIN'
+        ).exclude(
+            full_name__iexact='admin'
         )
         if company_id:
             employees = employees.filter(branch__company_id=company_id)

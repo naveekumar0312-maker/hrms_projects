@@ -29,6 +29,7 @@ import {
   Navigation,
   Loader2,
   AlertCircle,
+  ListTodo,
 } from 'lucide-react';
 
 import { Link, useNavigate } from 'react-router-dom';
@@ -996,6 +997,20 @@ const EmployeeDashboard = () => {
           Notifications intentionally removed
       ===================================================== */}
       <section className="quick-actions">
+
+        <button
+          type="button"
+          className="quick-action-card"
+          onClick={() => navigate('/tasks')}
+        >
+          <div className="quick-icon history-icon" style={{ background: '#f0fdf4', color: '#16a34a' }}>
+            <ListTodo size={25} />
+          </div>
+
+          <span>
+            {['TEAM_LEADER', 'REPORTING_MANAGER', 'HR', 'ADMIN', 'SUPER_ADMIN'].includes(employee?.role || employee?.user?.role || '') ? 'Task Manager' : 'My Tasks'}
+          </span>
+        </button>
 
         <button
           type="button"
