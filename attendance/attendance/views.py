@@ -1937,6 +1937,23 @@ class CheckInView(views.APIView):
 
         # Use employee shift if assigned, else fallback to branch policy or default 09:00.
         shift_start_time = employee.shift.start_time if employee.shift else (policy.start_time if policy else time(9, 0))
+        shift_end_time = employee.shift.end_time if employee.shift else (policy.end_time if policy else time(18, 0))
+
+        # Block check-in strictly after shift end time (or shift checkout time)
+        end_date = today
+        if shift_end_time < shift_start_time:
+            end_date = today + timedelta(days=1)
+        shift_end_datetime = timezone.make_aware(
+            datetime.combine(end_date, shift_end_time)
+        )
+
+        if now >= shift_end_datetime:
+            end_time_str = shift_end_time.strftime("%I:%M %p")
+            return Response({
+                "code": "SHIFT_ENDED",
+                "error": f"Check-in closed: Your shift ended at {end_time_str}. Check-in is not permitted after shift end time.",
+                "shift_end_time": shift_end_time.strftime("%H:%M:%S")
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         start_datetime = timezone.make_aware(
             datetime.combine(today, shift_start_time)

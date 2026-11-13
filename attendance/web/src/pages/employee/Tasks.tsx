@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   ListTodo,
   Calendar,
   Clock,
+  Plus,
 } from 'lucide-react';
 import api from '../../api';
 import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
+import { AuthContext } from '../../context/AuthContext';
 
 interface EmployeeTask {
   id: number;
@@ -30,9 +32,12 @@ interface EmployeeTask {
 }
 
 const EmployeeTasks: React.FC = () => {
+  const { user } = useContext(AuthContext);
+  const isTeamLeaderOrManager = ['TEAM_LEADER', 'REPORTING_MANAGER', 'HR', 'ADMIN', 'SUPER_ADMIN'].includes(user?.role || '');
   const [tasks, setTasks] = useState<EmployeeTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const loadTasks = useCallback(async () => {
     try {
@@ -101,11 +106,22 @@ const EmployeeTasks: React.FC = () => {
 
   return (
     <div className="task-manager-page">
-      <div className="rm-header">
+      <div className="rm-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1>My Assigned Tasks</h1>
-          <p>View your deliverables, collaborate with your manager, and log work hours.</p>
+          <h1>{isTeamLeaderOrManager ? 'Task Management' : 'My Assigned Tasks'}</h1>
+          <p>{isTeamLeaderOrManager ? 'Assign and track tasks for company employees, collaborate, and monitor progress.' : 'View your deliverables, collaborate with your manager, and log work hours.'}</p>
         </div>
+        {isTeamLeaderOrManager && (
+          <button
+            type="button"
+            className="rm-btn rm-btn-primary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus size={16} />
+            <span>Assign New Task</span>
+          </button>
+        )}
       </div>
 
       <div className="rm-table-card">
@@ -179,6 +195,18 @@ const EmployeeTasks: React.FC = () => {
           </table>
         )}
       </div>
+
+      {/* CREATE NEW TASK MODAL FOR TEAM LEADER / MANAGER */}
+      {showCreateModal && (
+        <TaskWorkspaceModal
+          taskId={null}
+          onClose={() => setShowCreateModal(false)}
+          onSaved={() => {
+            loadTasks();
+            setShowCreateModal(false);
+          }}
+        />
+      )}
 
       {/* TWO-COLUMN TASK WORKSPACE MODAL */}
       {selectedTaskId && (

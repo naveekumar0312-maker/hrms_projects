@@ -47,7 +47,8 @@ def check_user_task_access(task, user):
             return True
         raise PermissionDenied("You do not have permission for this task.")
     if user.role == 'TEAM_LEADER':
-        if not emp or task.company_id != user.company_id:
+        user_comp = user.company_id or (emp.branch.company_id if emp and emp.branch else None)
+        if not emp or (user_comp and task.company_id != user_comp):
             raise PermissionDenied("You do not have access to this task.")
         if (
             task.assigned_by_id == user.id or
@@ -55,7 +56,8 @@ def check_user_task_access(task, user):
             task.assigned_to_id == emp.id or
             (task.assigned_to and task.assigned_to.team_leader_id == emp.id) or
             task.assigned_employees.filter(id=emp.id).exists() or
-            task.assigned_employees.filter(team_leader=emp).exists()
+            task.assigned_employees.filter(team_leader=emp).exists() or
+            (user_comp and task.company_id == user_comp)
         ):
             return True
         raise PermissionDenied("Team Leaders can only access their own tasks or their team's tasks.")
@@ -123,14 +125,16 @@ class TaskViewSet(viewsets.ModelViewSet):
         if user.role == 'TEAM_LEADER':
             if not emp:
                 return Task.objects.none()
+            tl_company_id = user.company_id or (emp.branch.company_id if emp.branch else None)
             return qs.filter(
-                Q(company_id=user.company_id) & (
+                Q(company_id=tl_company_id) & (
                     Q(team_leader=emp) |
                     Q(assigned_by=user) |
                     Q(assigned_to=emp) |
                     Q(assigned_to__team_leader=emp) |
                     Q(assigned_employees=emp) |
-                    Q(assigned_employees__team_leader=emp)
+                    Q(assigned_employees__team_leader=emp) |
+                    Q(company_id=tl_company_id)
                 )
             ).distinct()
 
@@ -201,10 +205,12 @@ class TaskViewSet(viewsets.ModelViewSet):
         elif user.role == 'TEAM_LEADER':
             if not emp:
                 return Response([])
+            comp_id = user.company_id or (emp.branch.company_id if emp.branch else None)
+            # Team Leaders can assign tasks to employees within their company (excluding themselves and admin accounts)
             qs = Employee.objects.filter(
-                branch__company_id=user.company_id,
-                team_leader=emp
-            ).exclude(id=emp.id).select_related('user').order_by('full_name')
+                branch__company_id=comp_id,
+                status=True
+            ).exclude(id=emp.id).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).select_related('user', 'team_leader', 'branch', 'branch__company').order_by('full_name')
 
             return Response([_format_emp(e) for e in qs])
 
