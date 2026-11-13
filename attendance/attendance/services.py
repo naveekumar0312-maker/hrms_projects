@@ -323,6 +323,7 @@ def get_employee_attendance_status(
     holiday=None,
     approved_leave=None,
     now=None,
+    approved_wfh=None,
 ):
     """
     Single source of truth for an employee's attendance status on a specific date.
@@ -332,18 +333,20 @@ def get_employee_attendance_status(
          - If check_in is rejected or check_out is rejected -> 'REJECTED'
          - If check_in is late (late_minutes > 0 or status == 'LATE') -> 'LATE'
          - If checked in and checked out or working -> 'PRESENT'
-      2. If approved leave covers this date:
+      2. If approved WFH covers this date and no punch yet:
+         - 'WFH'
+      3. If approved leave covers this date:
          - 'HALF DAY' if leave_type == 'HALF_DAY' else 'ON_LEAVE'
-      3. If holiday covers this date:
+      4. If holiday covers this date:
          - 'HOLIDAY'
-      4. If weekly off (Sunday):
+      5. If weekly off (Sunday):
          - 'WEEKLY_OFF'
-      5. If date is in the future:
+      6. If date is in the future:
          - 'FUTURE'
-      6. If date is today:
+      7. If date is today:
          - If employee's shift end time has passed -> 'ABSENT'
          - Else -> 'PENDING'
-      7. If date is in the past:
+      8. If date is in the past:
          - 'ABSENT'
     """
     if now is None:
@@ -367,9 +370,15 @@ def get_employee_attendance_status(
         if approved_leave and approved_leave.leave_type == 'HALF_DAY':
             return 'HALF DAY'
 
+        if approved_wfh is not None:
+            return 'WFH'
+
         return 'PRESENT'
 
     # No attendance record was punched:
+    if approved_wfh is not None:
+        return 'WFH'
+
     if approved_leave is not None:
         if approved_leave.leave_type == 'HALF_DAY':
             return 'HALF DAY'
@@ -412,7 +421,7 @@ def build_employee_attendance_report(
     over [start_date, end_date]. Used by Web Reports, Mobile Attendance History,
     and Admin dashboards.
     """
-    from attendance.models import Attendance, LeaveRequest
+    from attendance.models import Attendance, LeaveRequest, PermissionRequest, WFHRequest
 
     if now is None:
         now = timezone.localtime()
@@ -424,7 +433,6 @@ def build_employee_attendance_report(
     # Approved leaves
     approved_leaves = LeaveRequest.objects.filter(
         employee=employee,
-        status='APPROVED',
         start_date__lte=end_date,
         end_date__gte=start_date,
     )
@@ -433,8 +441,34 @@ def build_employee_attendance_report(
         curr = max(leave.start_date, start_date)
         last = min(leave.end_date, end_date)
         while curr <= last:
-            leave_by_date[str(curr)] = leave
+            # Prioritize APPROVED leave over pending/rejected
+            existing_lev = leave_by_date.get(str(curr))
+            if not existing_lev or (existing_lev.status != 'APPROVED' and leave.status == 'APPROVED'):
+                leave_by_date[str(curr)] = leave
             curr += timedelta(days=1)
+
+    # Permissions in cycle (mapped by date, can have multiple)
+    permissions = PermissionRequest.objects.filter(
+        employee=employee,
+        date__range=[start_date, end_date],
+    )
+    permissions_by_date = {}
+    for perm in permissions:
+        d_k = str(perm.date)
+        if d_k not in permissions_by_date:
+            permissions_by_date[d_k] = []
+        permissions_by_date[d_k].append(perm)
+
+    # WFH requests in cycle
+    wfh_requests = WFHRequest.objects.filter(
+        employee=employee,
+        date__range=[start_date, end_date],
+    )
+    wfh_by_date = {}
+    for w in wfh_requests:
+        existing_wfh = wfh_by_date.get(str(w.date))
+        if not existing_wfh or (existing_wfh.status != 'APPROVED' and w.status == 'APPROVED'):
+            wfh_by_date[str(w.date)] = w
 
     # Actual attendance records
     records = Attendance.objects.filter(
@@ -452,6 +486,8 @@ def build_employee_attendance_report(
     on_leave_count = 0
     weekly_off_count = 0
     half_day_count = 0
+    wfh_count = 0
+    permission_count = 0
     total_working_seconds = 0
 
     curr = start_date
@@ -460,14 +496,20 @@ def build_employee_attendance_report(
         rec = records_by_date.get(d_str)
         hol = holidays_by_date.get(d_str)
         lev = leave_by_date.get(d_str)
+        wfh = wfh_by_date.get(d_str)
+        perms = permissions_by_date.get(d_str, [])
+
+        approved_lev = lev if (lev and lev.status == 'APPROVED') else None
+        approved_wfh = wfh if (wfh and wfh.status == 'APPROVED') else None
 
         calculated_status = get_employee_attendance_status(
             record=rec,
             employee=employee,
             target_date=curr,
             holiday=hol,
-            approved_leave=lev,
+            approved_leave=approved_lev,
             now=now,
+            approved_wfh=approved_wfh,
         )
 
         working_hours_str = "00:00"
@@ -521,6 +563,9 @@ def build_employee_attendance_report(
         elif calculated_status == 'LATE':
             late_count += 1
             present_count += 1  # Late employees were present at work
+        elif calculated_status == 'WFH':
+            wfh_count += 1
+            present_count += 1  # WFH is counted towards working attendance
         elif calculated_status == 'ABSENT':
             absent_count += 1
         elif calculated_status == 'HOLIDAY':
@@ -534,11 +579,18 @@ def build_employee_attendance_report(
             present_count += 0.5
             on_leave_count += 0.5
 
+        if any(p.status == 'APPROVED' for p in perms):
+            permission_count += 1
+
         day_item = {
             "id": rec.id if rec else f"{calculated_status.lower()}-{d_str}",
             "date": d_str,
             "status": calculated_status,
-            "approval_status": approval_status if rec else ("APPROVED" if lev else None),
+            "approval_status": approval_status if rec else (
+                approved_lev.status if approved_lev else (
+                    approved_wfh.status if approved_wfh else None
+                )
+            ),
             "rejection_reason": rejection_reason,
             "check_in_time": check_in_time_iso,
             "check_out_time": check_out_time_iso,
@@ -564,6 +616,28 @@ def build_employee_attendance_report(
                 "end_date": str(lev.end_date),
                 "reason": lev.reason,
                 "status": lev.status,
+            }
+
+        if perms:
+            day_item["permissions"] = [
+                {
+                    "id": p.id,
+                    "date": str(p.date),
+                    "duration_minutes": p.duration_minutes,
+                    "start_time": str(p.start_time) if p.start_time else None,
+                    "end_time": str(p.end_time) if p.end_time else None,
+                    "reason": p.reason,
+                    "status": p.status,
+                }
+                for p in perms
+            ]
+
+        if wfh:
+            day_item["wfh"] = {
+                "id": wfh.id,
+                "date": str(wfh.date),
+                "reason": wfh.reason,
+                "status": wfh.status,
             }
 
         calendar.append(day_item)

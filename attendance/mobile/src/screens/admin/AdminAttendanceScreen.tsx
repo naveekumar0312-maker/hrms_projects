@@ -550,6 +550,42 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                   <Text style={styles.detailValue}>{selectedRecord.working_hours || '00:00'}</Text>
                 </View>
 
+                {/* Photos Row */}
+                <View style={{ marginTop: 12 }}>
+                  <Text style={[styles.detailLabel, { marginBottom: 6 }]}>Punch Photos</Text>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={{ flex: 1, backgroundColor: '#F8F9FC', borderRadius: 10, padding: 6, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#444', marginBottom: 4 }}>Check In</Text>
+                      {selectedRecord.check_in_photo ? (
+                        <Image
+                          source={{ uri: resolveMediaUrl(selectedRecord.check_in_photo)! }}
+                          style={{ width: '100%', height: 90, borderRadius: 6, backgroundColor: '#E2E8F0' }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{ width: '100%', height: 90, borderRadius: 6, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={{ fontSize: 9, color: '#94A3B8' }}>No Photo</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={{ flex: 1, backgroundColor: '#F8F9FC', borderRadius: 10, padding: 6, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#444', marginBottom: 4 }}>Check Out</Text>
+                      {selectedRecord.check_out_photo ? (
+                        <Image
+                          source={{ uri: resolveMediaUrl(selectedRecord.check_out_photo)! }}
+                          style={{ width: '100%', height: 90, borderRadius: 6, backgroundColor: '#E2E8F0' }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{ width: '100%', height: 90, borderRadius: 6, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={{ fontSize: 9, color: '#94A3B8' }}>No Photo</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </View>
+
                 <View style={styles.viewActions}>
                   <TouchableOpacity
                     style={[styles.actionBtn, styles.editBtn, { flex: 1, paddingVertical: 10 }]}

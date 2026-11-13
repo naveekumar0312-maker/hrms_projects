@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useContext, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Platform, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { getReports } from '../services/attendanceService';
 import { AuthContext } from '../context/AuthContext';
-import { Calendar as CalendarIcon, ChevronDown, Check, Clock, X, Sparkles, ChevronRight, PartyPopper } from 'lucide-react-native';
+import { Calendar as CalendarIcon, ChevronDown, Check, Clock, X, Sparkles, ChevronRight, PartyPopper, Image as ImageIcon, Briefcase, FileText } from 'lucide-react-native';
 import { formatAttendanceTime, formatWorkingHours } from '../utils/dateUtils';
+import { resolveMediaUrl } from '../utils/imageUtils';
 import { COLORS } from '../constants/theme';
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -178,6 +179,8 @@ export default function HistoryScreen({ navigation }: any) {
     if (status === 'WEEKLY_OFF' || status === 'WEEKEND') return <View style={[styles.dot, { backgroundColor: COLORS.primaryLight }]} />;
     if (['PRESENT', 'COMPLETED', 'ON_TIME', 'WORKING'].includes(status)) return <View style={[styles.dot, { backgroundColor: COLORS.primary }]} />;
     if (status === 'LATE') return <View style={[styles.dot, { backgroundColor: COLORS.gold }]} />;
+    if (status === 'WFH') return <View style={[styles.dot, { backgroundColor: '#7C3AED' }]} />;
+    if (status === 'PERMISSION') return <View style={[styles.dot, { backgroundColor: '#0284C7' }]} />;
     if (status === 'ABSENT') return <View style={[styles.dot, { backgroundColor: '#8E9BAE' }]} />;
     if (status === 'ON_LEAVE' || status === 'HALF DAY' || status === 'HALF_DAY') return <View style={[styles.dot, { backgroundColor: COLORS.navy }]} />;
     return <View style={[styles.dot, { backgroundColor: '#E5E9F0' }]} />;
@@ -189,6 +192,12 @@ export default function HistoryScreen({ navigation }: any) {
     }
     if (status === 'WEEKLY_OFF' || status === 'WEEKEND') {
       return { bg: 'rgba(0, 86, 179, 0.08)', text: COLORS.primary, label: 'Weekly Off' };
+    }
+    if (status === 'WFH') {
+      return { bg: 'rgba(124, 58, 237, 0.12)', text: '#7C3AED', label: 'WFH' };
+    }
+    if (status === 'PERMISSION') {
+      return { bg: 'rgba(2, 132, 199, 0.12)', text: '#0284C7', label: 'Permission' };
     }
     if (status === 'ON_LEAVE') {
       return { bg: 'rgba(6, 27, 58, 0.08)', text: COLORS.navy, label: 'On Leave' };
@@ -463,32 +472,97 @@ export default function HistoryScreen({ navigation }: any) {
         <View style={styles.modalOverlay}>
           <View style={styles.detailsCard}>
             {selectedRecord && (
-              <>
+              <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={styles.modalTitle}>Cycle Day Details</Text>
+                
                 <View style={styles.detailsRow}>
                   <Text style={styles.detailsLabel}>Date:</Text>
                   <Text style={styles.detailsValue}>{selectedRecord.date}</Text>
                 </View>
+
                 {selectedRecord.holiday_name && (
                   <View style={styles.detailsRow}>
                     <Text style={styles.detailsLabel}>Holiday Event:</Text>
-                    <Text style={[styles.detailsValue, { color: COLORS.goldDark, fontFamily: 'Comfortaa_700Bold', }]}>
+                    <Text style={[styles.detailsValue, { color: COLORS.goldDark, fontFamily: 'Comfortaa_700Bold' }]}>
                       {selectedRecord.holiday_name}
                     </Text>
                   </View>
                 )}
+
                 <View style={styles.detailsRow}>
                   <Text style={styles.detailsLabel}>Status:</Text>
-                  <Text style={styles.detailsValue}>{selectedRecord.status?.replace('_', ' ')}</Text>
+                  <View style={[styles.historyCompactBadge, { backgroundColor: getStatusBadge(selectedRecord.status, selectedRecord.holiday_name).bg }]}>
+                    <Text style={[styles.historyCompactBadgeText, { color: getStatusBadge(selectedRecord.status, selectedRecord.holiday_name).text }]}>
+                      {getStatusBadge(selectedRecord.status, selectedRecord.holiday_name).label}
+                    </Text>
+                  </View>
                 </View>
+
+                {/* LEAVE SECTION IF PRESENT */}
+                {selectedRecord.leave && (
+                  <View style={styles.detailSectionBox}>
+                    <View style={styles.detailSectionHeader}>
+                      <FileText size={15} color="#D97706" />
+                      <Text style={styles.detailSectionTitle}>Leave Request ({selectedRecord.leave.leave_type})</Text>
+                    </View>
+                    <Text style={styles.detailSectionText}>Status: {selectedRecord.leave.status}</Text>
+                    {selectedRecord.leave.reason && (
+                      <Text style={styles.detailSectionSubText}>Reason: {selectedRecord.leave.reason}</Text>
+                    )}
+                  </View>
+                )}
+
+                {/* WFH SECTION IF PRESENT */}
+                {selectedRecord.wfh && (
+                  <View style={[styles.detailSectionBox, { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE' }]}>
+                    <View style={styles.detailSectionHeader}>
+                      <Briefcase size={15} color="#7C3AED" />
+                      <Text style={[styles.detailSectionTitle, { color: '#6D28D9' }]}>Work From Home (WFH)</Text>
+                    </View>
+                    <Text style={[styles.detailSectionText, { color: '#5B21B6' }]}>Status: {selectedRecord.wfh.status}</Text>
+                    {selectedRecord.wfh.reason && (
+                      <Text style={[styles.detailSectionSubText, { color: '#7C3AED' }]}>Reason: {selectedRecord.wfh.reason}</Text>
+                    )}
+                  </View>
+                )}
+
+                {/* PERMISSION SECTION IF PRESENT */}
+                {selectedRecord.permissions && selectedRecord.permissions.length > 0 && (
+                  <View style={[styles.detailSectionBox, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
+                    <View style={styles.detailSectionHeader}>
+                      <Clock size={15} color="#0284C7" />
+                      <Text style={[styles.detailSectionTitle, { color: '#0369A1' }]}>Permissions Used</Text>
+                    </View>
+                    {selectedRecord.permissions.map((p: any, pIdx: number) => (
+                      <View key={p.id || pIdx} style={{ marginTop: 4 }}>
+                        <Text style={[styles.detailSectionText, { color: '#0369A1' }]}>
+                          • {p.duration_minutes} Minutes ({p.status})
+                        </Text>
+                        {p.start_time && p.end_time && (
+                          <Text style={[styles.detailSectionSubText, { color: '#0284C7' }]}>
+                            Time: {p.start_time} - {p.end_time}
+                          </Text>
+                        )}
+                        {p.reason && (
+                          <Text style={[styles.detailSectionSubText, { color: '#64748B' }]}>
+                            Note: {p.reason}
+                          </Text>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                )}
+
                 <View style={styles.detailsRow}>
                   <Text style={styles.detailsLabel}>Check In:</Text>
                   <Text style={styles.detailsValue}>{formatAttendanceTime(selectedRecord.check_in_time)}</Text>
                 </View>
+
                 <View style={styles.detailsRow}>
                   <Text style={styles.detailsLabel}>Check Out:</Text>
                   <Text style={styles.detailsValue}>{formatAttendanceTime(selectedRecord.check_out_time)}</Text>
                 </View>
+
                 <View style={styles.detailsRow}>
                   <Text style={styles.detailsLabel}>Working Hours:</Text>
                   <Text style={styles.detailsValue}>
@@ -496,10 +570,48 @@ export default function HistoryScreen({ navigation }: any) {
                   </Text>
                 </View>
 
+                {/* ATTENDANCE PHOTOS (CHECK-IN & CHECK-OUT) */}
+                <View style={{ marginTop: 14 }}>
+                  <Text style={[styles.detailsLabel, { marginBottom: 8 }]}>Punch Photos</Text>
+                  <View style={styles.photoGrid}>
+                    <View style={styles.photoBox}>
+                      <Text style={styles.photoLabel}>Check In Photo</Text>
+                      {selectedRecord.check_in_photo ? (
+                        <Image
+                          source={{ uri: resolveMediaUrl(selectedRecord.check_in_photo)! }}
+                          style={styles.modalPhotoImg}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.noPhotoBox}>
+                          <ImageIcon size={20} color="#94A3B8" />
+                          <Text style={styles.noPhotoText}>No Punch In Photo</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={styles.photoBox}>
+                      <Text style={styles.photoLabel}>Check Out Photo</Text>
+                      {selectedRecord.check_out_photo ? (
+                        <Image
+                          source={{ uri: resolveMediaUrl(selectedRecord.check_out_photo)! }}
+                          style={styles.modalPhotoImg}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles.noPhotoBox}>
+                          <ImageIcon size={20} color="#94A3B8" />
+                          <Text style={styles.noPhotoText}>No Punch Out Photo</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </View>
+
                 <TouchableOpacity style={styles.closeDetailsBtn} onPress={() => setSelectedRecord(null)}>
                   <Text style={styles.closeDetailsBtnText}>Close</Text>
                 </TouchableOpacity>
-              </>
+              </ScrollView>
             )}
           </View>
         </View>
@@ -689,10 +801,23 @@ const styles = StyleSheet.create({
   closeBtn: { marginTop: 16, paddingVertical: 10, paddingHorizontal: 20 },
   closeBtnText: { fontSize: 14, fontFamily: 'Comfortaa_700Bold', color: COLORS.textSecondary },
 
-  detailsCard: { width: '90%', backgroundColor: '#FFF', borderRadius: 24, padding: 22 },
-  detailsRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F8F9FC' },
+  detailsCard: { width: '92%', maxHeight: '85%', backgroundColor: '#FFF', borderRadius: 24, padding: 22 },
+  detailsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F8F9FC' },
   detailsLabel: { fontSize: 13, color: COLORS.textSecondary },
   detailsValue: { fontSize: 13, fontFamily: 'Comfortaa_700Bold', color: COLORS.dark },
   closeDetailsBtn: { marginTop: 18, backgroundColor: COLORS.primary, paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
   closeDetailsBtnText: { color: '#FFF', fontFamily: 'Comfortaa_700Bold', fontSize: 14 },
+
+  detailSectionBox: { marginTop: 10, padding: 12, borderRadius: 12, backgroundColor: '#FFFBEB', borderWidth: 1, borderColor: '#FDE68A' },
+  detailSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  detailSectionTitle: { fontSize: 12, fontFamily: 'Comfortaa_700Bold', color: '#B45309' },
+  detailSectionText: { fontSize: 12, fontFamily: 'Comfortaa_600SemiBold', color: '#92400E' },
+  detailSectionSubText: { fontSize: 11, color: '#78350F', marginTop: 2 },
+
+  photoGrid: { flexDirection: 'row', gap: 10, marginTop: 4 },
+  photoBox: { flex: 1, backgroundColor: '#F8FAFC', borderRadius: 12, padding: 8, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  photoLabel: { fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: COLORS.dark, marginBottom: 6 },
+  modalPhotoImg: { width: '100%', height: 110, borderRadius: 8, backgroundColor: '#E2E8F0' },
+  noPhotoBox: { height: 110, width: '100%', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F1F5F9', borderRadius: 8 },
+  noPhotoText: { fontSize: 10, color: '#94A3B8', marginTop: 4, textAlign: 'center' },
 });
