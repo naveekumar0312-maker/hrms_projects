@@ -33,7 +33,8 @@ const getApiErrorMessage = (error: any, fallback: string) => {
 
 export const checkIn = async (
   location: LocationData,
-  photoUri: string
+  photoUri: string,
+  lateReason?: string
 ) => {
   try {
     const latitude = Number(location.latitude.toFixed(6));
@@ -45,6 +46,10 @@ export const checkIn = async (
     formData.append('latitude', latitude.toString());
     formData.append('longitude', longitude.toString());
     formData.append('accuracy', accuracy.toString());
+
+    if (lateReason) {
+      formData.append('late_reason', lateReason);
+    }
 
     const photoBlob = await dataUrlToBlob(photoUri);
 
@@ -62,6 +67,11 @@ export const checkIn = async (
     return response.data;
   } catch (error: any) {
     console.error('Punch In API error:', error?.response?.data || error);
+
+    // Preserve raw error response so caller can inspect error code (e.g. LATE_REASON_REQUIRED)
+    if (error?.response?.data) {
+      throw error;
+    }
 
     throw new Error(
       getApiErrorMessage(error, 'Punch In failed.')

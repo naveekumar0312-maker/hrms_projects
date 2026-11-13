@@ -26,8 +26,13 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
+
+    def get_permissions(self):
+        if self.action in ['me', 'change_password']:
+            return [permissions.IsAuthenticated()]
+        return [IsAdminUser()]
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related(

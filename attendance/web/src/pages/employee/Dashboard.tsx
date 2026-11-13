@@ -5,6 +5,7 @@ import api from '../../api/index';
 import { checkIn, checkOut, getHistory } from '../../api/attendance';
 import CameraCapture from '../../components/CameraCapture';
 import { useLocation } from '../../hooks/useLocation';
+import type { LocationData } from '../../hooks/useLocation';
 import {
   getLocationSharingStatus,
   setLocationSharing,
@@ -62,6 +63,13 @@ const EmployeeDashboard = () => {
   });
 
   const [locationStatus, setLocationStatus] = useState('-- m');
+
+  // Late check-in reason modal state
+  const [showLateReasonModal, setShowLateReasonModal] = useState(false);
+  const [lateReasonText, setLateReasonText] = useState('');
+  const [pendingLateNotice, setPendingLateNotice] = useState('');
+  const [pendingPhotoUri, setPendingPhotoUri] = useState<string | null>(null);
+  const [pendingLocationData, setPendingLocationData] = useState<LocationData | null>(null);
 
   // Daily Tasks Reminder Pop-up State
   const [assignedTasks, setAssignedTasks] = useState<DailyReminderTask[]>([]);
@@ -331,6 +339,50 @@ const EmployeeDashboard = () => {
     }
   };
 
+  const submitCheckInWithReason = async () => {
+    if (!lateReasonText.trim()) {
+      alert('Please enter a reason for late arrival.');
+      return;
+    }
+    if (!pendingPhotoUri || !pendingLocationData) {
+      alert('Session expired. Please capture your photo again.');
+      setShowLateReasonModal(false);
+      return;
+    }
+
+    setLoadingAction(true);
+    try {
+      await checkIn(pendingLocationData, pendingPhotoUri, lateReasonText.trim());
+      setShowLateReasonModal(false);
+      setLateReasonText('');
+      setPendingPhotoUri(null);
+      setPendingLocationData(null);
+
+      setAttendancePopup({
+        show: true,
+        type: 'success',
+        title: 'Check-In Successful',
+        message: 'Your attendance has been marked successfully.',
+      });
+      await fetchDashboardData();
+    } catch (error: any) {
+      const errMsg =
+        error?.response?.data?.error ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Check-In failed. Please try again.';
+      setAttendancePopup({
+        show: true,
+        type: 'error',
+        title: 'Check-In Failed',
+        message: String(errMsg),
+      });
+    } finally {
+      setActionType(null);
+      setLoadingAction(false);
+    }
+  };
+
   const handleCapture = async (photoUri: string) => {
     setShowCamera(false);
 
@@ -373,10 +425,24 @@ const EmployeeDashboard = () => {
         responseURL: error?.config?.url,
       });
 
+      const resData = error?.response?.data;
+      if (resData?.code === 'LATE_REASON_REQUIRED') {
+        setPendingLateNotice(resData.error || `You are checking in late.`);
+        setPendingPhotoUri(photoUri);
+        try {
+          const loc = await getLocation();
+          setPendingLocationData(loc);
+        } catch {
+          // ignore
+        }
+        setShowLateReasonModal(true);
+        return;
+      }
+
       const errorMessage =
-        error?.response?.data?.error ||
-        error?.response?.data?.detail ||
-        error?.response?.data?.message ||
+        resData?.error ||
+        resData?.detail ||
+        resData?.message ||
         error?.message ||
         'Attendance action failed. Please try again.';
 
@@ -391,9 +457,7 @@ const EmployeeDashboard = () => {
         title: isLocationError
           ? 'Outside Office Location'
           : 'Attendance Failed',
-        message: isLocationError
-          ? 'You are outside the allowed office location. Please move closer to the office and try again.'
-          : String(errorMessage),
+        message: String(errorMessage),
       });
     } finally {
       setActionType(null);
@@ -555,6 +619,60 @@ const EmployeeDashboard = () => {
 
   return (
     <>
+      {/* LATE REASON MODAL */}
+      {showLateReasonModal && (
+        <div className="attendance-popup-overlay">
+          <div className="attendance-popup attendance-popup-error" style={{ maxWidth: 440, width: '92%' }}>
+            <div className="attendance-popup-icon" style={{ background: '#FEF3C7', color: '#D97706' }}>
+              <AlertCircle size={28} />
+            </div>
+            <div className="attendance-popup-content">
+              <h3>Late Arrival Notice</h3>
+              <p style={{ marginBottom: 12 }}>{pendingLateNotice}</p>
+              <textarea
+                rows={3}
+                style={{
+                  width: '100%',
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: '1px solid #D1D5DB',
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                  resize: 'none',
+                  boxSizing: 'border-box',
+                  marginBottom: 10,
+                }}
+                placeholder="Reason for late arrival (e.g. Traffic, client meeting)..."
+                value={lateReasonText}
+                onChange={(e) => setLateReasonText(e.target.value)}
+              />
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  style={{ background: '#F3F4F6', color: '#374151' }}
+                  onClick={() => {
+                    setShowLateReasonModal(false);
+                    setLateReasonText('');
+                    setPendingPhotoUri(null);
+                    setPendingLocationData(null);
+                  }}
+                  disabled={loadingAction}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitCheckInWithReason}
+                  disabled={loadingAction || !lateReasonText.trim()}
+                >
+                  {loadingAction ? 'Submitting...' : 'Submit & Check In'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {attendancePopup.show && (
         <div className="attendance-popup-overlay">
           <div className={`attendance-popup ${
