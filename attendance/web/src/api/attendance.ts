@@ -1,4 +1,4 @@
-﻿import api from './index';
+import api from './index';
 import type { LocationData } from '../hooks/useLocation';
 
 const dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {
