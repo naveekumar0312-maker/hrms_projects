@@ -138,9 +138,10 @@ class ShiftViewSet(viewsets.ModelViewSet):
 
 class EmployeePersonalAlarmView(views.APIView):
     """
-    Authenticated employee personal daily alarm endpoint.
-    GET: Returns current configured personal alarm.
-    POST / PUT: Sets or updates personal alarm time and enabled state.
+    Manage Personal Alarms for the logged-in employee.
+    GET: returns primary alarm (backward-compatible) and 'alarms' list.
+    POST: creates a new alarm or updates an existing one (if 'id' provided).
+    DELETE: deletes an alarm by id query param or payload.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -153,18 +154,52 @@ class EmployeePersonalAlarmView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        alarm, _ = EmployeePersonalAlarm.objects.get_or_create(
-            employee=employee,
-            defaults={'alarm_time': '08:30:00', 'is_enabled': False}
-        )
-        serializer = EmployeePersonalAlarmSerializer(alarm)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        alarms = list(EmployeePersonalAlarm.objects.filter(employee=employee).order_by('id'))
+        if not alarms:
+            primary = EmployeePersonalAlarm.objects.create(
+                employee=employee,
+                label='Personal Alarm',
+                alarm_time='08:30:00',
+                is_enabled=False,
+                days_of_week=[],
+                specific_dates=[]
+            )
+            alarms = [primary]
+
+        serializer = EmployeePersonalAlarmSerializer(alarms, many=True)
+        primary_data = EmployeePersonalAlarmSerializer(alarms[0]).data
+
+        # Return backward-compatible single object fields plus 'alarms' array
+        response_data = dict(primary_data)
+        response_data['alarms'] = serializer.data
+        return Response(response_data, status=status.HTTP_200_OK)
 
     def post(self, request):
         return self._save_alarm(request)
 
     def put(self, request):
         return self._save_alarm(request)
+
+    def delete(self, request):
+        user = request.user
+        employee = getattr(user, 'employee_profile', None)
+        if not employee:
+            return Response(
+                {"detail": "Employee profile required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        alarm_id = request.query_params.get('id') or request.data.get('id')
+        if not alarm_id:
+            return Response({"detail": "Alarm ID is required to delete."}, status=status.HTTP_400_BAD_REQUEST)
+
+        deleted_count, _ = EmployeePersonalAlarm.objects.filter(employee=employee, id=alarm_id).delete()
+        if deleted_count == 0:
+            return Response({"detail": "Alarm not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        alarms = EmployeePersonalAlarm.objects.filter(employee=employee).order_by('id')
+        serializer = EmployeePersonalAlarmSerializer(alarms, many=True)
+        return Response({"detail": "Alarm deleted successfully", "alarms": serializer.data}, status=status.HTTP_200_OK)
 
     def _save_alarm(self, request):
         user = request.user
@@ -175,16 +210,43 @@ class EmployeePersonalAlarmView(views.APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        alarm, _ = EmployeePersonalAlarm.objects.get_or_create(
-            employee=employee,
-            defaults={'alarm_time': '08:30:00', 'is_enabled': False}
-        )
+        alarm_id = request.data.get('id')
+        alarm = None
+        if alarm_id:
+            alarm = EmployeePersonalAlarm.objects.filter(employee=employee, id=alarm_id).first()
+
+        # If action is explicitly 'create'
+        if not alarm and request.data.get('action') == 'create':
+            create_data = dict(request.data)
+            create_data.pop('action', None)
+            create_data.pop('id', None)
+            serializer = EmployeePersonalAlarmSerializer(data=create_data)
+            serializer.is_valid(raise_exception=True)
+            saved = serializer.save(employee=employee)
+            all_alarms = EmployeePersonalAlarm.objects.filter(employee=employee).order_by('id')
+            return Response({
+                **EmployeePersonalAlarmSerializer(saved).data,
+                "alarms": EmployeePersonalAlarmSerializer(all_alarms, many=True).data
+            }, status=status.HTTP_201_CREATED)
+
+        if not alarm:
+            alarm = EmployeePersonalAlarm.objects.filter(employee=employee).order_by('id').first()
+            if not alarm:
+                alarm = EmployeePersonalAlarm.objects.create(
+                    employee=employee,
+                    alarm_time=request.data.get('alarm_time', '08:30:00'),
+                    is_enabled=request.data.get('is_enabled', False)
+                )
 
         serializer = EmployeePersonalAlarmSerializer(alarm, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        saved = serializer.save()
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        all_alarms = EmployeePersonalAlarm.objects.filter(employee=employee).order_by('id')
+        return Response({
+            **EmployeePersonalAlarmSerializer(saved).data,
+            "alarms": EmployeePersonalAlarmSerializer(all_alarms, many=True).data
+        }, status=status.HTTP_200_OK)
 
 
 class AttendanceViewSet(viewsets.ModelViewSet):

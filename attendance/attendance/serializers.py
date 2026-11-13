@@ -133,13 +133,14 @@ class ShiftSerializer(serializers.ModelSerializer):
 class EmployeePersonalAlarmSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeePersonalAlarm
-        fields = ['alarm_time', 'is_enabled', 'timezone', 'updated_at']
-        read_only_fields = ['updated_at']
+        fields = ['id', 'label', 'alarm_time', 'is_enabled', 'days_of_week', 'specific_dates', 'timezone', 'updated_at']
+        read_only_fields = ['id', 'updated_at']
 
     def validate_alarm_time(self, value):
         if not value:
             raise serializers.ValidationError("Alarm time is required.")
         return value
+
 
 
 class AttendanceSerializer(serializers.ModelSerializer):

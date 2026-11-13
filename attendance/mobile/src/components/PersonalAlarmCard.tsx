@@ -8,10 +8,23 @@ import {
   ActivityIndicator,
   Modal,
   ScrollView,
+  TextInput,
+  Alert,
 } from 'react-native';
-import { Bell, BellOff, Clock, Check } from 'lucide-react-native';
+import {
+  Bell,
+  BellOff,
+  Clock,
+  Check,
+  Plus,
+  Trash2,
+  Calendar,
+  CalendarDays,
+  X,
+  ChevronRight,
+} from 'lucide-react-native';
 import { api } from '../context/AuthContext';
-import { cancelPersonalAlarmNotifications } from './PersonalAlarmManager';
+import { cancelPersonalAlarmNotifications, AlarmItemData } from './PersonalAlarmManager';
 
 export function convert24To12(time24?: string): { hour: string; minute: string; ampm: 'AM' | 'PM'; display: string } {
   if (!time24) {
@@ -51,25 +64,36 @@ export function convert12To24(hourStr: string, minuteStr: string, ampm: 'AM' | '
   return `${String(hour).padStart(2, '0')}:${validMinute}:00`;
 }
 
+const DAYS_LIST = [
+  { key: 'MON', label: 'Mon' },
+  { key: 'TUE', label: 'Tue' },
+  { key: 'WED', label: 'Wed' },
+  { key: 'THU', label: 'Thu' },
+  { key: 'FRI', label: 'Fri' },
+  { key: 'SAT', label: 'Sat' },
+  { key: 'SUN', label: 'Sun' },
+];
+
 interface PersonalAlarmCardProps {
   onAlarmChanged?: () => void;
 }
 
 export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardProps) {
-  const [hour, setHour] = useState('08');
-  const [minute, setMinute] = useState('30');
-  const [ampm, setAmpm] = useState<'AM' | 'PM'>('AM');
-  const [savedTimeDisplay, setSavedTimeDisplay] = useState('08:30 AM');
-  const [isEnabled, setIsEnabled] = useState(false);
+  const [alarms, setAlarms] = useState<AlarmItemData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const [savingId, setSavingId] = useState<number | null>(null);
 
-  // Picker modal state
-  const [pickerModalVisible, setPickerModalVisible] = useState(false);
-  const [tempHour, setTempHour] = useState('08');
-  const [tempMinute, setTempMinute] = useState('30');
-  const [tempAmpm, setTempAmpm] = useState<'AM' | 'PM'>('AM');
+  // Edit / Add Modal state
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editingAlarm, setEditingAlarm] = useState<AlarmItemData | null>(null);
+  const [modalHour, setModalHour] = useState('08');
+  const [modalMinute, setModalMinute] = useState('30');
+  const [modalAmpm, setModalAmpm] = useState<'AM' | 'PM'>('AM');
+  const [modalLabel, setModalLabel] = useState('Personal Alarm');
+  const [modalDays, setModalDays] = useState<string[]>([]);
+  const [modalDates, setModalDates] = useState<string[]>([]);
+  const [newDateInput, setNewDateInput] = useState('');
+  const [modalSubmitting, setModalSubmitting] = useState(false);
 
   const fetchAlarmSettings = useCallback(async () => {
     try {
@@ -77,14 +101,13 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
       const res = await api.get('/attendance/personal-alarm/');
       const data = res.data;
       if (data) {
-        if (data.alarm_time) {
-          const parsed = convert24To12(data.alarm_time);
-          setHour(parsed.hour);
-          setMinute(parsed.minute);
-          setAmpm(parsed.ampm);
-          setSavedTimeDisplay(parsed.display);
+        if (Array.isArray(data.alarms) && data.alarms.length > 0) {
+          setAlarms(data.alarms);
+        } else if (data.alarm_time) {
+          setAlarms([data]);
+        } else {
+          setAlarms([]);
         }
-        setIsEnabled(Boolean(data.is_enabled));
       }
     } catch (err) {
       console.warn('[PersonalAlarmCard] Error fetching alarm:', err);
@@ -97,63 +120,144 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
     void fetchAlarmSettings();
   }, [fetchAlarmSettings]);
 
-  const handleSave = async (overrideEnabled?: boolean, overrideHour?: string, overrideMin?: string, overrideAmpm?: 'AM' | 'PM') => {
+  const handleToggle = async (alarm: AlarmItemData, nextVal: boolean) => {
     try {
-      setSaving(true);
-      setSaveSuccess(false);
-
-      const targetEnabled = overrideEnabled !== undefined ? overrideEnabled : isEnabled;
-      const targetHour = overrideHour || hour;
-      const targetMin = overrideMin || minute;
-      const targetAmpm = overrideAmpm || ampm;
-
-      const formatted24 = convert12To24(targetHour, targetMin, targetAmpm);
-
+      if (alarm.id) setSavingId(alarm.id);
       const res = await api.post('/attendance/personal-alarm/', {
-        alarm_time: formatted24,
-        is_enabled: targetEnabled,
+        id: alarm.id,
+        is_enabled: nextVal,
       });
 
-      const updated = res.data;
-      setIsEnabled(Boolean(updated.is_enabled));
-      const parsed = convert24To12(updated.alarm_time);
-      setSavedTimeDisplay(parsed.display);
-      setHour(parsed.hour);
-      setMinute(parsed.minute);
-      setAmpm(parsed.ampm);
-
-      if (!targetEnabled) {
-        await cancelPersonalAlarmNotifications();
+      if (res.data?.alarms) {
+        setAlarms(res.data.alarms);
+      } else {
+        await fetchAlarmSettings();
       }
 
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
       onAlarmChanged?.();
     } catch (err) {
-      console.error('[PersonalAlarmCard] Save error:', err);
+      console.error('[PersonalAlarmCard] Toggle error:', err);
     } finally {
-      setSaving(false);
+      setSavingId(null);
     }
   };
 
-  const handleToggle = (nextVal: boolean) => {
-    setIsEnabled(nextVal);
-    void handleSave(nextVal);
+  const handleDelete = (alarm: AlarmItemData) => {
+    if (!alarm.id) return;
+    Alert.alert(
+      'Delete Alarm',
+      `Are you sure you want to delete "${alarm.label || 'this alarm'}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setSavingId(alarm.id || null);
+              const res = await api.delete(`/attendance/personal-alarm/?id=${alarm.id}`);
+              if (res.data?.alarms) {
+                setAlarms(res.data.alarms);
+              } else {
+                await fetchAlarmSettings();
+              }
+              onAlarmChanged?.();
+            } catch (err) {
+              console.error('[PersonalAlarmCard] Delete error:', err);
+            } finally {
+              setSavingId(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
-  const openPickerModal = () => {
-    setTempHour(hour);
-    setTempMinute(minute);
-    setTempAmpm(ampm);
-    setPickerModalVisible(true);
+  const openAddModal = () => {
+    setEditingAlarm(null);
+    setModalLabel(`Alarm ${alarms.length + 1}`);
+    setModalHour('08');
+    setModalMinute('30');
+    setModalAmpm('AM');
+    setModalDays([]);
+    setModalDates([]);
+    setNewDateInput('');
+    setEditModalVisible(true);
   };
 
-  const confirmPicker = () => {
-    setHour(tempHour);
-    setMinute(tempMinute);
-    setAmpm(tempAmpm);
-    setPickerModalVisible(false);
-    void handleSave(isEnabled, tempHour, tempMinute, tempAmpm);
+  const openEditModal = (alarm: AlarmItemData) => {
+    setEditingAlarm(alarm);
+    setModalLabel(alarm.label || 'Personal Alarm');
+    const parsed = convert24To12(alarm.alarm_time);
+    setModalHour(parsed.hour);
+    setModalMinute(parsed.minute);
+    setModalAmpm(parsed.ampm);
+    setModalDays(alarm.days_of_week || []);
+    setModalDates(alarm.specific_dates || []);
+    setNewDateInput('');
+    setEditModalVisible(true);
+  };
+
+  const toggleDay = (dayKey: string) => {
+    if (modalDays.includes(dayKey)) {
+      setModalDays(modalDays.filter((d) => d !== dayKey));
+    } else {
+      setModalDays([...modalDays, dayKey]);
+    }
+  };
+
+  const addSpecificDate = () => {
+    const trimmed = newDateInput.trim();
+    if (!trimmed) return;
+    // Basic date check YYYY-MM-DD
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+      Alert.alert('Invalid Date', 'Please enter date in format: YYYY-MM-DD (e.g. 2026-11-15)');
+      return;
+    }
+    if (!modalDates.includes(trimmed)) {
+      setModalDates([...modalDates, trimmed]);
+    }
+    setNewDateInput('');
+  };
+
+  const removeSpecificDate = (dateStr: string) => {
+    setModalDates(modalDates.filter((d) => d !== dateStr));
+  };
+
+  const handleSaveModal = async () => {
+    try {
+      setModalSubmitting(true);
+      const time24 = convert12To24(modalHour, modalMinute, modalAmpm);
+
+      const payload: any = {
+        label: modalLabel.trim() || 'Personal Alarm',
+        alarm_time: time24,
+        is_enabled: true,
+        days_of_week: modalDays,
+        specific_dates: modalDates,
+      };
+
+      if (editingAlarm?.id) {
+        payload.id = editingAlarm.id;
+      } else {
+        payload.action = 'create';
+      }
+
+      const res = await api.post('/attendance/personal-alarm/', payload);
+      if (res.data?.alarms) {
+        setAlarms(res.data.alarms);
+      } else {
+        await fetchAlarmSettings();
+      }
+
+      setEditModalVisible(false);
+      onAlarmChanged?.();
+    } catch (err: any) {
+      console.error('[PersonalAlarmCard] Save modal error:', err);
+      Alert.alert('Error', err?.response?.data?.detail || 'Failed to save alarm.');
+    } finally {
+      setModalSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -163,13 +267,15 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
   const hoursList = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
   const minutesList = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
+  const anyEnabled = alarms.some((a) => a.is_enabled);
+
   return (
     <View style={styles.card}>
       {/* HEADER */}
       <View style={styles.cardHeader}>
         <View style={styles.iconBox}>
-          {isEnabled ? (
-            <Bell size={22} color="#000000" strokeWidth={2.2} />
+          {anyEnabled ? (
+            <Bell size={22} color="#E56108" strokeWidth={2.2} />
           ) : (
             <BellOff size={22} color="#666666" strokeWidth={2.2} />
           )}
@@ -177,153 +283,267 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
 
         <View style={styles.headerTextContainer}>
           <View style={styles.titleRow}>
-            <Text style={styles.cardTitle}>Personal Daily Alarm</Text>
-            <View style={[styles.badge, isEnabled ? styles.badgeActive : styles.badgeInactive]}>
-              <Text style={[styles.badgeText, isEnabled ? styles.badgeTextActive : styles.badgeTextInactive]}>
-                {isEnabled ? 'Active' : 'Off'}
+            <Text style={styles.cardTitle}>Personal Alarms</Text>
+            <View style={[styles.badge, anyEnabled ? styles.badgeActive : styles.badgeInactive]}>
+              <Text style={[styles.badgeText, anyEnabled ? styles.badgeTextActive : styles.badgeTextInactive]}>
+                {anyEnabled ? `${alarms.filter((a) => a.is_enabled).length} Active` : 'All Off'}
               </Text>
             </View>
           </View>
           <Text style={styles.cardSubtitle}>
-            Recurring daily reminder at your preferred time.
+            Set daily or specific day/date reminders with alarm sound.
           </Text>
         </View>
 
-        <Switch
-          value={isEnabled}
-          onValueChange={handleToggle}
-          trackColor={{ false: '#E5E5E5', true: '#E5E5E5' }}
-          thumbColor={isEnabled ? '#000000' : '#FFFFFF'}
-          disabled={saving}
-        />
-      </View>
-
-      {/* TIME CONTROL ROW */}
-      <View style={styles.bodyRow}>
         <TouchableOpacity
-          style={styles.timeSelectorBtn}
-          onPress={openPickerModal}
-          disabled={saving}
-          activeOpacity={0.7}
-        >
-          <Clock size={18} color="#000000" strokeWidth={2.2} style={{ marginRight: 6 }} />
-          <Text style={styles.timeSelectorLabel}>Alarm Time:</Text>
-          <Text style={styles.timeSelectorValue}>{`${hour}:${minute} ${ampm}`}</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.saveBtn, saving && { opacity: 0.6 }]}
-          onPress={() => void handleSave()}
-          disabled={saving}
+          style={styles.addBtn}
+          onPress={openAddModal}
           activeOpacity={0.8}
         >
-          {saving ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.saveBtnText}>{saveSuccess ? 'Saved!' : 'Save Time'}</Text>
-          )}
+          <Plus size={16} color="#FFFFFF" strokeWidth={2.5} />
+          <Text style={styles.addBtnText}>Add</Text>
         </TouchableOpacity>
       </View>
 
-      {/* SUCCESS CONFIRMATION BADGE */}
-      {saveSuccess && (
-        <View style={styles.successRow}>
-          <Check size={14} color="#000000" strokeWidth={2.2} />
-          <Text style={styles.successText}>
-            Alarm scheduled for {savedTimeDisplay} ({isEnabled ? 'Enabled' : 'Disabled'})
-          </Text>
-        </View>
-      )}
+      {/* ALARMS LIST */}
+      <View style={styles.alarmsList}>
+        {alarms.map((alarm, idx) => {
+          const parsed = convert24To12(alarm.alarm_time);
+          const hasDays = Array.isArray(alarm.days_of_week) && alarm.days_of_week.length > 0;
+          const hasDates = Array.isArray(alarm.specific_dates) && alarm.specific_dates.length > 0;
 
-      {/* 12-HOUR TIME PICKER MODAL */}
-      <Modal statusBarTranslucent visible={pickerModalVisible}
+          return (
+            <View key={alarm.id || `alarm-${idx}`} style={styles.alarmItem}>
+              <TouchableOpacity
+                style={styles.alarmItemInfo}
+                onPress={() => openEditModal(alarm)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.alarmTimeRow}>
+                  <Text style={[styles.alarmTimeText, !alarm.is_enabled && styles.alarmTimeDisabled]}>
+                    {parsed.display}
+                  </Text>
+                  <Text style={styles.alarmLabelText}>{alarm.label || 'Alarm'}</Text>
+                </View>
+
+                {/* Days / Dates Tags */}
+                <View style={styles.tagsRow}>
+                  {hasDays ? (
+                    <View style={styles.tagBadge}>
+                      <CalendarDays size={11} color="#E56108" strokeWidth={2} style={{ marginRight: 3 }} />
+                      <Text style={styles.tagText}>{alarm.days_of_week!.join(', ')}</Text>
+                    </View>
+                  ) : hasDates ? (
+                    <View style={styles.tagBadge}>
+                      <Calendar size={11} color="#E56108" strokeWidth={2} style={{ marginRight: 3 }} />
+                      <Text style={styles.tagText}>{alarm.specific_dates!.join(', ')}</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.tagBadge}>
+                      <Clock size={11} color="#666666" strokeWidth={2} style={{ marginRight: 3 }} />
+                      <Text style={[styles.tagText, { color: '#666666' }]}>Every Day</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* Action Controls */}
+              <View style={styles.alarmItemControls}>
+                {savingId === alarm.id ? (
+                  <ActivityIndicator size="small" color="#E56108" />
+                ) : (
+                  <Switch
+                    value={alarm.is_enabled}
+                    onValueChange={(nextVal) => void handleToggle(alarm, nextVal)}
+                    trackColor={{ false: '#E5E5E5', true: '#FED7AA' }}
+                    thumbColor={alarm.is_enabled ? '#E56108' : '#FFFFFF'}
+                  />
+                )}
+
+                {alarms.length > 1 && (
+                  <TouchableOpacity
+                    style={styles.deleteBtn}
+                    onPress={() => handleDelete(alarm)}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Trash2 size={16} color="#999999" strokeWidth={2} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* EDIT / ADD MODAL */}
+      <Modal statusBarTranslucent visible={editModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setPickerModalVisible(false)}
+        onRequestClose={() => setEditModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Alarm Time (12-Hour)</Text>
-            <Text style={styles.modalSubtitle}>Scroll or tap to choose Hour, Minute, and AM/PM</Text>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {editingAlarm ? 'Edit Alarm' : 'Set New Alarm'}
+              </Text>
+              <TouchableOpacity onPress={() => setEditModalVisible(false)}>
+                <X size={20} color="#666666" />
+              </TouchableOpacity>
+            </View>
 
-            <View style={styles.pickerColumnsContainer}>
-              {/* Hour Column */}
-              <View style={styles.columnWrapper}>
-                <Text style={styles.columnLabel}>Hour</Text>
-                <ScrollView style={styles.wheelScrollView} showsVerticalScrollIndicator={false}>
-                  {hoursList.map((h) => (
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 480 }}>
+              {/* Label Input */}
+              <Text style={styles.sectionLabel}>Alarm Name / Label</Text>
+              <TextInput
+                style={styles.textInput}
+                value={modalLabel}
+                onChangeText={setModalLabel}
+                placeholder="e.g. Office Wakeup, Evening Punch-Out"
+                placeholderTextColor="#999999"
+              />
+
+              {/* Time Picker */}
+              <Text style={styles.sectionLabel}>Alarm Time</Text>
+              <View style={styles.pickerColumnsContainer}>
+                {/* Hour Column */}
+                <View style={styles.pickerColumn}>
+                  <Text style={styles.columnLabel}>Hour</Text>
+                  <ScrollView style={styles.columnScrollView} showsVerticalScrollIndicator={false}>
+                    {hoursList.map((h) => {
+                      const isSelected = modalHour === h;
+                      return (
+                        <TouchableOpacity
+                          key={h}
+                          style={[styles.pickerItem, isSelected && styles.pickerItemSelected]}
+                          onPress={() => setModalHour(h)}
+                        >
+                          <Text style={[styles.pickerItemText, isSelected && styles.pickerItemTextSelected]}>
+                            {h}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+
+                {/* Minute Column */}
+                <View style={styles.pickerColumn}>
+                  <Text style={styles.columnLabel}>Minute</Text>
+                  <ScrollView style={styles.columnScrollView} showsVerticalScrollIndicator={false}>
+                    {minutesList.map((m) => {
+                      const isSelected = modalMinute === m;
+                      return (
+                        <TouchableOpacity
+                          key={m}
+                          style={[styles.pickerItem, isSelected && styles.pickerItemSelected]}
+                          onPress={() => setModalMinute(m)}
+                        >
+                          <Text style={[styles.pickerItemText, isSelected && styles.pickerItemTextSelected]}>
+                            {m}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+
+                {/* AM/PM Column */}
+                <View style={[styles.pickerColumn, { flex: 0.8 }]}>
+                  <Text style={styles.columnLabel}>AM / PM</Text>
+                  <View style={styles.ampmContainer}>
                     <TouchableOpacity
-                      key={h}
-                      style={[styles.wheelItem, tempHour === h && styles.wheelItemSelected]}
-                      onPress={() => setTempHour(h)}
+                      style={[styles.ampmBtn, modalAmpm === 'AM' && styles.ampmBtnSelected]}
+                      onPress={() => setModalAmpm('AM')}
                     >
-                      <Text style={[styles.wheelItemText, tempHour === h && styles.wheelItemTextSelected]}>
-                        {h}
+                      <Text style={[styles.ampmBtnText, modalAmpm === 'AM' && styles.ampmBtnTextSelected]}>
+                        AM
                       </Text>
                     </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-
-              <Text style={styles.colonSeparator}>:</Text>
-
-              {/* Minute Column */}
-              <View style={styles.columnWrapper}>
-                <Text style={styles.columnLabel}>Minute</Text>
-                <ScrollView style={styles.wheelScrollView} showsVerticalScrollIndicator={false}>
-                  {minutesList.map((m) => (
                     <TouchableOpacity
-                      key={m}
-                      style={[styles.wheelItem, tempMinute === m && styles.wheelItemSelected]}
-                      onPress={() => setTempMinute(m)}
+                      style={[styles.ampmBtn, modalAmpm === 'PM' && styles.ampmBtnSelected]}
+                      onPress={() => setModalAmpm('PM')}
                     >
-                      <Text style={[styles.wheelItemText, tempMinute === m && styles.wheelItemTextSelected]}>
-                        {m}
+                      <Text style={[styles.ampmBtnText, modalAmpm === 'PM' && styles.ampmBtnTextSelected]}>
+                        PM
                       </Text>
                     </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-
-              {/* AM/PM Column */}
-              <View style={styles.columnWrapperAmpm}>
-                <Text style={styles.columnLabel}>Period</Text>
-                <View style={styles.ampmStack}>
-                  <TouchableOpacity
-                    style={[styles.ampmBtn, tempAmpm === 'AM' && styles.ampmBtnSelected]}
-                    onPress={() => setTempAmpm('AM')}
-                  >
-                    <Text style={[styles.ampmBtnText, tempAmpm === 'AM' && styles.ampmBtnTextSelected]}>
-                      AM
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={[styles.ampmBtn, tempAmpm === 'PM' && styles.ampmBtnSelected]}
-                    onPress={() => setTempAmpm('PM')}
-                  >
-                    <Text style={[styles.ampmBtnText, tempAmpm === 'PM' && styles.ampmBtnTextSelected]}>
-                      PM
-                    </Text>
-                  </TouchableOpacity>
+                  </View>
                 </View>
               </View>
-            </View>
+
+              {/* Day of Week Repeat Selector */}
+              <Text style={styles.sectionLabel}>Repeat On Specific Days (Optional)</Text>
+              <Text style={styles.helperText}>Leave unselected to ring every day.</Text>
+              <View style={styles.daysRow}>
+                {DAYS_LIST.map((day) => {
+                  const selected = modalDays.includes(day.key);
+                  return (
+                    <TouchableOpacity
+                      key={day.key}
+                      style={[styles.dayChip, selected && styles.dayChipSelected]}
+                      onPress={() => toggleDay(day.key)}
+                    >
+                      <Text style={[styles.dayChipText, selected && styles.dayChipTextSelected]}>
+                        {day.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Specific Dates (Optional) */}
+              <Text style={[styles.sectionLabel, { marginTop: 14 }]}>Specific Dates (Optional)</Text>
+              <Text style={styles.helperText}>Add specific dates when this alarm should ring.</Text>
+              <View style={styles.addDateRow}>
+                <TextInput
+                  style={[styles.textInput, { flex: 1, marginBottom: 0 }]}
+                  value={newDateInput}
+                  onChangeText={setNewDateInput}
+                  placeholder="YYYY-MM-DD (e.g. 2026-11-15)"
+                  placeholderTextColor="#999999"
+                />
+                <TouchableOpacity style={styles.addDateBtn} onPress={addSpecificDate}>
+                  <Plus size={16} color="#FFFFFF" />
+                  <Text style={styles.addDateBtnText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Selected Dates Badges */}
+              {modalDates.length > 0 && (
+                <View style={styles.datesContainer}>
+                  {modalDates.map((dateStr) => (
+                    <View key={dateStr} style={styles.dateTag}>
+                      <Text style={styles.dateTagText}>{dateStr}</Text>
+                      <TouchableOpacity onPress={() => removeSpecificDate(dateStr)}>
+                        <X size={12} color="#666666" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ScrollView>
 
             {/* Modal Actions */}
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancelBtn}
-                onPress={() => setPickerModalVisible(false)}
+                onPress={() => setEditModalVisible(false)}
+                disabled={modalSubmitting}
               >
-                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+                <Text style={styles.modalCancelText}>Cancel</Text>
               </TouchableOpacity>
-
               <TouchableOpacity
                 style={styles.modalConfirmBtn}
-                onPress={confirmPicker}
+                onPress={() => void handleSaveModal()}
+                disabled={modalSubmitting}
               >
-                <Text style={styles.modalConfirmBtnText}>Apply & Save</Text>
+                {modalSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.modalConfirmText}>Save Alarm</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -336,17 +556,17 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginTop: 16,
+    borderRadius: 16,
     padding: 16,
-    borderRadius: 18,
+    marginHorizontal: 16,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
+    borderColor: '#F0F0F0',
+    elevation: 3,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
-    shadowRadius: 10,
-    elevation: 2,
+    shadowRadius: 8,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -356,9 +576,9 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFF7ED',
     borderWidth: 1,
-    borderColor: '#F5F5F5',
+    borderColor: '#FED7AA',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -382,7 +602,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   badgeActive: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFF7ED',
   },
   badgeInactive: {
     backgroundColor: '#F5F5F5',
@@ -392,7 +612,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   badgeTextActive: {
-    color: '#000000',
+    color: '#E56108',
   },
   badgeTextInactive: {
     color: '#666666',
@@ -402,217 +622,296 @@ const styles = StyleSheet.create({
     color: '#666666',
     marginTop: 2,
   },
-  bodyRow: {
+  addBtn: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#E56108',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 4,
+  },
+  addBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  alarmsList: {
     marginTop: 14,
-    paddingTop: 12,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: '#F5F5F5',
     gap: 10,
   },
-  timeSelectorBtn: {
+  alarmItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FAFAFA',
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: 'space-between',
+  },
+  alarmItemInfo: {
+    flex: 1,
+  },
+  alarmTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8,
+  },
+  alarmTimeText: {
+    fontSize: 18,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#000000',
+  },
+  alarmTimeDisabled: {
+    color: '#999999',
+  },
+  alarmLabelText: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#666666',
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    marginTop: 4,
+    alignItems: 'center',
+  },
+  tagBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E5E5E5',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  tagText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#E56108',
+  },
+  alarmItemControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  deleteBtn: {
+    padding: 6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    width: '100%',
+    maxWidth: 380,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#000000',
+  },
+  sectionLabel: {
+    fontSize: 13,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#222222',
+    marginBottom: 6,
+    marginTop: 10,
+  },
+  helperText: {
+    fontSize: 11,
+    color: '#888888',
+    marginBottom: 8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    flex: 1,
-  },
-  timeSelectorLabel: {
-    fontSize: 12,
-    fontFamily: 'Comfortaa_600SemiBold',
-    color: '#444444',
-    marginRight: 6,
-  },
-  timeSelectorValue: {
     fontSize: 14,
-    fontFamily: 'Comfortaa_700Bold',
     color: '#000000',
-  },
-  saveBtn: {
-    backgroundColor: '#000000',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 85,
-  },
-  saveBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontFamily: 'Comfortaa_700Bold',
-  },
-  successRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    marginTop: 10,
-    gap: 6,
-  },
-  successText: {
-    fontSize: 12,
-    color: '#000000',
-    fontFamily: 'Comfortaa_600SemiBold',
-    flex: 1,
-  },
-
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 340,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  modalTitle: {
-    fontSize: 16,
-    fontFamily: 'Comfortaa_700Bold',
-    color: '#000000',
-    textAlign: 'center',
-  },
-  modalSubtitle: {
-    fontSize: 12,
-    color: '#666666',
-    textAlign: 'center',
-    marginTop: 4,
-    marginBottom: 16,
+    marginBottom: 6,
   },
   pickerColumnsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
-    borderRadius: 14,
+    height: 150,
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E5E5',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    borderColor: '#EEEEEE',
+    overflow: 'hidden',
   },
-  columnWrapper: {
-    alignItems: 'center',
-    width: 65,
-  },
-  columnWrapperAmpm: {
-    alignItems: 'center',
-    width: 65,
-    marginLeft: 6,
+  pickerColumn: {
+    flex: 1,
+    borderRightWidth: 1,
+    borderRightColor: '#EEEEEE',
   },
   columnLabel: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
     color: '#666666',
-    marginBottom: 6,
-    textTransform: 'uppercase',
+    textAlign: 'center',
+    paddingVertical: 4,
+    backgroundColor: '#F3F4F6',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
   },
-  colonSeparator: {
-    fontSize: 24,
-    fontFamily: 'Comfortaa_700Bold',
-    color: '#000000',
-    marginHorizontal: 4,
-    marginTop: 12,
+  columnScrollView: {
+    flex: 1,
   },
-  wheelScrollView: {
-    height: 140,
-    width: '100%',
-  },
-  wheelItem: {
-    height: 36,
-    justifyContent: 'center',
+  pickerItem: {
+    paddingVertical: 8,
     alignItems: 'center',
-    borderRadius: 8,
-    marginVertical: 2,
-  },
-  wheelItemSelected: {
-    backgroundColor: '#F5F5F5',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-  },
-  wheelItemText: {
-    fontSize: 16,
-    fontFamily: 'Comfortaa_600SemiBold',
-    color: '#666666',
-  },
-  wheelItemTextSelected: {
-    color: '#000000',
-    fontFamily: 'Comfortaa_700Bold',
-  },
-  ampmStack: {
-    height: 140,
     justifyContent: 'center',
-    gap: 10,
-    width: '100%',
+  },
+  pickerItemSelected: {
+    backgroundColor: '#FFF7ED',
+  },
+  pickerItemText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#444444',
+  },
+  pickerItemTextSelected: {
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#E56108',
+  },
+  ampmContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 8,
+    gap: 8,
   },
   ampmBtn: {
-    height: 42,
-    borderRadius: 8,
-    backgroundColor: '#E5E5E5',
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: '#EEEEEE',
   },
   ampmBtnSelected: {
-    backgroundColor: '#000000',
+    backgroundColor: '#E56108',
   },
   ampmBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Comfortaa_700Bold',
     color: '#444444',
   },
   ampmBtnTextSelected: {
     color: '#FFFFFF',
+  },
+  daysRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  dayChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+    backgroundColor: '#FAFAFA',
+  },
+  dayChipSelected: {
+    backgroundColor: '#E56108',
+    borderColor: '#E56108',
+  },
+  dayChipText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#555555',
+  },
+  dayChipTextSelected: {
+    color: '#FFFFFF',
+  },
+  addDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  addDateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#222222',
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    gap: 4,
+  },
+  addDateBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontFamily: 'Comfortaa_700Bold',
+  },
+  datesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  dateTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 4,
+  },
+  dateTagText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#E56108',
   },
   modalActions: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
     marginTop: 20,
+    gap: 10,
   },
   modalCancelBtn: {
-    flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 10,
-    backgroundColor: '#F5F5F5',
-    alignItems: 'center',
   },
-  modalCancelBtnText: {
-    fontSize: 14,
-    fontFamily: 'Comfortaa_700Bold',
-    color: '#444444',
+  modalCancelText: {
+    fontSize: 13,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#666666',
   },
   modalConfirmBtn: {
-    flex: 1,
-    paddingVertical: 12,
+    backgroundColor: '#E56108',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderRadius: 10,
-    backgroundColor: '#000000',
+    minWidth: 100,
     alignItems: 'center',
   },
-  modalConfirmBtnText: {
-    fontSize: 14,
+  modalConfirmText: {
+    fontSize: 13,
     fontFamily: 'Comfortaa_700Bold',
     color: '#FFFFFF',
   },
 });
-

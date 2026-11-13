@@ -19,31 +19,32 @@ import {
 import { AuthContext, api } from '../context/AuthContext';
 import ShiftAlarm from '../../modules/shift-alarm/src/ShiftAlarm';
 
-const CHANNEL_ID = 'personal-daily-alarms-v2';
+const CHANNEL_ID = 'personal-daily-alarms-v3';
 const ALARM_KIND = 'PERSONAL_DAILY_ALARM';
 
-type PersonalAlarmData = {
-  alarm_time: string;
+export type AlarmItemData = {
+  id?: number;
+  label?: string;
+  alarm_time: string; // "HH:MM:SS" or "HH:MM"
   is_enabled: boolean;
+  days_of_week?: string[]; // e.g. ["MON", "TUE", ...]
+  specific_dates?: string[]; // e.g. ["2026-11-13"]
   timezone?: string;
 };
 
-// Configure foreground notification behavior
+// Configure foreground notification behavior: let system play loud notification sound + vibration
 Notifications.setNotificationHandler({
   handleNotification: async (notification) => {
-    const isPersonalAlarm =
-      notification.request.content.data?.kind === ALARM_KIND;
-
     return {
       shouldShowBanner: true,
       shouldShowList: true,
-      shouldPlaySound: !isPersonalAlarm,
+      shouldPlaySound: true,
       shouldSetBadge: false,
     };
   },
 });
 
-function parseTime(value?: string): { hours: number; minutes: number } | null {
+export function parseTime(value?: string): { hours: number; minutes: number } | null {
   if (!value) return null;
   const match = value.match(/^(\d{1,2}):(\d{2})/);
   if (!match) return null;
@@ -55,11 +56,25 @@ function parseTime(value?: string): { hours: number; minutes: number } | null {
   return { hours, minutes };
 }
 
+const DAY_INDEX_MAP: Record<string, number> = {
+  SUN: 0,
+  MON: 1,
+  TUE: 2,
+  WED: 3,
+  THU: 4,
+  FRI: 5,
+  SAT: 6,
+};
+
 export async function cancelPersonalAlarmNotifications() {
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     for (const item of scheduled) {
-      if (item.content.data?.kind === ALARM_KIND || item.identifier.startsWith('personal-alarm-')) {
+      if (
+        item.content.data?.kind === ALARM_KIND ||
+        item.identifier.startsWith('personal-alarm-') ||
+        item.identifier.startsWith('personal-daily-alarm-')
+      ) {
         await Notifications.cancelScheduledNotificationAsync(item.identifier);
       }
     }
@@ -84,6 +99,7 @@ export default function PersonalAlarmManager() {
 
   const [activeAlarm, setActiveAlarm] = useState<boolean>(false);
   const [activeAlarmTime, setActiveAlarmTime] = useState<string>('');
+  const [activeAlarmTitle, setActiveAlarmTitle] = useState<string>('Personal Alarm');
 
   const checkExactAlarmPermission = useCallback(() => {
     if (!ShiftAlarm || exactAlarmPromptShown.current) return;
@@ -123,15 +139,15 @@ export default function PersonalAlarmManager() {
     if (channelCreatedRef.current) return;
 
     try {
-      // In Expo SDK 58 / Android O+, setting sound: null causes a NullPointerException in Expo's channel serializer
-      // when converting AudioAttributes. Omitting sound or using a valid sound string avoids this crash.
       await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-        name: 'Personal Daily Alarm',
+        name: 'Personal Alarms',
         importance: Notifications.AndroidImportance.MAX,
-        vibrationPattern: [0, 700, 300, 700],
+        vibrationPattern: [0, 800, 400, 800, 400, 800],
         enableVibrate: true,
         enableLights: true,
-        lightColor: '#22C55E',
+        lightColor: '#E56108',
+        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+        bypassDnd: true,
       });
       channelCreatedRef.current = true;
     } catch (err: any) {
@@ -158,28 +174,33 @@ export default function PersonalAlarmManager() {
     setActiveAlarm(false);
   }, []);
 
-  const playAlarm = useCallback(async (timeStr?: string) => {
+  const playAlarm = useCallback(async (timeStr?: string, titleStr?: string) => {
     setActiveAlarm(true);
     setActiveAlarmTime(timeStr || '');
+    setActiveAlarmTitle(titleStr || 'Personal Alarm');
 
     try {
       await setAudioModeAsync({
         playsInSilentMode: true,
       });
 
-      const player = createAudioPlayer(
-        require('../../assets/shift-reminder-alarm.wav')
-      );
-      playerRef.current = player;
-      player.loop = true;
-      player.volume = 1.0;
-      player.play();
+      if (!playerRef.current) {
+        const player = createAudioPlayer(
+          require('../../assets/shift_reminder_alarm.wav')
+        );
+        playerRef.current = player;
+        player.loop = true;
+        player.volume = 1.0;
+        player.play();
+      } else {
+        playerRef.current.play();
+      }
     } catch (error) {
       console.warn('Could not play personal alarm audio:', error);
     }
   }, []);
 
-  // Sync scheduled alarm from backend
+  // Sync scheduled alarms from backend
   const syncPersonalAlarm = useCallback(async () => {
     if (syncInProgress.current) return;
     syncInProgress.current = true;
@@ -208,75 +229,119 @@ export default function PersonalAlarmManager() {
       checkExactAlarmPermission();
       await ensureNotificationChannel();
 
-      // Fetch personal alarm configuration from backend
+      // Fetch personal alarms list from backend
       const res = await api.get('/attendance/personal-alarm/');
-      const alarmData: PersonalAlarmData = res.data;
+      const data = res.data;
 
-      if (!alarmData || !alarmData.is_enabled || !alarmData.alarm_time) {
-        await cancelPersonalAlarmNotifications();
+      let alarmsList: AlarmItemData[] = [];
+      if (Array.isArray(data?.alarms)) {
+        alarmsList = data.alarms;
+      } else if (data?.alarm_time) {
+        alarmsList = [data];
+      }
+
+      // Filter active alarms
+      const activeAlarms = alarmsList.filter((a) => a.is_enabled && a.alarm_time);
+
+      await cancelPersonalAlarmNotifications();
+
+      if (activeAlarms.length === 0) {
         stopAlarm();
         return;
       }
 
-      const parsed = parseTime(alarmData.alarm_time);
-      if (!parsed) {
-        await cancelPersonalAlarmNotifications();
-        console.warn('Invalid personal alarm time format:', alarmData.alarm_time);
-        return;
-      }
+      const now = new Date();
+      const nativeAlarmItems: Array<{
+        id: string;
+        timestamp: number;
+        event: any;
+        shiftName: string;
+        title: string;
+        body: string;
+      }> = [];
 
-      await cancelPersonalAlarmNotifications();
+      for (let idx = 0; idx < activeAlarms.length; idx += 1) {
+        const alarm = activeAlarms[idx];
+        const parsed = parseTime(alarm.alarm_time);
+        if (!parsed) continue;
 
-      const timeDisplay = `${String(parsed.hours % 12 || 12).padStart(2, '0')}:${String(parsed.minutes).padStart(2, '0')} ${parsed.hours >= 12 ? 'PM' : 'AM'}`;
+        const alarmId = alarm.id ? String(alarm.id) : `alarm-${idx}`;
+        const label = alarm.label || `Alarm ${idx + 1}`;
+        const timeDisplay = `${String(parsed.hours % 12 || 12).padStart(2, '0')}:${String(parsed.minutes).padStart(2, '0')} ${parsed.hours >= 12 ? 'PM' : 'AM'}`;
 
-      // Schedule exact daily recurring local notification via Expo Notifications
-      await Notifications.scheduleNotificationAsync({
-        identifier: 'personal-daily-alarm-recurring',
-        content: {
-          title: 'Personal Daily Alarm',
-          body: `Your daily alarm for ${timeDisplay} is ringing.`,
-          data: {
-            kind: ALARM_KIND,
-            alarmTime: timeDisplay,
-          },
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-          hour: parsed.hours,
-          minute: parsed.minutes,
-          channelId: CHANNEL_ID,
-        },
-      });
+        const hasDays = Array.isArray(alarm.days_of_week) && alarm.days_of_week.length > 0;
+        const hasDates = Array.isArray(alarm.specific_dates) && alarm.specific_dates.length > 0;
 
-      // Prepare native exact alarm fallback if custom native module is present
-      try {
-        const now = new Date();
-        const nativeAlarmItems: Array<{ id: string; timestamp: number; event: any; shiftName: string; title: string; body: string }> = [];
+        // Schedule next 14 days occurrences
+        for (let dayOffset = 0; dayOffset < 14; dayOffset += 1) {
+          const target = new Date(now);
+          target.setDate(target.getDate() + dayOffset);
+          target.setHours(parsed.hours, parsed.minutes, 0, 0);
 
-        for (let offset = 0; offset < 7; offset += 1) {
-          const targetDate = new Date(now);
-          targetDate.setHours(parsed.hours, parsed.minutes, 0, 0);
-          targetDate.setDate(targetDate.getDate() + offset);
-
-          if (targetDate.getTime() <= now.getTime()) {
+          if (target.getTime() <= now.getTime()) {
             continue;
           }
 
+          // Check Day of Week filter
+          if (hasDays) {
+            const currentDayIndex = target.getDay(); // 0 = SUN, 1 = MON, ...
+            const dayAllowed = alarm.days_of_week!.some(
+              (d) => DAY_INDEX_MAP[d.toUpperCase()] === currentDayIndex
+            );
+            if (!dayAllowed) continue;
+          }
+
+          // Check Specific Date filter
+          if (hasDates) {
+            const y = target.getFullYear();
+            const m = String(target.getMonth() + 1).padStart(2, '0');
+            const d = String(target.getDate()).padStart(2, '0');
+            const targetDateStr = `${y}-${m}-${d}`;
+            const dateAllowed = alarm.specific_dates!.includes(targetDateStr);
+            if (!dateAllowed) continue;
+          }
+
+          const occurrenceId = `personal-alarm-${alarmId}-${target.getTime()}`;
+
+          // Schedule local notification with sound & vibration
+          await Notifications.scheduleNotificationAsync({
+            identifier: occurrenceId,
+            content: {
+              title: label,
+              body: `Alarm ringing at ${timeDisplay}`,
+              sound: true,
+              data: {
+                kind: ALARM_KIND,
+                alarmId,
+                alarmTitle: label,
+                alarmTime: timeDisplay,
+              },
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
+              date: target,
+              channelId: CHANNEL_ID,
+            },
+          });
+
+          // Native exact alarm
           nativeAlarmItems.push({
-            id: `personal-alarm-${targetDate.getFullYear()}-${targetDate.getMonth() + 1}-${targetDate.getDate()}`,
-            timestamp: targetDate.getTime(),
-            event: 'PERSONAL_ALARM',
-            shiftName: 'Personal Alarm',
-            title: 'Personal Daily Alarm',
-            body: `Daily alarm for ${timeDisplay}`,
+            id: occurrenceId,
+            timestamp: target.getTime(),
+            event: 'SHIFT_START', // Use valid event for native module playback
+            shiftName: label,
+            title: label,
+            body: `Alarm for ${timeDisplay} is ringing!`,
           });
         }
+      }
 
-        if (nativeAlarmItems.length > 0) {
+      if (nativeAlarmItems.length > 0) {
+        try {
           ShiftAlarm?.scheduleAlarms(nativeAlarmItems);
+        } catch (error) {
+          // Native module not linked in Expo Go
         }
-      } catch (error) {
-        // Native module not present in Expo Go
       }
     } catch (error: any) {
       console.warn('Personal alarm sync error:', error?.message || error);
@@ -293,7 +358,7 @@ export default function PersonalAlarmManager() {
         const data = notification.request.content.data;
         if (data?.kind !== ALARM_KIND) return;
 
-        void playAlarm(String(data.alarmTime || ''));
+        void playAlarm(String(data.alarmTime || ''), String(data.alarmTitle || ''));
       }
     );
 
@@ -302,7 +367,7 @@ export default function PersonalAlarmManager() {
         const data = response.notification.request.content.data;
         if (data?.kind !== ALARM_KIND) return;
 
-        void playAlarm(String(data.alarmTime || ''));
+        void playAlarm(String(data.alarmTime || ''), String(data.alarmTitle || ''));
       }
     );
 
@@ -315,8 +380,8 @@ export default function PersonalAlarmManager() {
       }
     );
 
-    // Sync periodically
-    const interval = setInterval(() => void syncPersonalAlarm(), 5 * 60 * 1000);
+    // Periodic resync every 3 minutes
+    const interval = setInterval(() => void syncPersonalAlarm(), 3 * 60 * 1000);
 
     return () => {
       clearInterval(interval);
@@ -343,10 +408,10 @@ export default function PersonalAlarmManager() {
     >
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.title}>Personal Daily Alarm</Text>
-          <Text style={styles.timeHighlight}>{activeAlarmTime || 'Daily Alarm'}</Text>
+          <Text style={styles.title}>{activeAlarmTitle || 'Personal Alarm'}</Text>
+          <Text style={styles.timeHighlight}>{activeAlarmTime || 'Alarm'}</Text>
           <Text style={styles.body}>
-            It's time for your daily attendance reminder!
+            It's time for your scheduled reminder!
           </Text>
 
           <Pressable style={styles.button} onPress={stopAlarm}>

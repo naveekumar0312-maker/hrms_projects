@@ -298,20 +298,27 @@ class WFHRequest(models.Model):
 
 class EmployeePersonalAlarm(models.Model):
     """
-    Employee-controlled Daily Personal Alarm.
-    Repeats every day at the employee's configured time, completely independent of assigned shifts.
+    Employee-controlled Personal Alarms.
+    Supports multiple alarms per employee, daily repeat or specific days of the week, and specific dates.
     """
-    employee = models.OneToOneField(
+    employee = models.ForeignKey(
         Employee,
         on_delete=models.CASCADE,
-        related_name='personal_alarm'
+        related_name='personal_alarms'
     )
+    label = models.CharField(max_length=100, default='Personal Alarm')
     alarm_time = models.TimeField()
     is_enabled = models.BooleanField(default=False)
+    days_of_week = models.JSONField(default=list, blank=True)  # e.g. ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    specific_dates = models.JSONField(default=list, blank=True)  # e.g. ["2026-11-13", "2026-11-14"]
     timezone = models.CharField(max_length=50, default='Asia/Kolkata')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        ordering = ['alarm_time', 'id']
+
     def __str__(self):
-        return f"{self.employee.full_name} - Personal Alarm ({self.alarm_time}) [{'ON' if self.is_enabled else 'OFF'}]"
+        return f"{self.employee.full_name} - {self.label} ({self.alarm_time}) [{'ON' if self.is_enabled else 'OFF'}]"
+
 
