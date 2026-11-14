@@ -370,7 +370,10 @@ export const createHRAccount = async (data: { username: string; phone_number?: s
 export const fetchLiveLocations = async (companyId?: number): Promise<LiveLocationItem[]> => {
   const params = companyId ? { company: companyId } : {};
   const response = await api.get('/tracking/live/', { params });
-  return Array.isArray(response.data) ? response.data : [];
+  const data = response.data;
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  return [];
 };
 
 

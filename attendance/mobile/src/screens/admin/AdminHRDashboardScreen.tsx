@@ -339,16 +339,16 @@ export const AdminHRDashboardScreen = ({ navigation }: any) => {
               onPress: () => navigation.navigate('AdminAttendance'),
             },
             {
+              id: 'live_tracking',
+              label: 'Tracking',
+              icon: <MapPin size={22} color={colors.primary} strokeWidth={2} />,
+              onPress: () => navigation.navigate('AdminLiveLocations'),
+            },
+            {
               id: 'branches',
               label: 'Branches',
               icon: <GitBranch size={22} color={colors.primary} strokeWidth={2} />,
               onPress: () => navigation.navigate('AdminBranches'),
-            },
-            {
-              id: 'shifts',
-              label: 'Shifts',
-              icon: <Clock size={22} color={colors.primary} strokeWidth={2} />,
-              onPress: () => navigation.navigate('AdminShifts'),
             },
           ]}
         />
