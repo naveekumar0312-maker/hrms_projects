@@ -193,8 +193,8 @@ export default function LoginScreen() {
       {/* Translucent status bar: allows the top metallic wave to flow behind the system clock & icons naturally */}
       <StatusBar style="light" />
 
-      {/* Decorative Bottom Wave Fixed Background */}
-      <View style={[styles.bottomFooterContainer, { height: SCREEN_WIDTH * (180 / 472) }]} pointerEvents="none">
+      {/* Decorative Bottom Wave Fixed Background (Wave only, no duplicated badge) */}
+      <View style={[styles.bottomFooterContainer, { height: SCREEN_WIDTH * (154 / 472) }]} pointerEvents="none">
         <Image
           source={BOT_FOOTER_IMAGE}
           style={styles.bottomFooterImage}
