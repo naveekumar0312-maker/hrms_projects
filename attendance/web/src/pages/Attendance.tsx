@@ -100,6 +100,7 @@ export interface AttendanceRecord {
   check_out_time: string | null;
   status: string;
   late_minutes: number;
+  late_reason?: string | null;
   grace_used?: boolean;
   late_display?: string;
   early_minutes?: number;
@@ -1037,6 +1038,26 @@ const Attendance = () => {
                                 formatDuration(record.late_minutes)}
                             </span>
 
+                            {record.late_reason && (
+                              <span
+                                style={{
+                                  display: 'inline-block',
+                                  maxWidth: '220px',
+                                  fontSize: '11px',
+                                  color: '#dc2626',
+                                  background: '#fef2f2',
+                                  border: '1px solid #fecaca',
+                                  padding: '2px 6px',
+                                  borderRadius: '6px',
+                                  lineHeight: 1.3,
+                                  wordBreak: 'break-word',
+                                }}
+                                title={`Late Reason: ${record.late_reason}`}
+                              >
+                                Reason: {record.late_reason}
+                              </span>
+                            )}
+
                             {record.grace_used && (
                               <span
                                 style={{
@@ -1135,7 +1156,7 @@ const Attendance = () => {
                           </div>
                         </td>
 
-                        <td style={{minWidth: '330px', whiteSpace: 'nowrap'}}><div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}><button style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', border: '1px solid #e2e8f0', background: '#fff', color: '#334155', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, width: 'fit-content'}} onClick={() => setViewRecord(record)} title='View Details'><Eye size={15} /> View Details</button><div style={{display: 'flex', alignItems: 'center', gap: '8px', minHeight: '30px'}}><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b'}}>Punch In</span><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 600, color: '#334155'}}>{formatTime(record.check_in_time)}</span>{record.check_in_time && record.check_in_approval_status === 'PENDING' ? <><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #E56108', background: '#eff6ff', color: '#CC5200', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setApproveRecord(record);setApproveType('check_in');}}><Check size={13} /> Approve</button><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #ef4444', background: '#fef2f2', color: '#dc2626', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setRejectRecord(record);setRejectType('check_in');}}><XCircle size={13} /> Reject</button></> : record.check_in_approval_status === 'APPROVED' ? <span className='badge badge-success'>Approved</span> : record.check_in_approval_status === 'REJECTED' ? <span className='badge badge-danger'>Rejected</span> : <span style={{fontSize: '0.72rem', color: '#94a3b8'}}>--</span>}</div><div style={{display: 'flex', alignItems: 'center', gap: '8px', minHeight: '30px'}}><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b'}}>Punch Out</span><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 600, color: '#334155'}}>{formatTime(record.check_out_time)}</span>{record.check_out_time && record.check_out_approval_status === 'PENDING' ? <><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #E56108', background: '#eff6ff', color: '#CC5200', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setApproveRecord(record);setApproveType('check_out');}}><Check size={13} /> Approve</button><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #ef4444', background: '#fef2f2', color: '#dc2626', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setRejectRecord(record);setRejectType('check_out');}}><XCircle size={13} /> Reject</button></> : record.check_out_approval_status === 'APPROVED' ? <span className='badge badge-success'>Approved</span> : record.check_out_approval_status === 'REJECTED' ? <span className='badge badge-danger'>Rejected</span> : <span style={{fontSize: '0.72rem', color: '#94a3b8'}}>--</span>}</div></div></td>
+                        <td style={{minWidth: '330px', whiteSpace: 'nowrap'}}><div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}><button style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', border: '1px solid #e2e8f0', background: '#fff', color: '#334155', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, width: 'fit-content'}} onClick={() => setViewRecord(record)} title='View Details'><Eye size={15} /> View Details</button><div style={{display: 'flex', flexDirection: 'column', gap: '3px'}}><div style={{display: 'flex', alignItems: 'center', gap: '8px', minHeight: '30px'}}><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b'}}>Punch In</span><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 600, color: '#334155'}}>{formatTime(record.check_in_time)}</span>{record.check_in_time && record.check_in_approval_status === 'PENDING' ? <><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #E56108', background: '#eff6ff', color: '#CC5200', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setApproveRecord(record);setApproveType('check_in');}}><Check size={13} /> Approve</button><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #ef4444', background: '#fef2f2', color: '#dc2626', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setRejectRecord(record);setRejectType('check_in');}}><XCircle size={13} /> Reject</button></> : record.check_in_approval_status === 'APPROVED' ? <span className='badge badge-success'>Approved</span> : record.check_in_approval_status === 'REJECTED' ? <span className='badge badge-danger'>Rejected</span> : <span style={{fontSize: '0.72rem', color: '#94a3b8'}}>--</span>}</div>{record.late_reason && <span style={{fontSize: '0.70rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '4px', padding: '1px 6px', width: 'fit-content', maxWidth: '300px', whiteSpace: 'normal', lineHeight: 1.2}}>Late Reason: {record.late_reason}</span>}</div><div style={{display: 'flex', alignItems: 'center', gap: '8px', minHeight: '30px'}}><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b'}}>Punch Out</span><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 600, color: '#334155'}}>{formatTime(record.check_out_time)}</span>{record.check_out_time && record.check_out_approval_status === 'PENDING' ? <><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #E56108', background: '#eff6ff', color: '#CC5200', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setApproveRecord(record);setApproveType('check_out');}}><Check size={13} /> Approve</button><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #ef4444', background: '#fef2f2', color: '#dc2626', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setRejectRecord(record);setRejectType('check_out');}}><XCircle size={13} /> Reject</button></> : record.check_out_approval_status === 'APPROVED' ? <span className='badge badge-success'>Approved</span> : record.check_out_approval_status === 'REJECTED' ? <span className='badge badge-danger'>Rejected</span> : <span style={{fontSize: '0.72rem', color: '#94a3b8'}}>--</span>}</div></div></td>
                                               <td style={{ minWidth: '210px', padding: '10px' }}>
                           {(() => {
                             const permissions = (record.approved_permissions || []).filter(
@@ -1310,6 +1331,31 @@ const Attendance = () => {
                           )}
                       </span>
                     </div>
+
+                    {record.late_reason && (
+                      <div className="admin-mobile-card-row" style={{ alignItems: 'flex-start' }}>
+                        <span className="admin-mobile-card-label" style={{ color: '#dc2626' }}>
+                          Late Reason
+                        </span>
+                        <span
+                          className="admin-mobile-card-value"
+                          style={{
+                            color: '#dc2626',
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            padding: '3px 8px',
+                            fontSize: '0.78rem',
+                            textAlign: 'right',
+                            lineHeight: 1.3,
+                            maxWidth: '65%',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {record.late_reason}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="admin-mobile-card-row">
                       <span className="admin-mobile-card-label">
@@ -2461,6 +2507,22 @@ const Attendance = () => {
                           viewRecord.late_minutes
                         )}
                     </div>
+                    {viewRecord.late_reason && (
+                      <div
+                        style={{
+                          marginTop: '4px',
+                          fontSize: '0.75rem',
+                          color: '#dc2626',
+                          background: '#fef2f2',
+                          border: '1px solid #fecaca',
+                          borderRadius: '6px',
+                          padding: '4px 8px',
+                          lineHeight: 1.3,
+                        }}
+                      >
+                        <strong>Reason:</strong> {viewRecord.late_reason}
+                      </div>
+                    )}
                   </div>
 
                   <div>

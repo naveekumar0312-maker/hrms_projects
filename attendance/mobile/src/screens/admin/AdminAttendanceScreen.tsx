@@ -474,6 +474,14 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                         ) : null}
                       </View>
 
+                      {item.late_reason ? (
+                        <View style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginTop: 4 }}>
+                          <Text style={{ fontSize: 11, color: '#DC2626', fontFamily: 'Comfortaa_600SemiBold' }}>
+                            Late Reason: {item.late_reason}
+                          </Text>
+                        </View>
+                      ) : null}
+
                       {item.check_in_rejection_reason ? (
                         <Text style={{ fontSize: 11, color: '#DC2626', fontStyle: 'italic', marginTop: 4 }}>
                           Reason: {item.check_in_rejection_reason}
@@ -711,6 +719,14 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                       : 'Not punched'}
                   </Text>
                 </View>
+                {selectedRecord.late_reason ? (
+                  <View style={[styles.detailRow, { backgroundColor: '#FEF2F2', padding: 8, borderRadius: 8, marginTop: 4, marginBottom: 4 }]}>
+                    <Text style={[styles.detailLabel, { color: '#DC2626' }]}>Late Reason</Text>
+                    <Text style={[styles.detailValue, { color: '#DC2626', fontFamily: 'Comfortaa_700Bold', flex: 1, textAlign: 'right' }]}>
+                      {selectedRecord.late_reason}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Check Out</Text>
                   <Text style={styles.detailValue}>

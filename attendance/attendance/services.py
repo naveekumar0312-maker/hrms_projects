@@ -624,6 +624,7 @@ def build_employee_attendance_report(
             "check_out_time": check_out_time_iso,
             "working_hours": working_hours_str,
             "late_minutes": late_minutes,
+            "late_reason": getattr(rec, 'late_reason', None) if rec else None,
             "early_minutes": early_minutes,
             "overtime_minutes": overtime_minutes,
             "check_in_photo": check_in_photo,
