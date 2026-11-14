@@ -264,7 +264,6 @@ const Shifts = () => {
                 <th>End Time</th>
                 <th>Grace Period</th>
                 <th>Employees</th>
-                <th>Reminders</th>
                 <th>Status</th>
                 <th style={{ minWidth: '140px' }}>Actions</th>
               </tr>
