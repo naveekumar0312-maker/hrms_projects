@@ -4333,6 +4333,7 @@ body {
 .sidebar-brand span {
   background: linear-gradient(135deg, #FF8C38 0%, #E56108 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
