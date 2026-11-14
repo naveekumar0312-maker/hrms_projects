@@ -22,7 +22,7 @@
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/branding/adaptive-foreground.png"
       },
-      "package": "com.vibhutravelhub.dailyattendance",
+      "package": "hrms.yaazh360digitech",
       "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
       "permissions": [

@@ -23,25 +23,6 @@
           "other_platform_oauth_client": []
         }
       }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:408047924981:android:364d07a19d3cf683edf7bc",
-        "android_client_info": {
-          "package_name": "com.vibhutravelhub.dailyattendance"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDRQ7vj1GChUbfcg2yBxBeMU4WwH1Xsg3I"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
     }
   ],
   "configuration_version": "1"
