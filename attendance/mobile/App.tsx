@@ -31,6 +31,7 @@ import ManagerDashboardScreen from './src/screens/manager/ManagerDashboardScreen
 import ManagerTeamScreen from './src/screens/manager/ManagerTeamScreen';
 import ManagerAttendanceScreen from './src/screens/manager/ManagerAttendanceScreen';
 import PersonalAlarmManager from './src/components/PersonalAlarmManager';
+import PushNotificationManager from './src/components/PushNotificationManager';
 
 import { Text, TextInput } from 'react-native';
 
@@ -426,6 +427,20 @@ const RootNavigator = () => {
   );
 };
 
+function AppContent() {
+  const { isAuthenticated } = useContext(AuthContext);
+
+  return (
+    <>
+      <PersonalAlarmManager />
+      <PushNotificationManager isAuthenticated={isAuthenticated} />
+      <NavigationContainer theme={navTheme}>
+        <RootNavigator />
+      </NavigationContainer>
+    </>
+  );
+}
+
 export default function App() {
   const [fontsLoaded] = useFonts({
     Comfortaa_400Regular,
@@ -446,10 +461,7 @@ export default function App() {
       />
       <AuthProvider>
         <MessageProvider>
-          <PersonalAlarmManager />
-          <NavigationContainer theme={navTheme}>
-            <RootNavigator />
-          </NavigationContainer>
+          <AppContent />
         </MessageProvider>
       </AuthProvider>
     </SafeAreaProvider>
