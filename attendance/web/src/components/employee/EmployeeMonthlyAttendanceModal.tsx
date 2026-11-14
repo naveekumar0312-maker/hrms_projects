@@ -128,45 +128,45 @@ const getStatusInfo = (status?: string) => {
     case 'ON_TIME':
       return {
         label: 'Present',
-        color: '#E56108',
-        background: 'rgba(0, 86, 179, 0.08)',
-        border: '#BDE8CB',
+        color: '#15803D', // Dark Green
+        background: '#DCFCE7', // Soft green pill background
+        border: '#86EFAC',
         icon: CheckCircle2,
       };
 
     case 'WORKING':
       return {
         label: 'Working',
-        color: '#2563EB',
-        background: '#EAF2FF',
-        border: '#C9DCFF',
+        color: '#1D4ED8', // Dark Blue
+        background: '#DBEAFE',
+        border: '#93C5FD',
         icon: Clock3,
       };
 
     case 'ABSENT':
       return {
         label: 'Absent',
-        color: '#DC2626',
-        background: '#FDECEC',
-        border: '#F5C2C2',
+        color: '#B91C1C', // Dark Red
+        background: '#FEE2E2', // Soft red pill background
+        border: '#FCA5A5',
         icon: XCircle,
       };
 
     case 'CASUAL_LEAVE':
       return {
         label: 'Casual Leave',
-        color: '#B45309',
-        background: '#FFF4DF',
-        border: '#F3D29A',
+        color: '#9A3412', // Dark Amber/Orange-brown
+        background: '#FFEDD5',
+        border: '#FDBA74',
         icon: Coffee,
       };
 
     case 'SICK_LEAVE':
       return {
         label: 'Sick Leave',
-        color: '#7C3AED',
-        background: '#F2EAFF',
-        border: '#DCC9FF',
+        color: '#6D28D9', // Dark Purple
+        background: '#EDE9FE',
+        border: '#C4B5FD',
         icon: HeartPulse,
       };
 
@@ -174,34 +174,52 @@ const getStatusInfo = (status?: string) => {
     case 'HALF_DAY_LEAVE':
       return {
         label: 'Half Day',
-        color: '#DB2777',
+        color: '#BE185D', // Dark Pink/Magenta
         background: '#FCE7F3',
-        border: '#F6BDD8',
+        border: '#F9A8D4',
         icon: Sun,
+      };
+
+    case 'PERSONAL_LEAVE':
+      return {
+        label: 'Personal Leave',
+        color: '#4338CA', // Dark Indigo
+        background: '#E0E7FF',
+        border: '#A5B4FC',
+        icon: CalendarDays,
+      };
+
+    case 'OTHER_LEAVE':
+      return {
+        label: 'Other Leave',
+        color: '#475569', // Dark Slate
+        background: '#F1F5F9',
+        border: '#CBD5E1',
+        icon: CalendarDays,
       };
 
     case 'HOLIDAY':
       return {
         label: 'Holiday',
-        color: '#0891B2',
-        background: '#E6F8FC',
-        border: '#B9E8F0',
+        color: '#0E7490', // Dark Cyan
+        background: '#CFFAFE',
+        border: '#67E8F9',
         icon: CalendarOff,
       };
 
     case 'WEEKEND':
       return {
         label: 'Weekend',
-        color: '#64748B',
+        color: '#334155', // Dark Slate Gray
         background: '#F1F5F9',
-        border: '#DCE3EA',
+        border: '#CBD5E1',
         icon: CalendarDays,
       };
 
     case 'UPCOMING':
       return {
         label: 'Upcoming',
-        color: '#94A3B8',
+        color: '#64748B', // Medium Slate
         background: '#F8FAFC',
         border: '#E2E8F0',
         icon: CalendarDays,
@@ -209,10 +227,10 @@ const getStatusInfo = (status?: string) => {
 
     default:
       return {
-        label: value || 'No Data',
-        color: '#64748B',
-        background: '#F8FAFC',
-        border: '#E2E8F0',
+        label: value.replace(/_/g, ' ') || 'No Data',
+        color: '#334155',
+        background: '#F1F5F9',
+        border: '#CBD5E1',
         icon: CalendarDays,
       };
   }
@@ -1083,14 +1101,16 @@ const EmployeeMonthlyAttendanceModal = ({
 
                     <div className="employee-calendar-legend">
                       {[
-                        ['#E56108', 'Present'],
-                        ['#DC2626', 'Absent'],
-                        ['#B45309', 'Casual Leave'],
-                        ['#7C3AED', 'Sick Leave'],
-                        ['#DB2777', 'Half Day'],
-                        ['#0891B2', 'Holiday'],
-                        ['#64748B', 'Weekend'],
-                        ['#94A3B8', 'Upcoming'],
+                        ['#15803D', 'Present'],
+                        ['#B91C1C', 'Absent'],
+                        ['#1D4ED8', 'Working'],
+                        ['#9A3412', 'Casual Leave'],
+                        ['#6D28D9', 'Sick Leave'],
+                        ['#4338CA', 'Personal Leave'],
+                        ['#BE185D', 'Half Day'],
+                        ['#0E7490', 'Holiday'],
+                        ['#334155', 'Weekend'],
+                        ['#64748B', 'Upcoming'],
                       ].map(([color, label]) => (
                         <div
                           key={label}
@@ -1231,7 +1251,7 @@ const EmployeeMonthlyAttendanceModal = ({
                         </div>
                         <div
                           className="employee-calendar-stat-value"
-                          style={{ color: '#E56108' }}
+                          style={{ color: '#15803D' }}
                         >
                           {summary.present || 0}
                         </div>
@@ -1243,7 +1263,7 @@ const EmployeeMonthlyAttendanceModal = ({
                         </div>
                         <div
                           className="employee-calendar-stat-value"
-                          style={{ color: '#DC2626' }}
+                          style={{ color: '#B91C1C' }}
                         >
                           {summary.absent || 0}
                         </div>
@@ -1255,7 +1275,7 @@ const EmployeeMonthlyAttendanceModal = ({
                         </div>
                         <div
                           className="employee-calendar-stat-value"
-                          style={{ color: '#F97316' }}
+                          style={{ color: '#C2410C' }}
                         >
                           {summary.late_days || 0}
                         </div>
@@ -1266,7 +1286,7 @@ const EmployeeMonthlyAttendanceModal = ({
                         </div>
                         <div
                           className="employee-calendar-stat-value"
-                          style={{ color: '#0891B2' }}
+                          style={{ color: '#0E7490' }}
                         >
                           {summary.holidays || 0}
                         </div>
