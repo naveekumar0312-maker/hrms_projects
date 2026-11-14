@@ -38,11 +38,13 @@ import {
   Camera,
   MapPin,
   ChevronRight,
+  CalendarDays,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
 import { DropdownPicker, DatePicker } from '../../components/pickers';
+import { EmployeeMonthlyAttendanceModal } from '../../components/employee/EmployeeMonthlyAttendanceModal';
 import {
   fetchEmployees,
   fetchBranches,
@@ -89,6 +91,10 @@ export const AdminEmployeesScreen = ({ navigation }: any) => {
   const [detailModalVisible, setDetailModalVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+
+  // Monthly Attendance Modal
+  const [monthlyModalVisible, setMonthlyModalVisible] = useState(false);
+  const [monthlyEmployee, setMonthlyEmployee] = useState<any | null>(null);
 
   // Add / Edit Employee Modal
   const [formModalVisible, setFormModalVisible] = useState(false);
@@ -550,9 +556,21 @@ export const AdminEmployeesScreen = ({ navigation }: any) => {
                     {item.email}
                   </Text>
                 </View>
-                <View style={styles.viewLink}>
-                  <Text style={styles.viewLinkText}>View Full Details</Text>
-                  <ChevronRight size={14} color="#000000" />
+                <View style={styles.footerActions}>
+                  <TouchableOpacity
+                    style={styles.monthlyBtn}
+                    onPress={() => {
+                      setMonthlyEmployee(item);
+                      setMonthlyModalVisible(true);
+                    }}
+                  >
+                    <CalendarDays size={12} color="#EA580C" />
+                    <Text style={styles.monthlyBtnText}>Attendance</Text>
+                  </TouchableOpacity>
+                  <View style={styles.viewLink}>
+                    <Text style={styles.viewLinkText}>Details</Text>
+                    <ChevronRight size={14} color="#000000" />
+                  </View>
                 </View>
               </View>
             </TouchableOpacity>
@@ -745,13 +763,24 @@ export const AdminEmployeesScreen = ({ navigation }: any) => {
                   </View>
                 </View>
 
-                {/* Action Buttons: Edit and Toggle Status */}
+                {/* Action Buttons: Monthly Attendance, Edit and Toggle Status */}
+                <TouchableOpacity
+                  style={styles.monthlyFullBtn}
+                  onPress={() => {
+                    setMonthlyEmployee(selectedEmployee);
+                    setMonthlyModalVisible(true);
+                  }}
+                >
+                  <CalendarDays size={16} color="#FFFFFF" />
+                  <Text style={styles.monthlyFullBtnText}>View Monthly Attendance Calendar</Text>
+                </TouchableOpacity>
+
                 <View style={styles.modalActionRow}>
                   <TouchableOpacity
                     style={styles.editBtn}
                     onPress={() => handleOpenEdit(selectedEmployee)}
                   >
-                    <Text style={styles.editBtnText}>Edit Employee Profile</Text>
+                    <Text style={styles.editBtnText}>Edit Profile</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1197,6 +1226,13 @@ export const AdminEmployeesScreen = ({ navigation }: any) => {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Monthly Attendance Calendar & Summary Modal */}
+      <EmployeeMonthlyAttendanceModal
+        visible={monthlyModalVisible}
+        employee={monthlyEmployee}
+        onClose={() => setMonthlyModalVisible(false)}
+      />
     </SafeAreaView>
   );
 };
@@ -1400,6 +1436,27 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666666',
   },
+  footerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  monthlyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF7ED',
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  monthlyBtnText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#EA580C',
+  },
   viewLink: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1538,6 +1595,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_600SemiBold',
     flex: 1.5,
     textAlign: 'right',
+  },
+  monthlyFullBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#EA580C',
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  monthlyFullBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'Comfortaa_700Bold',
+    fontSize: 13,
   },
   modalActionRow: {
     flexDirection: 'row',
