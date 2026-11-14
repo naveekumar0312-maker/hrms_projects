@@ -1902,8 +1902,9 @@ class CheckInView(views.APIView):
         # Location name is resolved in background thread.
         location_name = None
 
+        # For FIELD / Marketing employees, do not reject check-in on low GPS accuracy
         max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
-        if acc > max_accuracy:
+        if employee.work_type != 'FIELD' and acc > max_accuracy:
             return Response({
                 "code": "GPS_ACCURACY_TOO_LOW",
                 "error": "GPS accuracy is too low.",
@@ -2119,8 +2120,9 @@ class CheckOutView(views.APIView):
         # Location name is resolved in background thread.
         location_name = None
         
+        # For FIELD / Marketing employees, do not reject check-in on low GPS accuracy
         max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
-        if acc > max_accuracy:
+        if employee.work_type != 'FIELD' and acc > max_accuracy:
             return Response({
                 "code": "GPS_ACCURACY_TOO_LOW",
                 "error": "GPS accuracy is too low.",
