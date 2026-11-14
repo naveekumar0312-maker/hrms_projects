@@ -323,6 +323,8 @@ const EmployeeDashboard = () => {
     fetchDashboardData();
   }, []);
 
+  const currentActionLocationRef = useRef<LocationData | null>(null);
+
   const handleAction = async (type: 'CHECK_IN' | 'CHECK_OUT') => {
     setActionType(type);
     setShowCamera(true);
@@ -330,7 +332,7 @@ const EmployeeDashboard = () => {
 
     try {
       const location = await getLocation();
-
+      currentActionLocationRef.current = location;
       setLocationStatus(
         `${Math.round(location.accuracy || 0)} m`
       );
@@ -394,7 +396,8 @@ const EmployeeDashboard = () => {
     setLoadingAction(true);
 
     try {
-      const locationData = await getLocation();
+      // Use location fetched during camera opening if available, otherwise fetch fresh/cached location
+      const locationData = currentActionLocationRef.current || await getLocation();
 
       if (actionType === 'CHECK_IN') {
         await checkIn(locationData, photoUri);
