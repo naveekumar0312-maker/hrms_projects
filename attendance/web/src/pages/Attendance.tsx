@@ -683,170 +683,133 @@ const Attendance = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <div
-        className="admin-filters"
-        style={{
-          display: 'flex',
-          gap: '1rem',
-          marginBottom: '1rem',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-        }}
-      >
-        <CustomSelect
-          options={[
-            { value: '', label: 'All Companies' },
-            ...companies.map((company) => ({
-              value: company.id.toString(),
-              label: company.name,
-            })),
-          ]}
-          value={selectedCompany}
-          onChange={(value) => {
-            setSelectedCompany(value);
-            setSelectedBranch('');
-          }}
-          placeholder="All Companies"
-          icon={<Building2 size={18} />}
-          searchPlaceholder="Search companies..."
-        />
-
-        <CustomSelect
-          options={[
-            { value: '', label: 'All Branches' },
-            ...filteredBranches.map((branch) => ({
-              value: branch.id.toString(),
-              label:
-                branch.branch_name ||
-                `Branch ${branch.id}`,
-            })),
-          ]}
-          value={selectedBranch}
-          onChange={setSelectedBranch}
-          placeholder="All Branches"
-          icon={<MapPin size={18} />}
-          searchPlaceholder="Search branches..."
-        />
-
-        {/* Standardized LiveLocations DatePicker */}
-        <div style={{ minWidth: '220px' }}>
-          <CustomDatePicker
-            value={selectedDate}
-            onChange={(val) => {
-              if (!val) {
-                setSelectedDate('');
-                return;
-              }
-              const selected = new Date(`${val}T00:00:00`);
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              selected.setHours(0, 0, 0, 0);
-              const diffDays = Math.floor((today.getTime() - selected.getTime()) / (1000 * 60 * 60 * 24));
-              if (diffDays >= 0) {
-                setAttendancePage(diffDays + 1);
-              } else {
-                setSelectedDate(val);
-              }
-            }}
-            placeholder="All Dates"
-          />
-        </div>
-
-        <div style={{ position: 'relative' }}>
-          <Search
-            size={16}
-            color="var(--text-muted)"
-            style={{
-              position: 'absolute',
-              left: '1rem',
-              top: '50%',
-              transform: 'translateY(-50%)',
-            }}
-          />
-
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search employee..."
-            value={searchEmployee}
-            onChange={(event) =>
-              setSearchEmployee(event.target.value)
-            }
-            style={{
-              paddingLeft: '2.5rem',
-              width: '250px',
-            }}
-          />
-        </div>
-
-        {(selectedCompany ||
-          selectedBranch ||
-          selectedDate ||
-          searchEmployee) && (
-          <button
-            type="button"
-            onClick={handleResetFilters}
-            className="btn btn-secondary"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              minHeight: '42px',
-            }}
-          >
-            <RotateCcw size={16} />
-            Clear
-          </button>
-        )}
-      </div>
-
-      {/* Selected date indicator */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '1rem',
-          flexWrap: 'wrap',
-          marginBottom: '1rem',
-          padding: '12px 16px',
-          borderRadius: '10px',
-          background: '#F8F9FC',
-          border: '1px solid #bbf7d0',
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontSize: '0.75rem',
-              color: 'var(--text-muted)',
-              marginBottom: '3px',
-            }}
-          >
-            ATTENDANCE DATE
+      {/* Unified Command Filters Card */}
+      <div className="admin-filters-card">
+        <div className="admin-filters-top">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }} />
+            <div>
+              <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B', fontWeight: 700 }}>
+                Attendance Date
+              </span>
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#0F172A' }}>
+                {selectedDateLabel}
+              </div>
+            </div>
           </div>
-          <div
-            style={{
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-            }}
-          >
-            {selectedDateLabel}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '0.80rem', color: '#475569', background: '#F1F5F9', padding: '4px 10px', borderRadius: '20px', fontWeight: 600 }}>
+              {visibleRecords.length} {visibleRecords.length === 1 ? 'Record' : 'Records'}
+            </span>
+            {(selectedCompany || selectedBranch || selectedDate || searchEmployee) && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="btn btn-secondary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '5px 12px',
+                  fontSize: '0.78rem',
+                  borderRadius: '8px',
+                }}
+              >
+                <RotateCcw size={14} />
+                Reset Filters
+              </button>
+            )}
           </div>
         </div>
 
-        <div
-          style={{
-            fontSize: '0.9rem',
-            color: 'var(--text-secondary)',
-          }}
-        >
-          {visibleRecords.length}{' '}
-          {visibleRecords.length === 1
-            ? 'attendance'
-            : 'attendances'}{' '}
-          shown
+        <div className="admin-filters-row">
+          <CustomSelect
+            options={[
+              { value: '', label: 'All Companies' },
+              ...companies.map((company) => ({
+                value: company.id.toString(),
+                label: company.name,
+              })),
+            ]}
+            value={selectedCompany}
+            onChange={(value) => {
+              setSelectedCompany(value);
+              setSelectedBranch('');
+            }}
+            placeholder="All Companies"
+            icon={<Building2 size={18} />}
+            searchPlaceholder="Search companies..."
+          />
+
+          <CustomSelect
+            options={[
+              { value: '', label: 'All Branches' },
+              ...filteredBranches.map((branch) => ({
+                value: branch.id.toString(),
+                label:
+                  branch.branch_name ||
+                  `Branch ${branch.id}`,
+              })),
+            ]}
+            value={selectedBranch}
+            onChange={setSelectedBranch}
+            placeholder="All Branches"
+            icon={<MapPin size={18} />}
+            searchPlaceholder="Search branches..."
+          />
+
+          {/* Standardized LiveLocations DatePicker */}
+          <div style={{ minWidth: '220px' }}>
+            <CustomDatePicker
+              value={selectedDate}
+              onChange={(val) => {
+                if (!val) {
+                  setSelectedDate('');
+                  return;
+                }
+                const selected = new Date(`${val}T00:00:00`);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                selected.setHours(0, 0, 0, 0);
+                const diffDays = Math.floor((today.getTime() - selected.getTime()) / (1000 * 60 * 60 * 24));
+                if (diffDays >= 0) {
+                  setAttendancePage(diffDays + 1);
+                } else {
+                  setSelectedDate(val);
+                }
+              }}
+              placeholder="All Dates"
+            />
+          </div>
+
+          <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+            <Search
+              size={16}
+              color="var(--text-muted)"
+              style={{
+                position: 'absolute',
+                left: '1rem',
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+            />
+
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search employee name or ID..."
+              value={searchEmployee}
+              onChange={(event) =>
+                setSearchEmployee(event.target.value)
+              }
+              style={{
+                paddingLeft: '2.5rem',
+                width: '100%',
+                borderRadius: '10px',
+              }}
+            />
+          </div>
         </div>
       </div>
 
@@ -1156,7 +1119,160 @@ const Attendance = () => {
                           </div>
                         </td>
 
-                        <td style={{minWidth: '330px', whiteSpace: 'nowrap'}}><div style={{display: 'flex', flexDirection: 'column', gap: '8px'}}><button style={{display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '5px', border: '1px solid #e2e8f0', background: '#fff', color: '#334155', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600, width: 'fit-content'}} onClick={() => setViewRecord(record)} title='View Details'><Eye size={15} /> View Details</button><div style={{display: 'flex', flexDirection: 'column', gap: '3px'}}><div style={{display: 'flex', alignItems: 'center', gap: '8px', minHeight: '30px'}}><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b'}}>Punch In</span><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 600, color: '#334155'}}>{formatTime(record.check_in_time)}</span>{record.check_in_time && record.check_in_approval_status === 'PENDING' ? <><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #E56108', background: '#eff6ff', color: '#CC5200', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setApproveRecord(record);setApproveType('check_in');}}><Check size={13} /> Approve</button><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #ef4444', background: '#fef2f2', color: '#dc2626', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setRejectRecord(record);setRejectType('check_in');}}><XCircle size={13} /> Reject</button></> : record.check_in_approval_status === 'APPROVED' ? <span className='badge badge-success'>Approved</span> : record.check_in_approval_status === 'REJECTED' ? <span className='badge badge-danger'>Rejected</span> : <span style={{fontSize: '0.72rem', color: '#94a3b8'}}>--</span>}</div>{record.late_reason && <span style={{fontSize: '0.70rem', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '4px', padding: '1px 6px', width: 'fit-content', maxWidth: '300px', whiteSpace: 'normal', lineHeight: 1.2}}>Late Reason: {record.late_reason}</span>}</div><div style={{display: 'flex', alignItems: 'center', gap: '8px', minHeight: '30px'}}><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 700, color: '#64748b'}}>Punch Out</span><span style={{width: '68px', fontSize: '0.72rem', fontWeight: 600, color: '#334155'}}>{formatTime(record.check_out_time)}</span>{record.check_out_time && record.check_out_approval_status === 'PENDING' ? <><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #E56108', background: '#eff6ff', color: '#CC5200', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setApproveRecord(record);setApproveType('check_out');}}><Check size={13} /> Approve</button><button style={{display: 'inline-flex', alignItems: 'center', gap: '3px', border: '1px solid #ef4444', background: '#fef2f2', color: '#dc2626', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 600}} onClick={() => {setRejectRecord(record);setRejectType('check_out');}}><XCircle size={13} /> Reject</button></> : record.check_out_approval_status === 'APPROVED' ? <span className='badge badge-success'>Approved</span> : record.check_out_approval_status === 'REJECTED' ? <span className='badge badge-danger'>Rejected</span> : <span style={{fontSize: '0.72rem', color: '#94a3b8'}}>--</span>}</div></div></td>
+                        <td style={{ minWidth: '320px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <button
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                border: '1px solid #CBD5E1',
+                                background: '#FFFFFF',
+                                color: '#334155',
+                                borderRadius: '8px',
+                                padding: '5px 12px',
+                                cursor: 'pointer',
+                                fontSize: '0.78rem',
+                                fontWeight: 600,
+                                width: 'fit-content',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onClick={() => setViewRecord(record)}
+                              title="View Details"
+                            >
+                              <Eye size={14} color="#64748B" /> View Details
+                            </button>
+
+                            {/* Punch In Action Row */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: '#F8FAFC', padding: '6px 10px', borderRadius: '8px', border: '1px solid #F1F5F9' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ width: '64px', fontSize: '0.72rem', fontWeight: 700, color: '#475569' }}>Punch In</span>
+                                <span style={{ width: '68px', fontSize: '0.74rem', fontWeight: 600, color: '#0F172A' }}>
+                                  {formatTime(record.check_in_time)}
+                                </span>
+                                {record.check_in_time && record.check_in_approval_status === 'PENDING' ? (
+                                  <div style={{ display: 'inline-flex', gap: '5px' }}>
+                                    <button
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        border: '1px solid #10B981',
+                                        background: '#ECFDF5',
+                                        color: '#059669',
+                                        borderRadius: '6px',
+                                        padding: '3px 8px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.70rem',
+                                        fontWeight: 700,
+                                      }}
+                                      onClick={() => {
+                                        setApproveRecord(record);
+                                        setApproveType('check_in');
+                                      }}
+                                    >
+                                      <Check size={12} /> Approve
+                                    </button>
+                                    <button
+                                      style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '3px',
+                                        border: '1px solid #FCA5A5',
+                                        background: '#FEF2F2',
+                                        color: '#DC2626',
+                                        borderRadius: '6px',
+                                        padding: '3px 8px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.70rem',
+                                        fontWeight: 700,
+                                      }}
+                                      onClick={() => {
+                                        setRejectRecord(record);
+                                        setRejectType('check_in');
+                                      }}
+                                    >
+                                      <XCircle size={12} /> Reject
+                                    </button>
+                                  </div>
+                                ) : record.check_in_approval_status === 'APPROVED' ? (
+                                  <span className="badge badge-success">Approved</span>
+                                ) : record.check_in_approval_status === 'REJECTED' ? (
+                                  <span className="badge badge-danger">Rejected</span>
+                                ) : (
+                                  <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>--</span>
+                                )}
+                              </div>
+
+                              {record.late_reason && (
+                                <div style={{ fontSize: '0.70rem', color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '4px', padding: '2px 8px', marginTop: '2px' }}>
+                                  <strong>Reason:</strong> {record.late_reason}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Punch Out Action Row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#F8FAFC', padding: '6px 10px', borderRadius: '8px', border: '1px solid #F1F5F9' }}>
+                              <span style={{ width: '64px', fontSize: '0.72rem', fontWeight: 700, color: '#475569' }}>Punch Out</span>
+                              <span style={{ width: '68px', fontSize: '0.74rem', fontWeight: 600, color: '#0F172A' }}>
+                                {formatTime(record.check_out_time)}
+                              </span>
+                              {record.check_out_time && record.check_out_approval_status === 'PENDING' ? (
+                                <div style={{ display: 'inline-flex', gap: '5px' }}>
+                                  <button
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      border: '1px solid #10B981',
+                                      background: '#ECFDF5',
+                                      color: '#059669',
+                                      borderRadius: '6px',
+                                      padding: '3px 8px',
+                                      cursor: 'pointer',
+                                      fontSize: '0.70rem',
+                                      fontWeight: 700,
+                                    }}
+                                    onClick={() => {
+                                      setApproveRecord(record);
+                                      setApproveType('check_out');
+                                    }}
+                                  >
+                                    <Check size={12} /> Approve
+                                  </button>
+                                  <button
+                                    style={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                      border: '1px solid #FCA5A5',
+                                      background: '#FEF2F2',
+                                      color: '#DC2626',
+                                      borderRadius: '6px',
+                                      padding: '3px 8px',
+                                      cursor: 'pointer',
+                                      fontSize: '0.70rem',
+                                      fontWeight: 700,
+                                    }}
+                                    onClick={() => {
+                                      setRejectRecord(record);
+                                      setRejectType('check_out');
+                                    }}
+                                  >
+                                    <XCircle size={12} /> Reject
+                                  </button>
+                                </div>
+                              ) : record.check_out_approval_status === 'APPROVED' ? (
+                                <span className="badge badge-success">Approved</span>
+                              ) : record.check_out_approval_status === 'REJECTED' ? (
+                                <span className="badge badge-danger">Rejected</span>
+                              ) : (
+                                <span style={{ fontSize: '0.72rem', color: '#94A3B8' }}>--</span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
                                               <td style={{ minWidth: '210px', padding: '10px' }}>
                           {(() => {
                             const permissions = (record.approved_permissions || []).filter(
