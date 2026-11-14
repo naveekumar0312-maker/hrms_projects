@@ -214,3 +214,4 @@ export async function removeLogoBackground(file: File): Promise<File> {
     img.src = objectUrl;
   });
 }
+
