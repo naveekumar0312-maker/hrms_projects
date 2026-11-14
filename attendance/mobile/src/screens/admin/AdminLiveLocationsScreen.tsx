@@ -21,6 +21,7 @@ import {
   BellRing,
   LocateFixed,
   Users,
+  Route,
 } from 'lucide-react-native';
 import { AuthContext, api } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
@@ -203,21 +204,40 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
                         </View>
                       </View>
 
-                      <TouchableOpacity
-                        style={styles.sendAlertBtn}
-                        onPress={() => handleSendAlert(emp)}
-                        disabled={sendingAlertId === emp.id}
-                        activeOpacity={0.85}
-                      >
-                        {sendingAlertId === emp.id ? (
-                          <ActivityIndicator size="small" color="#FFFFFF" />
-                        ) : (
-                          <>
-                            <BellRing size={13} color="#FFFFFF" />
-                            <Text style={styles.sendAlertBtnText}>Send Alert</Text>
-                          </>
-                        )}
-                      </TouchableOpacity>
+                      <View style={styles.notSharingActions}>
+                        <TouchableOpacity
+                          style={styles.historyBtn}
+                          onPress={() =>
+                            navigation.navigate('AdminEmployeeRouteMap', {
+                              employeeId: emp.id,
+                              employeeName: emp.full_name,
+                              employeeCode: emp.employee_id,
+                              branchName: emp.branch_name,
+                              isSharing: false,
+                            })
+                          }
+                          activeOpacity={0.85}
+                        >
+                          <Route size={13} color="#003882" />
+                          <Text style={styles.historyBtnText}>Timeline</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.sendAlertBtn}
+                          onPress={() => handleSendAlert(emp)}
+                          disabled={sendingAlertId === emp.id}
+                          activeOpacity={0.85}
+                        >
+                          {sendingAlertId === emp.id ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          ) : (
+                            <>
+                              <BellRing size={13} color="#FFFFFF" />
+                              <Text style={styles.sendAlertBtnText}>Alert</Text>
+                            </>
+                          )}
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -473,9 +493,31 @@ const styles = StyleSheet.create({
     color: '#DC2626',
     marginTop: 2,
   },
+  notSharingActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginLeft: 8,
+  },
+  historyBtn: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  historyBtnText: {
+    color: '#1D4ED8',
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+  },
   sendAlertBtn: {
     backgroundColor: '#E56108',
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 8,
     flexDirection: 'row',
