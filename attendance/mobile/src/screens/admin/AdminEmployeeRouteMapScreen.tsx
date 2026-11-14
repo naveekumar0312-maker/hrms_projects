@@ -7,34 +7,23 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Dimensions,
-  Linking,
-  Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, {
   Path,
   Circle,
-  Line,
-  Rect,
-  Text as SvgText,
   G,
-  Defs,
-  LinearGradient,
-  Stop,
 } from 'react-native-svg';
 import {
   Play,
   Pause,
   LocateFixed,
   Route,
-  Navigation,
   MapPin,
   Clock,
   Radio,
-  ChevronLeft,
-  Calendar,
   AlertCircle,
-  Share2,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
@@ -43,6 +32,15 @@ import { fetchTrackingHistory, TrackingHistoryItem } from '../../services/adminH
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MAP_WIDTH = SCREEN_WIDTH - 32;
 const MAP_HEIGHT = 280;
+
+// Coordinate transformation math for Web Mercator (EPSG:3857) tiles
+function deg2num(lat_deg: number, lon_deg: number, zoom: number) {
+  const lat_rad = (lat_deg * Math.PI) / 180.0;
+  const n = Math.pow(2.0, zoom);
+  const xtile = ((lon_deg + 180.0) / 360.0) * n;
+  const ytile = ((1.0 - Math.asinh(Math.tan(lat_rad)) / Math.PI) / 2.0) * n;
+  return { x: xtile, y: ytile };
+}
 
 export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
   const { user } = React.useContext(AuthContext);
@@ -53,7 +51,7 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
   const [error, setError] = useState('');
   const [selectedPointIndex, setSelectedPointIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [fitMode, setFitMode] = useState<'all' | 'selected'>('all');
+  const [zoomLevel, setZoomLevel] = useState<number>(15);
 
   const playTimerRef = useRef<any>(null);
 
@@ -62,14 +60,13 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchTrackingHistory(employeeId, 200);
-      // Sort ascending by recorded_at for chronological route
+      const data = await fetchTrackingHistory(Number(employeeId), 200);
       const sorted = [...data].sort(
         (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
       );
       setHistory(sorted);
       if (sorted.length > 0) {
-        setSelectedPointIndex(sorted.length - 1); // select latest by default
+        setSelectedPointIndex(sorted.length - 1);
       } else {
         setError('No GPS records found for this employee today.');
       }
@@ -96,49 +93,60 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
     );
   }, [history]);
 
-  // Bounding box for mapping coordinates to SVG canvas
-  const bounds = useMemo(() => {
-    if (gpsPoints.length === 0) return null;
-    let minLat = gpsPoints[0].latitude!;
-    let maxLat = gpsPoints[0].latitude!;
-    let minLng = gpsPoints[0].longitude!;
-    let maxLng = gpsPoints[0].longitude!;
+  // Selected or latest point for centering map
+  const activePoint = gpsPoints[selectedPointIndex] || gpsPoints[gpsPoints.length - 1] || null;
 
-    gpsPoints.forEach((p) => {
-      if (p.latitude! < minLat) minLat = p.latitude!;
-      if (p.latitude! > maxLat) maxLat = p.latitude!;
-      if (p.longitude! < minLng) minLng = p.longitude!;
-      if (p.longitude! > maxLng) maxLng = p.longitude!;
-    });
+  // Calculate Map Center & Tile Coordinates
+  const tileInfo = useMemo(() => {
+    if (!activePoint || !activePoint.latitude || !activePoint.longitude) {
+      return null;
+    }
+    const centerTile = deg2num(activePoint.latitude, activePoint.longitude, zoomLevel);
+    const tileX = Math.floor(centerTile.x);
+    const tileY = Math.floor(centerTile.y);
+    const pixelOffsetX = (centerTile.x - tileX) * 256;
+    const pixelOffsetY = (centerTile.y - tileY) * 256;
 
-    const latDelta = Math.max(maxLat - minLat, 0.005);
-    const lngDelta = Math.max(maxLng - minLng, 0.005);
+    // Build 3x3 grid around center tile to smoothly cover the MAP container
+    const tiles = [];
+    for (let dy = -1; dy <= 1; dy++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const curX = tileX + dx;
+        const curY = tileY + dy;
+        const left = (dx + 1) * 256 - pixelOffsetX - (256 * 1.5 - MAP_WIDTH / 2);
+        const top = (dy + 1) * 256 - pixelOffsetY - (256 * 1.5 - MAP_HEIGHT / 2);
 
-    return {
-      minLat: minLat - latDelta * 0.15,
-      maxLat: maxLat + latDelta * 0.15,
-      minLng: minLng - lngDelta * 0.15,
-      maxLng: maxLng + lngDelta * 0.15,
-    };
-  }, [gpsPoints]);
+        tiles.push({
+          key: `${zoomLevel}/${curY}/${curX}`,
+          imageryUrl: `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${zoomLevel}/${curY}/${curX}`,
+          labelsUrl: `https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/${zoomLevel}/${curY}/${curX}`,
+          left,
+          top,
+        });
+      }
+    }
 
-  // Function to project lat/lng to SVG x,y
-  const project = (lat: number, lng: number) => {
-    if (!bounds) return { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 };
-    const x = ((lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * (MAP_WIDTH - 60) + 30;
-    // Latitude inverted because SVG Y is down
-    const y = ((bounds.maxLat - lat) / (bounds.maxLat - bounds.minLat)) * (MAP_HEIGHT - 60) + 30;
+    return { centerTile, tileX, tileY, pixelOffsetX, pixelOffsetY, tiles };
+  }, [activePoint, zoomLevel]);
+
+  // Project any lat/lng into the container's X/Y pixels based on active center
+  const projectToPixels = (lat: number, lng: number) => {
+    if (!activePoint) return { x: MAP_WIDTH / 2, y: MAP_HEIGHT / 2 };
+    const pTile = deg2num(lat, lng, zoomLevel);
+    const cTile = deg2num(activePoint.latitude!, activePoint.longitude!, zoomLevel);
+    const x = MAP_WIDTH / 2 + (pTile.x - cTile.x) * 256;
+    const y = MAP_HEIGHT / 2 + (pTile.y - cTile.y) * 256;
     return { x, y };
   };
 
-  // SVG Polyline Path
+  // SVG Polyline Path overlayed precisely on top of satellite map
   const svgPathData = useMemo(() => {
-    if (gpsPoints.length < 2) return '';
+    if (gpsPoints.length < 2 || !activePoint) return '';
     return gpsPoints.reduce((acc, p, idx) => {
-      const { x, y } = project(p.latitude!, p.longitude!);
+      const { x, y } = projectToPixels(p.latitude!, p.longitude!);
       return `${acc} ${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
     }, '');
-  }, [gpsPoints, bounds]);
+  }, [gpsPoints, activePoint, zoomLevel]);
 
   // Playback timer
   useEffect(() => {
@@ -169,16 +177,6 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
   };
 
   const selectedPoint = gpsPoints[selectedPointIndex] || gpsPoints[gpsPoints.length - 1];
-
-  const openInGoogleMaps = (lat: number, lng: number, label: string) => {
-    const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
-    const latLng = `${lat},${lng}`;
-    const url = Platform.select({
-      ios: `${scheme}${label}@${latLng}`,
-      android: `${scheme}${latLng}(${label})`,
-    });
-    if (url) Linking.openURL(url);
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -244,95 +242,100 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
                 <View style={styles.metaItem}>
                   <Radio size={13} color="#15803D" />
                   <Text style={styles.metaText}>
-                    GPS accuracy: {Math.round(selectedPoint.accuracy_meters || 15)} m
+                    GPS accuracy: {Math.round(selectedPoint.accuracy_meters || 16)} m
                   </Text>
                 </View>
               </View>
             )}
 
-            {/* SVG Interactive Map Container */}
-            <View style={styles.mapSvgContainer}>
-              <Svg width={MAP_WIDTH} height={MAP_HEIGHT}>
-                <Defs>
-                  <LinearGradient id="routeGradient" x1="0" y1="0" x2="1" y2="1">
-                    <Stop offset="0%" stopColor="#EA580C" stopOpacity="0.9" />
-                    <Stop offset="100%" stopColor="#DC2626" stopOpacity="0.9" />
-                  </LinearGradient>
-                </Defs>
+            {/* REAL SATELLITE TILE MAP CONTAINER (ESRI ArcGIS World Imagery & Street Labels) */}
+            <View style={styles.mapContainer}>
+              {/* 1. Satellite Base Tiles */}
+              {tileInfo?.tiles.map((t) => (
+                <Image
+                  key={`img-${t.key}`}
+                  source={{ uri: t.imageryUrl }}
+                  style={[styles.tileImage, { left: t.left, top: t.top }]}
+                  resizeMode="cover"
+                />
+              ))}
 
-                {/* Grid Lines simulating city streets */}
-                <Line x1="0" y1="70" x2={MAP_WIDTH} y2="70" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="4,4" />
-                <Line x1="0" y1="140" x2={MAP_WIDTH} y2="140" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="4,4" />
-                <Line x1="0" y1="210" x2={MAP_WIDTH} y2="210" stroke="#E2E8F0" strokeWidth="1" strokeDasharray="4,4" />
-                <Line x1={MAP_WIDTH * 0.3} y1="0" x2={MAP_WIDTH * 0.3} y2={MAP_HEIGHT} stroke="#E2E8F0" strokeWidth="1" strokeDasharray="4,4" />
-                <Line x1={MAP_WIDTH * 0.7} y1="0" x2={MAP_WIDTH * 0.7} y2={MAP_HEIGHT} stroke="#E2E8F0" strokeWidth="1" strokeDasharray="4,4" />
+              {/* 2. Road Network & Labels Overlay */}
+              {tileInfo?.tiles.map((t) => (
+                <Image
+                  key={`lbl-${t.key}`}
+                  source={{ uri: t.labelsUrl }}
+                  style={[styles.tileImage, { left: t.left, top: t.top }]}
+                  resizeMode="cover"
+                />
+              ))}
 
-                {/* Route Polyline */}
-                {svgPathData ? (
-                  <>
-                    <Path
-                      d={svgPathData}
-                      fill="none"
-                      stroke="#FDBA74"
-                      strokeWidth="6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      opacity={0.6}
-                    />
-                    <Path
-                      d={svgPathData}
-                      fill="none"
-                      stroke="#EA580C"
-                      strokeWidth="3.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </>
-                ) : null}
+              {/* 3. SVG Route & Waypoints Overlay */}
+              <View style={StyleSheet.absoluteFill} pointerEvents="none">
+                <Svg width={MAP_WIDTH} height={MAP_HEIGHT}>
+                  {svgPathData ? (
+                    <>
+                      <Path
+                        d={svgPathData}
+                        fill="none"
+                        stroke="#FED7AA"
+                        strokeWidth="7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity={0.7}
+                      />
+                      <Path
+                        d={svgPathData}
+                        fill="none"
+                        stroke="#EA580C"
+                        strokeWidth="4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </>
+                  ) : null}
 
-                {/* GPS Waypoints */}
-                {gpsPoints.map((p, idx) => {
-                  const { x, y } = project(p.latitude!, p.longitude!);
-                  const isStart = idx === 0;
-                  const isEnd = idx === gpsPoints.length - 1;
-                  const isSelected = idx === selectedPointIndex;
+                  {/* Waypoints */}
+                  {gpsPoints.map((p, idx) => {
+                    const { x, y } = projectToPixels(p.latitude!, p.longitude!);
+                    const isStart = idx === 0;
+                    const isEnd = idx === gpsPoints.length - 1;
+                    const isSelected = idx === selectedPointIndex;
 
-                  let color = '#EA580C';
-                  if (isStart) color = '#F59E0B';
-                  if (isEnd) color = '#DC2626';
+                    let color = '#EA580C';
+                    if (isStart) color = '#F59E0B';
+                    if (isEnd) color = '#DC2626';
 
-                  return (
-                    <G key={p.id || idx}>
-                      {isSelected && (
+                    return (
+                      <G key={p.id || idx}>
+                        {isSelected && (
+                          <Circle
+                            cx={x}
+                            cy={y}
+                            r="18"
+                            fill="#3B82F6"
+                            opacity={0.35}
+                          />
+                        )}
                         <Circle
                           cx={x}
                           cy={y}
-                          r="16"
-                          fill="#3B82F6"
-                          opacity={0.25}
+                          r={isSelected ? '9' : isStart || isEnd ? '7' : '4.5'}
+                          fill={isSelected ? '#2563EB' : color}
+                          stroke="#FFFFFF"
+                          strokeWidth="2.5"
                         />
-                      )}
-                      <Circle
-                        cx={x}
-                        cy={y}
-                        r={isSelected ? '9' : isStart || isEnd ? '7' : '4.5'}
-                        fill={isSelected ? '#2563EB' : color}
-                        stroke="#FFFFFF"
-                        strokeWidth="2"
-                      />
-                    </G>
-                  );
-                })}
-              </Svg>
+                      </G>
+                    );
+                  })}
+                </Svg>
+              </View>
 
-              {/* Floating Action Controls on Map */}
+              {/* Floating Zoom & Center Controls */}
               <View style={styles.floatingMapControls}>
                 <TouchableOpacity
                   style={styles.floatingBtn}
-                  onPress={() => {
-                    setSelectedPointIndex(gpsPoints.length - 1);
-                    setFitMode('selected');
-                  }}
+                  onPress={() => setSelectedPointIndex(gpsPoints.length - 1)}
                   activeOpacity={0.8}
                 >
                   <LocateFixed size={14} color="#0F172A" />
@@ -341,12 +344,24 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
 
                 <TouchableOpacity
                   style={styles.floatingBtn}
-                  onPress={() => setFitMode('all')}
+                  onPress={() => setZoomLevel((z) => Math.max(12, z - 1))}
                   activeOpacity={0.8}
                 >
-                  <Route size={14} color="#0F172A" />
-                  <Text style={styles.floatingBtnText}>Fit route</Text>
+                  <Text style={styles.floatingBtnText}>-</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.floatingBtn}
+                  onPress={() => setZoomLevel((z) => Math.min(18, z + 1))}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.floatingBtnText}>+</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* ESRI Attribution Badge */}
+              <View style={styles.esriBadge}>
+                <Text style={styles.esriText}>Esri World Imagery</Text>
               </View>
             </View>
 
@@ -483,19 +498,6 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
                       GPS accuracy {Math.round(point.accuracy_meters || 16)} m
                     </Text>
                   </View>
-
-                  {isSelected && (
-                    <TouchableOpacity
-                      style={styles.openMapsBtn}
-                      onPress={() =>
-                        openInGoogleMaps(point.latitude!, point.longitude!, employeeName)
-                      }
-                      activeOpacity={0.8}
-                    >
-                      <Navigation size={13} color="#003882" />
-                      <Text style={styles.openMapsBtnText}>Open in Google Maps</Text>
-                    </TouchableOpacity>
-                  )}
                 </TouchableOpacity>
               );
             })}
@@ -634,28 +636,35 @@ const styles = StyleSheet.create({
     color: '#15803D',
     fontFamily: 'Comfortaa_600SemiBold',
   },
-  mapSvgContainer: {
+  mapContainer: {
     width: MAP_WIDTH,
     height: MAP_HEIGHT,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#1E293B',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#CBD5E1',
     position: 'relative',
     overflow: 'hidden',
+  },
+  tileImage: {
+    position: 'absolute',
+    width: 256,
+    height: 256,
   },
   floatingMapControls: {
     position: 'absolute',
     top: 10,
     right: 10,
     gap: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   floatingBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+    paddingHorizontal: 9,
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
@@ -663,9 +672,23 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   floatingBtnText: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Comfortaa_700Bold',
     color: '#0F172A',
+  },
+  esriBadge: {
+    position: 'absolute',
+    bottom: 4,
+    right: 6,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  esriText: {
+    fontSize: 9,
+    color: '#FFFFFF',
+    fontFamily: 'Comfortaa_400Regular',
   },
   legendRow: {
     flexDirection: 'row',
@@ -827,20 +850,5 @@ const styles = StyleSheet.create({
   accuracyText: {
     fontSize: 11,
     color: '#64748B',
-  },
-  openMapsBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#E0E7FF',
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  openMapsBtnText: {
-    color: '#003882',
-    fontFamily: 'Comfortaa_700Bold',
-    fontSize: 12,
   },
 });

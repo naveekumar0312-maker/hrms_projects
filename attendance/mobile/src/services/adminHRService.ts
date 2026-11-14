@@ -159,18 +159,22 @@ export interface HRAccountItem {
 }
 
 export interface LiveLocationItem {
-  employee_id: number;
-  employee_code: string;
-  name: string;
+  id?: number;
+  employee_id: number | string;
+  employee_code?: string;
+  name?: string;
+  employee_name?: string;
   phone_number?: string;
   department?: string;
+  branch?: string;
   branch_name?: string;
   latitude: number;
   longitude: number;
   battery_level?: number;
   is_mock?: boolean;
-  updated_at: string;
-  status: string;
+  updated_at?: string;
+  recorded_at?: string;
+  status?: string;
 }
 
 // ---------------- API FUNCTIONS ---------------- //

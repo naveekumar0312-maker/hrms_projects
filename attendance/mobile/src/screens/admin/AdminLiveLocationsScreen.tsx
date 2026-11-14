@@ -252,82 +252,83 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
               </View>
             </View>
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.card}
-              onPress={() =>
-                navigation.navigate('AdminEmployeeRouteMap', {
-                  employeeId: item.employee_id,
-                  employeeName: item.name,
-                  employeeCode: item.employee_code,
-                  branchName: item.branch_name,
-                  isSharing: true,
-                })
-              }
-              activeOpacity={0.9}
-            >
-              <View style={styles.cardTop}>
-                <View style={styles.avatarCircle}>
-                  <Text style={styles.avatarText}>
-                    {(item.name || 'E').trim().charAt(0).toUpperCase()}
-                  </Text>
+          renderItem={({ item }) => {
+            const empPk = item.id || item.employee_id;
+            const empDisplayName = item.employee_name || item.name || 'Employee';
+            const empCode = item.employee_id && typeof item.employee_id === 'string' ? item.employee_id : item.employee_code || '';
+            const empBranch = item.branch || item.branch_name || '';
+            const timeText = item.recorded_at 
+              ? new Date(item.recorded_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              : item.updated_at 
+                ? item.updated_at.split('T')[1]?.substring(0, 8) 
+                : 'Active';
+
+            return (
+              <TouchableOpacity
+                style={styles.card}
+                onPress={() =>
+                  navigation.navigate('AdminEmployeeRouteMap', {
+                    employeeId: empPk,
+                    employeeName: empDisplayName,
+                    employeeCode: empCode,
+                    branchName: empBranch,
+                    isSharing: true,
+                  })
+                }
+                activeOpacity={0.9}
+              >
+                <View style={styles.cardTop}>
+                  <View style={styles.avatarCircle}>
+                    <Text style={styles.avatarText}>
+                      {empDisplayName.trim().charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+
+                  <View style={styles.nameCol}>
+                    <Text style={styles.empName}>{empDisplayName}</Text>
+                    <Text style={styles.empSub}>
+                      {empCode ? `ID: ${empCode}` : ''} {empBranch ? `• ${empBranch}` : ''}
+                    </Text>
+                  </View>
+
+                  <View style={styles.batteryRow}>
+                    <Battery size={14} color="#059669" />
+                    <Text style={styles.batteryText}>{item.battery_level ?? 95}%</Text>
+                  </View>
                 </View>
 
-                <View style={styles.nameCol}>
-                  <Text style={styles.empName}>{item.name}</Text>
-                  <Text style={styles.empSub}>
-                    ID: {item.employee_code} {item.branch_name ? `• ${item.branch_name}` : ''}
-                  </Text>
+                <View style={styles.infoRow}>
+                  <View style={styles.coordCol}>
+                    <MapPin size={13} color="#003882" />
+                    <Text style={styles.coordText}>
+                      {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
+                    </Text>
+                  </View>
+
+                  <Text style={styles.updatedAt}>{timeText}</Text>
                 </View>
 
-                <View style={styles.batteryRow}>
-                  <Battery size={14} color="#059669" />
-                  <Text style={styles.batteryText}>{item.battery_level ?? 95}%</Text>
+                <View style={styles.cardActionRow}>
+                  <TouchableOpacity
+                    style={styles.routeBtn}
+                    onPress={() =>
+                      navigation.navigate('AdminEmployeeRouteMap', {
+                        employeeId: empPk,
+                        employeeName: empDisplayName,
+                        employeeCode: empCode,
+                        branchName: empBranch,
+                        isSharing: true,
+                      })
+                    }
+                    activeOpacity={0.8}
+                  >
+                    <LocateFixed size={14} color="#FFFFFF" />
+                    <Text style={styles.routeBtnText}>View Route Map</Text>
+                  </TouchableOpacity>
                 </View>
-              </View>
-
-              <View style={styles.infoRow}>
-                <View style={styles.coordCol}>
-                  <MapPin size={13} color="#003882" />
-                  <Text style={styles.coordText}>
-                    {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
-                  </Text>
-                </View>
-
-                <Text style={styles.updatedAt}>
-                  {item.updated_at ? item.updated_at.split('T')[1]?.substring(0, 8) : 'Active'}
-                </Text>
-              </View>
-
-              <View style={styles.cardActionRow}>
-                <TouchableOpacity
-                  style={styles.routeBtn}
-                  onPress={() =>
-                    navigation.navigate('AdminEmployeeRouteMap', {
-                      employeeId: item.employee_id,
-                      employeeName: item.name,
-                      employeeCode: item.employee_code,
-                      branchName: item.branch_name,
-                      isSharing: true,
-                    })
-                  }
-                  activeOpacity={0.8}
-                >
-                  <LocateFixed size={14} color="#FFFFFF" />
-                  <Text style={styles.routeBtnText}>View Route Map</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.mapBtn}
-                  onPress={() => openInMaps(item.latitude, item.longitude, item.name)}
-                  activeOpacity={0.8}
-                >
-                  <Navigation size={14} color="#003882" />
-                  <Text style={styles.mapBtnText}>Maps</Text>
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            );
+          }}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyTitle}>No Active Trackers</Text>
