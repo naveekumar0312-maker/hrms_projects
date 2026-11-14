@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   X,
   CalendarDays,
@@ -192,10 +192,10 @@ const getStatusInfo = (status?: string) => {
     case 'OTHER_LEAVE':
       return {
         label: 'Other Leave',
-        color: '#475569', // Dark Slate
-        background: '#F1F5F9',
-        border: '#CBD5E1',
-        icon: CalendarDays,
+        color: '#0F766E', // Dark Teal
+        background: '#CCFBF1', // Soft Mint/Teal pill
+        border: '#5EEAD4',
+        icon: Coffee,
       };
 
     case 'HOLIDAY':
@@ -1107,6 +1107,7 @@ const EmployeeMonthlyAttendanceModal = ({
                         ['#9A3412', 'Casual Leave'],
                         ['#6D28D9', 'Sick Leave'],
                         ['#4338CA', 'Personal Leave'],
+                        ['#0F766E', 'Other Leave'],
                         ['#BE185D', 'Half Day'],
                         ['#0E7490', 'Holiday'],
                         ['#334155', 'Weekend'],
