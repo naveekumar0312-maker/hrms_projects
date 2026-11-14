@@ -194,7 +194,7 @@ export default function LoginScreen() {
       <StatusBar style="light" />
 
       {/* Decorative Bottom Wave Fixed Background (Wave only, no duplicated badge) */}
-      <View style={[styles.bottomFooterContainer, { height: SCREEN_WIDTH * (154 / 472) }]} pointerEvents="none">
+      <View style={[styles.bottomFooterContainer, { height: SCREEN_WIDTH * (146 / 472) }]} pointerEvents="none">
         <Image
           source={BOT_FOOTER_IMAGE}
           style={styles.bottomFooterImage}
