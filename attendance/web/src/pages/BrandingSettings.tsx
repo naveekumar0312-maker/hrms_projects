@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import api from '../services/api'
 import { CustomSelect } from '../components/CustomSelect'
+import { removeLogoBackground } from '../utils/imageBackgroundRemover'
 import './BrandingSettings.css'
 
 interface Company {
@@ -47,6 +48,7 @@ const BrandingSettings = () => {
   const [logoPreview, setLogoPreview] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [processingLogo, setProcessingLogo] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
@@ -158,7 +160,7 @@ const BrandingSettings = () => {
     setMessage('')
   }
 
-  const handleLogo = (file?: File) => {
+  const handleLogo = async (file?: File) => {
     if (!file || !branding) return
 
     if (!file.type.startsWith('image/')) {
@@ -173,8 +175,21 @@ const BrandingSettings = () => {
 
     setError('')
     setMessage('')
-    setLogoFile(file)
-    setLogoPreview(URL.createObjectURL(file))
+    setProcessingLogo(true)
+
+    try {
+      // Automatically detect and remove background from uploaded logo
+      const transparentLogoFile = await removeLogoBackground(file)
+      setLogoFile(transparentLogoFile)
+      setLogoPreview(URL.createObjectURL(transparentLogoFile))
+      setMessage('Logo uploaded and background automatically removed.')
+    } catch (err) {
+      console.warn('Background removal fallback to original file:', err)
+      setLogoFile(file)
+      setLogoPreview(URL.createObjectURL(file))
+    } finally {
+      setProcessingLogo(false)
+    }
   }
 
   const reloadBranding = async () => {
@@ -533,14 +548,15 @@ const BrandingSettings = () => {
             </label>
             <label className="branding-upload" htmlFor="brand-logo">
               <ImagePlus size={22} />
-              <span>{logoFile?.name || 'Choose company logo'}</span>
-              <small>PNG, JPG or WebP  Max 5 MB</small>
+              <span>{processingLogo ? 'Removing background...' : logoFile?.name || 'Choose company logo'}</span>
+              <small>Auto background removal enabled • PNG, JPG or WebP</small>
             </label>
             <input
               id="brand-logo"
               type="file"
               accept="image/*"
               hidden
+              disabled={processingLogo}
               onChange={(event) => handleLogo(event.target.files?.[0])}
             />
 
@@ -558,7 +574,7 @@ const BrandingSettings = () => {
               type="button"
               className="branding-save-button"
               onClick={handleSave}
-              disabled={saving || !branding.name.trim()}
+              disabled={saving || processingLogo || !branding.name.trim()}
             >
               <Save size={18} />
               {saving ? 'Saving...' : 'Save login branding'}
