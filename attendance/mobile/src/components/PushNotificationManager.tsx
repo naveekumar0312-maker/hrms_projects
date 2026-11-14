@@ -82,18 +82,32 @@ export default function PushNotificationManager({
           Constants?.easConfig?.projectId ??
           '74248a75-9ef3-4b37-8dc6-8e52bec78aa0';
 
-        const tokenResponse = await Notifications.getExpoPushTokenAsync({
-          projectId,
-        });
+        // 1. Get Expo Push Token
+        try {
+          const tokenResponse = await Notifications.getExpoPushTokenAsync({
+            projectId,
+          });
+          const expoToken = tokenResponse?.data;
+          if (expoToken && !isCancelled && registeredTokenRef.current !== expoToken) {
+            await api.post('/notifications/push-token/', { token: expoToken });
+            registeredTokenRef.current = expoToken;
+            console.log('[PushNotificationManager] Expo Push token registered:', expoToken);
+          }
+        } catch (expoErr) {
+          console.warn('[PushNotificationManager] Expo push token fetch failed:', expoErr);
+        }
 
-        const token = tokenResponse?.data;
-        if (!token || isCancelled) return;
-
-        if (registeredTokenRef.current === token) return;
-
-        await api.post('/notifications/push-token/', { token });
-        registeredTokenRef.current = token;
-        console.log('[PushNotificationManager] Push token registered successfully:', token);
+        // 2. Also register native FCM device push token if available
+        try {
+          const deviceToken = await Notifications.getDevicePushTokenAsync();
+          const fcmToken = deviceToken?.data;
+          if (fcmToken && typeof fcmToken === 'string' && !isCancelled && fcmToken !== registeredTokenRef.current) {
+            await api.post('/notifications/push-token/', { token: fcmToken });
+            console.log('[PushNotificationManager] Native FCM device token registered:', fcmToken);
+          }
+        } catch (fcmErr) {
+          console.warn('[PushNotificationManager] Native device push token fetch failed:', fcmErr);
+        }
       } catch (err: any) {
         console.warn('[PushNotificationManager] Registration error:', err?.message || err);
       }

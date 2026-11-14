@@ -17,6 +17,7 @@
       "translucent": true
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/branding/adaptive-foreground.png"
