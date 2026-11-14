@@ -48,7 +48,7 @@ def _send_expo_push(token, title, body, event=None, url=None):
             "priority": "high",
             "channelId": "hrms-notifications-v1",
             "data": {
-                "url": url or "/",
+                "url": url or "https://hrms.yaazh360digitech.in/",
                 **({"event": event} if event else {}),
             },
         }
@@ -80,22 +80,27 @@ def send_web_push(user, title, body, url=None, event=None):
 
     sent = 0
 
+    # Ensure link is always an absolute HTTPS url for WebpushFCMOptions
+    raw_url = str(url or "").strip()
+    if raw_url.startswith("https://") or raw_url.startswith("http://"):
+        target_url = raw_url
+    else:
+        target_url = "https://hrms.yaazh360digitech.in/"
+
     for device in devices:
         token = device.token
 
-        # Check if this is an Expo Push Token from the Mobile App
+        # 1. Check if this is an Expo Push Token from the Mobile App
         if token.startswith("ExponentPushToken[") or token.startswith("ExpoPushToken["):
-            expo_res = _send_expo_push(token, title, body, event=event, url=url)
+            expo_res = _send_expo_push(token, title, body, event=event, url=target_url)
             if expo_res is True:
                 sent += 1
             elif expo_res == "UNREGISTERED":
                 device.delete()
             continue
 
-        # Otherwise send via Firebase Admin FCM (Web Push or Direct FCM)
+        # 2. Otherwise send via Firebase Admin FCM (Native Android / Web Push)
         try:
-            target_url = url or "https://hrms.yaazh360digitech.in/"
-
             message = messaging.Message(
                 notification=messaging.Notification(
                     title=title,
