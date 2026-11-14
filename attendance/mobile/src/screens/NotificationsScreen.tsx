@@ -44,7 +44,7 @@ export default function NotificationsScreen({ navigation }: any) {
     try {
       if (showLoader) setLoading(true);
 
-      const response = await api.get('/notifications/?limit=50');
+      const response = await api.get('/notifications/?unread_only=true&limit=50');
       setNotifications(response.data?.results ?? []);
       setUnreadCount(Number(response.data?.unread_count ?? 0));
     } catch (error: any) {
@@ -79,12 +79,9 @@ export default function NotificationsScreen({ navigation }: any) {
     try {
       await api.patch(`/notifications/${item.id}/read/`);
 
+      // Immediately remove from the list so read notifications disappear
       setNotifications(current =>
-        current.map(notification =>
-          notification.id === item.id
-            ? { ...notification, is_read: true }
-            : notification,
-        ),
+        current.filter(notification => notification.id !== item.id)
       );
 
       setUnreadCount(count => Math.max(0, count - 1));
@@ -103,9 +100,8 @@ export default function NotificationsScreen({ navigation }: any) {
     try {
       await api.post('/notifications/read-all/');
 
-      setNotifications(current =>
-        current.map(item => ({ ...item, is_read: true })),
-      );
+      // Clear all since they are read
+      setNotifications([]);
       setUnreadCount(0);
     } catch (error: any) {
       showError('Notifications', error?.response?.data?.detail || 'Unable to mark notifications as read.');

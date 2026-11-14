@@ -1,5 +1,5 @@
 import { colors } from '../../theme/colors';
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,21 +9,26 @@ import {
   ActivityIndicator,
   Linking,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   MapPin,
   Battery,
-  Building,
-  Phone,
   Navigation,
   RefreshCw,
+  AlertCircle,
+  BellRing,
+  LocateFixed,
+  Users,
 } from 'lucide-react-native';
-import { AuthContext } from '../../context/AuthContext';
+import { AuthContext, api } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
 import {
   fetchLiveLocations,
+  fetchEmployees,
   LiveLocationItem,
+  EmployeeItem,
 } from '../../services/adminHRService';
 
 export const AdminLiveLocationsScreen = ({ navigation }: any) => {
@@ -32,15 +37,22 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
   const companyId = isHR ? user?.company_id : undefined;
 
   const [locations, setLocations] = useState<LiveLocationItem[]>([]);
+  const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [sendingAlertId, setSendingAlertId] = useState<number | null>(null);
 
-  const loadLocations = async () => {
+  const loadData = async (isManual = false) => {
+    if (isManual) setRefreshing(true);
     try {
-      const data = await fetchLiveLocations(companyId);
-      setLocations(data);
+      const [locData, empData] = await Promise.all([
+        fetchLiveLocations(companyId),
+        fetchEmployees(companyId),
+      ]);
+      setLocations(locData);
+      setEmployees(empData);
     } catch (error) {
-      console.error('Failed fetching live locations:', error);
+      console.error('Failed fetching live locations or employees:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -48,10 +60,27 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
   };
 
   useEffect(() => {
-    loadLocations();
-    const interval = setInterval(loadLocations, 15000); // Poll every 15s
+    loadData();
+    const interval = setInterval(() => loadData(false), 15000); // Poll every 15s
     return () => clearInterval(interval);
   }, []);
+
+  // Filter employees whose work_type is FIELD or MARKETING
+  const fieldEmployees = useMemo(() => {
+    return employees.filter((emp) => {
+      const wt = ((emp as any).work_type || '').trim().toUpperCase();
+      return ['FIELD', 'MARKETING'].includes(wt);
+    });
+  }, [employees]);
+
+  // Employees who are NOT currently sharing location
+  const notSharingEmployees = useMemo(() => {
+    const sharingEmpIds = new Set(locations.map((loc) => loc.employee_id));
+    const sharingCodes = new Set(locations.map((loc) => loc.employee_code));
+    return fieldEmployees.filter(
+      (emp) => !sharingEmpIds.has(emp.id) && !sharingCodes.has(emp.employee_id)
+    );
+  }, [fieldEmployees, locations]);
 
   const openInMaps = (lat: number, lng: number, label: string) => {
     const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
@@ -65,6 +94,27 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
     }
   };
 
+  const handleSendAlert = async (emp: EmployeeItem) => {
+    if (sendingAlertId !== null) return;
+    setSendingAlertId(emp.id);
+    try {
+      await api.post('/notifications/request-location/', {
+        employee_id: emp.id,
+      });
+      Alert.alert(
+        'Alert Sent',
+        `Notification sent to ${emp.full_name} to turn on GPS location sharing!`
+      );
+    } catch (err: any) {
+      Alert.alert(
+        'Error',
+        err?.response?.data?.detail || 'Failed to send notification request.'
+      );
+    } finally {
+      setSendingAlertId(null);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <AdminHRHeader
@@ -75,11 +125,9 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
         rightAction={
           <TouchableOpacity
             style={styles.refreshBtn}
-            onPress={() => {
-              setRefreshing(true);
-              loadLocations();
-            }}
+            onPress={() => loadData(true)}
             activeOpacity={0.8}
+            disabled={refreshing}
           >
             <RefreshCw size={16} color="#FFFFFF" />
           </TouchableOpacity>
@@ -88,7 +136,7 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
 
       {loading && !refreshing ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#E56108" />
+          <ActivityIndicator size="large" color="#003882" />
           <Text style={styles.loadingText}>Connecting to field GPS beacons...</Text>
         </View>
       ) : (
@@ -96,36 +144,119 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
           data={locations}
           keyExtractor={(item) => String(item.employee_id)}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <View style={styles.headerComponent}>
+              {/* STATS OVERVIEW */}
+              <View style={styles.statsRow}>
+                <View style={styles.statBox}>
+                  <LocateFixed size={18} color="#059669" />
+                  <Text style={styles.statCount}>{locations.length}</Text>
+                  <Text style={styles.statLabel}>Sharing Live</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <AlertCircle size={18} color="#DC2626" />
+                  <Text style={[styles.statCount, { color: '#DC2626' }]}>
+                    {notSharingEmployees.length}
+                  </Text>
+                  <Text style={styles.statLabel}>Location Off</Text>
+                </View>
+                <View style={styles.statBox}>
+                  <Users size={18} color="#003882" />
+                  <Text style={styles.statCount}>{fieldEmployees.length}</Text>
+                  <Text style={styles.statLabel}>Total Field</Text>
+                </View>
+              </View>
+
+              {/* LOCATION TURNED OFF SECTION (Exact Web Feature) */}
+              {notSharingEmployees.length > 0 && (
+                <View style={styles.notSharingSection}>
+                  <View style={styles.sectionHeader}>
+                    <View style={styles.sectionTitleRow}>
+                      <AlertCircle size={18} color="#DC2626" />
+                      <Text style={styles.sectionTitleRed}>
+                        Location Turned Off ({notSharingEmployees.length})
+                      </Text>
+                    </View>
+                    <View style={styles.actionRequiredBadge}>
+                      <Text style={styles.actionRequiredText}>Action Required</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.sectionSubtitle}>
+                    Active field/marketing employees who have NOT enabled location sharing today
+                  </Text>
+
+                  {notSharingEmployees.map((emp) => (
+                    <View key={emp.id} style={styles.notSharingCard}>
+                      <View style={styles.notSharingLeft}>
+                        <View style={styles.notSharingAvatar}>
+                          <Text style={styles.notSharingAvatarText}>
+                            {(emp.full_name || 'E').trim().charAt(0).toUpperCase()}
+                          </Text>
+                        </View>
+                        <View style={styles.notSharingInfo}>
+                          <Text style={styles.notSharingName}>{emp.full_name}</Text>
+                          <Text style={styles.notSharingSub}>
+                            {emp.employee_id} {emp.branch_name ? `• ${emp.branch_name}` : ''}
+                          </Text>
+                          <Text style={styles.notSharingStatus}>GPS is currently turned OFF</Text>
+                        </View>
+                      </View>
+
+                      <TouchableOpacity
+                        style={styles.sendAlertBtn}
+                        onPress={() => handleSendAlert(emp)}
+                        disabled={sendingAlertId === emp.id}
+                        activeOpacity={0.85}
+                      >
+                        {sendingAlertId === emp.id ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <>
+                            <BellRing size={13} color="#FFFFFF" />
+                            <Text style={styles.sendAlertBtnText}>Send Alert</Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
+
+              {/* CURRENTLY SHARING HEADER */}
+              <View style={styles.sharingHeadingRow}>
+                <Text style={styles.sharingHeadingTitle}>Currently Sharing GPS</Text>
+                <Text style={styles.sharingHeadingCount}>
+                  {locations.length} employee{locations.length === 1 ? '' : 's'}
+                </Text>
+              </View>
+            </View>
+          }
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={styles.cardTop}>
                 <View style={styles.avatarCircle}>
                   <Text style={styles.avatarText}>
-                    {item.name
-                      ?.split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .substring(0, 2)
-                      .toUpperCase() || 'EM'}
+                    {(item.name || 'E').trim().charAt(0).toUpperCase()}
                   </Text>
                 </View>
 
                 <View style={styles.nameCol}>
                   <Text style={styles.empName}>{item.name}</Text>
                   <Text style={styles.empSub}>
-                    ID: {item.employee_code} {item.department ? `• ${item.department}` : ''}
+                    ID: {item.employee_code} {item.branch_name ? `• ${item.branch_name}` : ''}
                   </Text>
                 </View>
 
                 <View style={styles.batteryRow}>
-                  <Battery size={14} color="#E56108" />
+                  <Battery size={14} color="#059669" />
                   <Text style={styles.batteryText}>{item.battery_level ?? 95}%</Text>
                 </View>
               </View>
 
               <View style={styles.infoRow}>
                 <View style={styles.coordCol}>
-                  <MapPin size={13} color="#E56108" />
+                  <MapPin size={13} color="#003882" />
                   <Text style={styles.coordText}>
                     {item.latitude.toFixed(5)}, {item.longitude.toFixed(5)}
                   </Text>
@@ -141,7 +272,7 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
                 onPress={() => openInMaps(item.latitude, item.longitude, item.name)}
                 activeOpacity={0.8}
               >
-                <Navigation size={14} color="#E56108" />
+                <Navigation size={14} color="#003882" />
                 <Text style={styles.mapBtnText}>View on External Maps</Text>
               </TouchableOpacity>
             </View>
@@ -167,12 +298,13 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: '#F8FAFC',
   },
   loadingText: {
     marginTop: 10,
     fontSize: 14,
-    color: '#666666',
+    fontFamily: 'Comfortaa_500Medium',
+    color: '#64748B',
   },
   refreshBtn: {
     width: 36,
@@ -184,8 +316,164 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: '#F8FAFC',
     paddingBottom: 40,
+  },
+  headerComponent: {
+    marginBottom: 14,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    alignItems: 'center',
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    elevation: 1,
+  },
+  statCount: {
+    fontSize: 18,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#0F172A',
+    marginTop: 4,
+  },
+  statLabel: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_500Medium',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  notSharingSection: {
+    backgroundColor: '#FFF5F5',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#FECACA',
+    padding: 14,
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sectionTitleRed: {
+    fontSize: 15,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#DC2626',
+  },
+  actionRequiredBadge: {
+    backgroundColor: '#FEE2E2',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  actionRequiredText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#DC2626',
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_400Regular',
+    color: '#64748B',
+    marginBottom: 12,
+  },
+  notSharingCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    padding: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  notSharingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  notSharingAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#FCA5A5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  notSharingAvatarText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#7F1D1D',
+  },
+  notSharingInfo: {
+    flex: 1,
+  },
+  notSharingName: {
+    fontSize: 13.5,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#0F172A',
+  },
+  notSharingSub: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_400Regular',
+    color: '#64748B',
+    marginTop: 1,
+  },
+  notSharingStatus: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#DC2626',
+    marginTop: 2,
+  },
+  sendAlertBtn: {
+    backgroundColor: '#E56108',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginLeft: 8,
+  },
+  sendAlertBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  sharingHeadingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+    marginBottom: 10,
+    paddingHorizontal: 2,
+  },
+  sharingHeadingTitle: {
+    fontSize: 15,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#0F172A',
+  },
+  sharingHeadingCount: {
+    fontSize: 12.5,
+    fontFamily: 'Comfortaa_500Medium',
+    color: '#64748B',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -193,7 +481,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#F5F5F5',
+    borderColor: '#E2E8F0',
     elevation: 2,
   },
   cardTop: {
@@ -204,7 +492,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: '#EBF4FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -212,7 +500,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 15,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#000000',
+    color: '#003882',
   },
   nameCol: {
     flex: 1,
@@ -224,7 +512,7 @@ const styles = StyleSheet.create({
   },
   empSub: {
     fontSize: 12,
-    color: '#666666',
+    color: '#64748B',
     marginTop: 1,
   },
   batteryRow: {
@@ -239,14 +527,14 @@ const styles = StyleSheet.create({
   batteryText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#CC5200',
+    color: '#059669',
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
-    borderTopColor: '#F5F5F5',
+    borderTopColor: '#F1F5F9',
     marginTop: 12,
     paddingTop: 10,
   },
@@ -257,25 +545,25 @@ const styles = StyleSheet.create({
   },
   coordText: {
     fontSize: 12,
-    color: '#444444',
+    color: '#334155',
     fontFamily: 'Comfortaa_600SemiBold',
   },
   updatedAt: {
     fontSize: 11,
-    color: '#888888',
+    color: '#64748B',
   },
   mapBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceSecondary,
+    backgroundColor: '#F1F5F9',
     paddingVertical: 9,
     borderRadius: 8,
     marginTop: 10,
     gap: 6,
   },
   mapBtnText: {
-    color: '#000000',
+    color: '#003882',
     fontSize: 12,
     fontFamily: 'Comfortaa_700Bold',
   },
@@ -294,4 +582,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-
