@@ -58,6 +58,7 @@ import { AdminShiftsScreen } from './src/screens/admin/AdminShiftsScreen';
 import { AdminHolidaysScreen } from './src/screens/admin/AdminHolidaysScreen';
 import { AdminReportingManagersScreen } from './src/screens/admin/AdminReportingManagersScreen';
 import { AdminLiveLocationsScreen } from './src/screens/admin/AdminLiveLocationsScreen';
+import { AdminEmployeeRouteMapScreen } from './src/screens/admin/AdminEmployeeRouteMapScreen';
 import { AdminCompaniesScreen } from './src/screens/admin/AdminCompaniesScreen';
 import { AdminHRAccountsScreen } from './src/screens/admin/AdminHRAccountsScreen';
 import { colors } from './src/theme/colors';
@@ -419,6 +420,7 @@ const RootNavigator = () => {
           <Stack.Screen name="AdminHolidays" component={AdminHolidaysScreen} />
           <Stack.Screen name="AdminReportingManagers" component={AdminReportingManagersScreen} />
           <Stack.Screen name="AdminLiveLocations" component={AdminLiveLocationsScreen} />
+          <Stack.Screen name="AdminEmployeeRouteMap" component={AdminEmployeeRouteMapScreen} options={{ headerShown: false }} />
           <Stack.Screen name="AdminCompanies" component={AdminCompaniesScreen} />
           <Stack.Screen name="AdminHRAccounts" component={AdminHRAccountsScreen} />
         </>

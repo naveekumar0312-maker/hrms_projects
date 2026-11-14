@@ -233,7 +233,19 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
             </View>
           }
           renderItem={({ item }) => (
-            <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.card}
+              onPress={() =>
+                navigation.navigate('AdminEmployeeRouteMap', {
+                  employeeId: item.employee_id,
+                  employeeName: item.name,
+                  employeeCode: item.employee_code,
+                  branchName: item.branch_name,
+                  isSharing: true,
+                })
+              }
+              activeOpacity={0.9}
+            >
               <View style={styles.cardTop}>
                 <View style={styles.avatarCircle}>
                   <Text style={styles.avatarText}>
@@ -267,15 +279,34 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
                 </Text>
               </View>
 
-              <TouchableOpacity
-                style={styles.mapBtn}
-                onPress={() => openInMaps(item.latitude, item.longitude, item.name)}
-                activeOpacity={0.8}
-              >
-                <Navigation size={14} color="#003882" />
-                <Text style={styles.mapBtnText}>View on External Maps</Text>
-              </TouchableOpacity>
-            </View>
+              <View style={styles.cardActionRow}>
+                <TouchableOpacity
+                  style={styles.routeBtn}
+                  onPress={() =>
+                    navigation.navigate('AdminEmployeeRouteMap', {
+                      employeeId: item.employee_id,
+                      employeeName: item.name,
+                      employeeCode: item.employee_code,
+                      branchName: item.branch_name,
+                      isSharing: true,
+                    })
+                  }
+                  activeOpacity={0.8}
+                >
+                  <LocateFixed size={14} color="#FFFFFF" />
+                  <Text style={styles.routeBtnText}>View Route Map</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.mapBtn}
+                  onPress={() => openInMaps(item.latitude, item.longitude, item.name)}
+                  activeOpacity={0.8}
+                >
+                  <Navigation size={14} color="#003882" />
+                  <Text style={styles.mapBtnText}>Maps</Text>
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
           )}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
@@ -552,14 +583,35 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748B',
   },
+  cardActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+  },
+  routeBtn: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EA580C',
+    paddingVertical: 9,
+    borderRadius: 8,
+    gap: 6,
+  },
+  routeBtnText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+  },
   mapBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F1F5F9',
     paddingVertical: 9,
     borderRadius: 8,
-    marginTop: 10,
     gap: 6,
   },
   mapBtnText: {

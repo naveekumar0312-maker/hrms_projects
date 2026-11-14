@@ -376,6 +376,31 @@ export const fetchLiveLocations = async (companyId?: number): Promise<LiveLocati
   return [];
 };
 
+export interface TrackingHistoryItem {
+  id: string | number;
+  employee_id: string;
+  employee_name: string;
+  designation?: string | null;
+  department?: string | null;
+  branch?: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  accuracy_meters?: number | null;
+  location_name?: string | null;
+  recorded_at: string;
+  type?: string;
+  event_type?: string;
+  details?: any;
+}
+
+export const fetchTrackingHistory = async (employeeId: number, limit = 200): Promise<TrackingHistoryItem[]> => {
+  const response = await api.get(`/tracking/history/${employeeId}/?limit=${limit}`);
+  const data = response.data;
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.results)) return data.results;
+  return [];
+};
+
 
 export const updateHRAccount = async (id: number, data: Partial<HRAccountItem> & { password?: string }): Promise<any> => {
   const response = await api.patch(`/auth/hr-accounts/${id}/`, data);
