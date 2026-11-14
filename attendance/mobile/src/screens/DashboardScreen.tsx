@@ -82,6 +82,8 @@ export default function DashboardScreen({ navigation }: any) {
     }
   }, []);
   const [recentHistory, setRecentHistory] = useState<any[]>([]);
+  const [allHistoryList, setAllHistoryList] = useState<any[]>([]);
+  const [selectedFilterStatus, setSelectedFilterStatus] = useState<string>('ALL');
   
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [cameraVisible, setCameraVisible] = useState(false);
@@ -311,9 +313,9 @@ export default function DashboardScreen({ navigation }: any) {
       }
       
       const historyList = historyData.results || historyData || [];
-      // Filter out today from recent history visually if it's already shown above,
-      // or just show the top 3.
-      setRecentHistory(historyList.filter((item: any) => item.date !== todayData.date).slice(0, 3));
+      const nonToday = historyList.filter((item: any) => item.date !== todayData?.date);
+      setAllHistoryList(nonToday);
+      setRecentHistory(nonToday.slice(0, 3));
 
       // Daily Task Reminder check
       if (Array.isArray(tasksList)) {
@@ -841,9 +843,8 @@ export default function DashboardScreen({ navigation }: any) {
             <AppSearchBar
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search attendance, leaves, tasks..."
+              placeholder="Search recent attendance, status, branch..."
               onClear={() => setSearchQuery('')}
-              onFilterPress={() => navigateToHistory()}
             />
           </View>
         </View>
@@ -1070,39 +1071,97 @@ export default function DashboardScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        {recentHistory.map((item, index) => {
-          const dateObj = new Date(item.date);
-          const day = dateObj.getDate().toString().padStart(2, '0');
-          const month = dateObj.toLocaleString('default', { month: 'short' });
-          const isLate = item.status === 'LATE';
-          
-          return (
-            <View key={item.id?.toString() || index.toString()} style={styles.recentItem}>
-              <View style={styles.recentDateBox}>
-                <Text style={styles.recentDateDay}>{day}</Text>
-                <Text style={styles.recentDateMonth}>{month}</Text>
+        {/* Status Filters */}
+        <View style={{ flexDirection: 'row', gap: 8, marginHorizontal: 20, marginBottom: 12 }}>
+          {['ALL', 'PRESENT', 'LATE'].map((st) => (
+            <TouchableOpacity
+              key={st}
+              onPress={() => setSelectedFilterStatus(st)}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 5,
+                borderRadius: 16,
+                backgroundColor: selectedFilterStatus === st ? COLORS.primary : '#F1F5F9',
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 12,
+                  fontFamily: 'Comfortaa_700Bold',
+                  color: selectedFilterStatus === st ? '#FFFFFF' : '#64748B',
+                }}
+              >
+                {st === 'ALL' ? 'All' : st === 'PRESENT' ? 'On Time' : 'Late'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {(() => {
+          const filtered = (allHistoryList.length > 0 ? allHistoryList : recentHistory).filter((item: any) => {
+            const matchesStatus =
+              selectedFilterStatus === 'ALL'
+                ? true
+                : selectedFilterStatus === 'LATE'
+                ? item.status === 'LATE'
+                : ['ON_TIME', 'PRESENT', 'WORKING', 'COMPLETED'].includes(item.status);
+
+            if (!matchesStatus) return false;
+
+            if (!searchQuery.trim()) return true;
+            const q = searchQuery.toLowerCase().trim();
+            const dateStr = String(item.date || '').toLowerCase();
+            const statusStr = String(item.status || '').toLowerCase();
+            const branchStr = String(item.branch?.branch_name || '').toLowerCase();
+            return dateStr.includes(q) || statusStr.includes(q) || branchStr.includes(q);
+          });
+
+          if (filtered.length === 0) {
+            return (
+              <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ color: COLORS.muted, fontFamily: 'Comfortaa_600SemiBold', fontSize: 13 }}>
+                  No matching attendance records found.
+                </Text>
               </View>
-              <View style={styles.recentItemDot} />
-              <View style={styles.recentItemBody}>
-                <View style={styles.recentItemRow}>
-                  <Text style={styles.recentItemLabel}>Check In</Text>
-                  <View style={[styles.recentBadge, isLate ? styles.badgeLate : styles.badgeSuccess]}>
-                    <Text style={[styles.recentBadgeText, isLate ? styles.badgeTextLate : styles.badgeTextSuccess]}>
-                      {item.status.replace('_', ' ')}
-                    </Text>
+            );
+          }
+
+          const displayItems = searchQuery.trim() ? filtered.slice(0, 5) : filtered.slice(0, 3);
+
+          return displayItems.map((item, index) => {
+            const dateObj = new Date(item.date);
+            const day = dateObj.getDate().toString().padStart(2, '0');
+            const month = dateObj.toLocaleString('default', { month: 'short' });
+            const isLate = item.status === 'LATE';
+
+            return (
+              <View key={item.id?.toString() || index.toString()} style={styles.recentItem}>
+                <View style={styles.recentDateBox}>
+                  <Text style={styles.recentDateDay}>{day}</Text>
+                  <Text style={styles.recentDateMonth}>{month}</Text>
+                </View>
+                <View style={styles.recentItemDot} />
+                <View style={styles.recentItemBody}>
+                  <View style={styles.recentItemRow}>
+                    <Text style={styles.recentItemLabel}>Check In</Text>
+                    <View style={[styles.recentBadge, isLate ? styles.badgeLate : styles.badgeSuccess]}>
+                      <Text style={[styles.recentBadgeText, isLate ? styles.badgeTextLate : styles.badgeTextSuccess]}>
+                        {item.status.replace('_', ' ')}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.recentItemRow}>
+                    <Text style={styles.recentItemTime}>{formatAttendanceTime(item.check_in_time)}</Text>
+                    <View style={styles.recentItemLocation}>
+                      <MapPin size={12} color={COLORS.muted} style={{ marginRight: 4 }} strokeWidth={2.2} />
+                      <Text style={styles.recentItemLocText}>{item.branch?.branch_name || employee?.branch?.branch_name || 'Main Branch'}</Text>
+                    </View>
                   </View>
                 </View>
-                <View style={styles.recentItemRow}>
-                  <Text style={styles.recentItemTime}>{formatAttendanceTime(item.check_in_time)}</Text>
-                  <View style={styles.recentItemLocation}>
-                    <MapPin size={12} color={COLORS.muted} style={{ marginRight: 4 }} strokeWidth={2.2} />
-                    <Text style={styles.recentItemLocText}>{item.branch?.branch_name || employee?.branch?.branch_name || 'Main Branch'}</Text>
-                  </View>
-                </View>
               </View>
-            </View>
-          );
-        })}
+            );
+          });
+        })()}
 
         <View style={{ height: 40 }} />
       </ScrollView>
