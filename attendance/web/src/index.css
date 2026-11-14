@@ -4293,6 +4293,22 @@ body {
   height: 100vh;
   z-index: 50;
   box-sizing: border-box;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media screen and (max-width: 1024px) {
+  .sidebar {
+    width: min(280px, 82vw);
+    max-width: 280px;
+    height: 100dvh;
+    transform: translateX(-105%);
+    z-index: 1000;
+    box-shadow: 12px 0 30px rgba(0, 0, 0, 0.35);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
 }
 
 .sidebar-header {
