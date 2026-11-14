@@ -70,21 +70,36 @@ export function getCurrentPositionPromise(): Promise<GeolocationPosition> {
       reject(new Error('Geolocation is not supported by your browser.'));
       return;
     }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => resolve(pos),
-      (err) => {
+
+    const tryGetPosition = (highAccuracy: boolean, timeoutMs: number, onFail: (err: GeolocationPositionError) => void) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve(pos),
+        onFail,
+        {
+          enableHighAccuracy: highAccuracy,
+          timeout: timeoutMs,
+          maximumAge: 30000,
+        }
+      );
+    };
+
+    tryGetPosition(true, 10000, (err) => {
+      if (err.code === 3 || err.code === 2) {
+        tryGetPosition(false, 15000, (fallbackErr) => {
+          let msg = 'Unable to retrieve location.';
+          if (fallbackErr.code === 1) msg = 'Location permission denied by browser. Please allow location access in your browser settings.';
+          else if (fallbackErr.code === 2) msg = 'Location information is unavailable.';
+          else if (fallbackErr.code === 3) msg = 'Location request timed out. Please check your GPS signal and try again.';
+          reject(new Error(msg));
+        });
+      } else {
         let msg = 'Unable to retrieve location.';
         if (err.code === 1) msg = 'Location permission denied by browser. Please allow location access in your browser settings.';
         else if (err.code === 2) msg = 'Location information is unavailable.';
-        else if (err.code === 3) msg = 'Location request timed out.';
+        else if (err.code === 3) msg = 'Location request timed out. Please check your GPS signal and try again.';
         reject(new Error(msg));
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0,
       }
-    );
+    });
   });
 }
 
