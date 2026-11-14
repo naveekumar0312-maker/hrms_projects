@@ -55,36 +55,53 @@ const Sidebar = ({
   
   const { logout, user } = React.useContext(AuthContext);
   const [companyName, setCompanyName] = useState('');
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    const loadCompanyName = async () => {
-      if (user?.role !== 'HR') {
-        setCompanyName('');
-        return;
-      }
-
+    const loadCompanyInfo = async () => {
       try {
         const response = await api.get('/companies/');
         const companies = Array.isArray(response.data)
           ? response.data
           : response.data?.results || [];
 
-        if (active && companies.length > 0) {
-          setCompanyName(companies[0].name || '');
+        if (!active || companies.length === 0) return;
+
+        // Find active company or matching HR company
+        let targetComp = null;
+        if (user?.role === 'HR') {
+          targetComp = companies.find((c: any) => c.slug === user?.company_slug || c.name === user?.company_name) || companies[0];
+        } else {
+          // If viewing specific company in URL or localStorage
+          const slug = activeCompanySlug;
+          if (slug) {
+            targetComp = companies.find((c: any) => c.slug === slug);
+          }
+        }
+
+        if (targetComp) {
+          setCompanyName(targetComp.name || '');
+          if (targetComp.logo) {
+            const rawLogo = String(targetComp.logo);
+            const fullLogo = /^https?:\/\//i.test(rawLogo)
+              ? rawLogo
+              : `${(api.defaults.baseURL || '').replace(/\/api\/?$/, '')}${rawLogo.startsWith('/') ? '' : '/'}${rawLogo}`;
+            setCompanyLogo(fullLogo);
+          }
         }
       } catch (error) {
-        console.error('Unable to load HR company name:', error);
+        console.error('Unable to load company info for sidebar:', error);
       }
     };
 
-    loadCompanyName();
+    loadCompanyInfo();
 
     return () => {
       active = false;
     };
-  }, [user?.role]);
+  }, [user?.role, user?.company_slug, user?.company_name]);
   const navigate = useNavigate();
   const route = useLocation();
   const { companySlug: routeSlug } = useParams<{ companySlug?: string }>();
@@ -140,16 +157,20 @@ const Sidebar = ({
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         
         {/* Sidebar Header */}
-        <div
-          className="sidebar-header"
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            height: '72px',
-          }}
-        >
-          <div className="sidebar-brand">{companyName || (user?.role === 'SUPER_ADMIN' ? 'Super Admin' : user?.role === 'HR' ? 'Loading company...' : 'Attendance')}</div>
+        <div className="sidebar-header">
+          <div className="sidebar-brand">
+            {companyLogo ? (
+              <img
+                src={companyLogo}
+                alt={companyName || 'Company Logo'}
+                className="sidebar-company-logo"
+                onError={() => setCompanyLogo(null)}
+              />
+            ) : null}
+            <span className="sidebar-brand-name">
+              {companyName || (user?.role === 'SUPER_ADMIN' ? 'Super Admin' : user?.role === 'HR' ? 'Loading...' : 'Attendance')}
+            </span>
+          </div>
 
           {/* Mobile Close Button */}
           <button
