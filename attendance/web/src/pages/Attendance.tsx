@@ -48,6 +48,7 @@ import {
     
 import { CustomSelect } from '../components/CustomSelect';
 import { CustomDatePicker } from '../components/CustomDatePicker';
+import { resolveMediaUrl } from '../utils/imageUtils';
 import api from '../services/api';
 import { getPermissions, type PermissionRequest } from '../api/permissions';
 import { type Company } from './Companies';
@@ -139,6 +140,7 @@ export interface AttendanceRecord {
     full_name?: string;
     name?: string;
     employee_id?: string;
+    profile_photo?: string | null;
     department?: string;
     designation?: string;
     phone_number?: string;
@@ -905,9 +907,16 @@ const Attendance = () => {
                               gap: '0.75rem',
                             }}
                           >
-                            <div className="avatar">
-                              {empName[0]?.toUpperCase() ||
-                                '-'}
+                            <div className="avatar" style={{ overflow: 'hidden' }}>
+                              {resolveMediaUrl(record.employee?.profile_photo || (record as any).profile_photo) ? (
+                                <img
+                                  src={resolveMediaUrl(record.employee?.profile_photo || (record as any).profile_photo)!}
+                                  alt={empName}
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                              ) : (
+                                empName[0]?.toUpperCase() || '-'
+                              )}
                             </div>
 
                             <div>
@@ -1336,9 +1345,16 @@ const Attendance = () => {
                     className="admin-mobile-card"
                   >
                     <div className="admin-mobile-card-header">
-                      <div className="avatar">
-                        {empName[0]?.toUpperCase() ||
-                          '-'}
+                      <div className="avatar" style={{ overflow: 'hidden' }}>
+                        {resolveMediaUrl(record.employee?.profile_photo || (record as any).profile_photo) ? (
+                          <img
+                            src={resolveMediaUrl(record.employee?.profile_photo || (record as any).profile_photo)!}
+                            alt={empName}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        ) : (
+                          empName[0]?.toUpperCase() || '-'
+                        )}
                       </div>
 
                       <div style={{ flex: 1 }}>

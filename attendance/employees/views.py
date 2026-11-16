@@ -111,7 +111,11 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
             
         elif request.method == 'PATCH':
-            allowed_fields = ['full_name', 'profile_photo']
+            allowed_fields = [
+                'full_name', 'profile_photo', 'phone_number', 'email',
+                'date_of_birth', 'gender', 'current_address', 'permanent_address',
+                'emergency_contact_name', 'emergency_contact_number'
+            ]
             data = {k: v for k, v in request.data.items() if k in allowed_fields}
             serializer = self.get_serializer(employee, data=data, partial=True)
             serializer.is_valid(raise_exception=True)

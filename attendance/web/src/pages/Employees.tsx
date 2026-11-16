@@ -24,6 +24,7 @@ import { type Branch } from './Branches';
 import api from '../services/api';
 import { employeeService } from '../services/employeeService';
 import EmployeeMonthlyAttendanceModal from '../components/employee/EmployeeMonthlyAttendanceModal';
+import { resolveMediaUrl } from '../utils/imageUtils';
 
 export interface Employee {
   id: number;
@@ -654,10 +655,16 @@ const Employees = () => {
                             gap: '0.75rem',
                           }}
                         >
-                          <div className="avatar">
-                            {employee.full_name
-                              ?.charAt(0)
-                              .toUpperCase() || '?'}
+                          <div className="avatar" style={{ overflow: 'hidden' }}>
+                            {employee.profile_photo ? (
+                              <img
+                                src={resolveMediaUrl(employee.profile_photo)!}
+                                alt={employee.full_name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              employee.full_name?.charAt(0).toUpperCase() || '?'
+                            )}
                           </div>
 
                           <div>
@@ -1010,10 +1017,16 @@ const Employees = () => {
                   className="admin-mobile-card"
                 >
                   <div className="admin-mobile-card-header">
-                    <div className="avatar">
-                      {employee.full_name
-                        ?.charAt(0)
-                        .toUpperCase() || '-'}
+                    <div className="avatar" style={{ overflow: 'hidden' }}>
+                      {employee.profile_photo ? (
+                        <img
+                          src={resolveMediaUrl(employee.profile_photo)!}
+                          alt={employee.full_name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      ) : (
+                        employee.full_name?.charAt(0).toUpperCase() || '-'
+                      )}
                     </div>
 
                     <div style={{ flex: 1, minWidth: 0 }}>

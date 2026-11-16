@@ -157,10 +157,23 @@ class AttendanceSerializer(serializers.ModelSerializer):
             company = branch.company if branch else None
             shift = employee.shift
 
+            profile_photo_url = None
+            if employee.profile_photo:
+                try:
+                    profile_photo_url = employee.profile_photo.url
+                    request = self.context.get('request')
+                    if request:
+                        profile_photo_url = request.build_absolute_uri(profile_photo_url)
+                        if profile_photo_url.startswith('http://hrms.yaazh360digitech.in'):
+                            profile_photo_url = profile_photo_url.replace('http://', 'https://', 1)
+                except Exception:
+                    profile_photo_url = None
+
             response['employee'] = {
                 'id': employee.id,
                 'full_name': employee.full_name,
                 'employee_id': employee.employee_id,
+                'profile_photo': profile_photo_url,
                 'department': getattr(employee, 'department', None),
                 'designation': getattr(employee, 'designation', None),
                 'work_type': getattr(employee, 'work_type', None),
