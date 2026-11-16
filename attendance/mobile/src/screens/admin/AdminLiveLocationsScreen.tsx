@@ -77,17 +77,14 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
     });
   }, [employees]);
 
-  // Only employees who explicitly TURNED OFF their location
+  // Web Parity: Active field/marketing employees who have NOT enabled location sharing today
   const notSharingEmployees = useMemo(() => {
-    if (turnedOffList.length > 0) {
-      const turnedOffIds = new Set(turnedOffList.map((t) => t.id));
-      const turnedOffCodes = new Set(turnedOffList.map((t) => t.employee_id));
-      return fieldEmployees.filter(
-        (emp) => turnedOffIds.has(emp.id) || turnedOffCodes.has(emp.employee_id)
-      );
-    }
-    return [];
-  }, [fieldEmployees, turnedOffList]);
+    const sharingIds = new Set(locations.map((loc) => loc.id));
+    const sharingEmpIds = new Set(locations.map((loc) => loc.employee_id));
+    return fieldEmployees.filter(
+      (emp) => !sharingIds.has(emp.id) && !sharingEmpIds.has(emp.employee_id)
+    );
+  }, [fieldEmployees, locations]);
 
   const openInMaps = (lat: number, lng: number, label: string) => {
     const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });
@@ -205,30 +202,13 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
                         <View style={styles.notSharingInfo}>
                           <Text style={styles.notSharingName}>{emp.full_name}</Text>
                           <Text style={styles.notSharingSub}>
-                            {emp.employee_id} {emp.branch_name ? `• ${emp.branch_name}` : ''}
+                            {emp.employee_id} - {emp.branch_name || 'Main Branch'}
                           </Text>
                           <Text style={styles.notSharingStatus}>GPS is currently turned OFF</Text>
                         </View>
                       </View>
 
                       <View style={styles.notSharingActions}>
-                        <TouchableOpacity
-                          style={styles.historyBtn}
-                          onPress={() =>
-                            navigation.navigate('AdminEmployeeRouteMap', {
-                              employeeId: emp.id,
-                              employeeName: emp.full_name,
-                              employeeCode: emp.employee_id,
-                              branchName: emp.branch_name,
-                              isSharing: false,
-                            })
-                          }
-                          activeOpacity={0.85}
-                        >
-                          <Route size={13} color="#003882" />
-                          <Text style={styles.historyBtnText}>Timeline</Text>
-                        </TouchableOpacity>
-
                         <TouchableOpacity
                           style={styles.sendAlertBtn}
                           onPress={() => handleSendAlert(emp)}
@@ -239,8 +219,8 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
                             <ActivityIndicator size="small" color="#FFFFFF" />
                           ) : (
                             <>
-                              <BellRing size={13} color="#FFFFFF" />
-                              <Text style={styles.sendAlertBtnText}>Alert</Text>
+                              <BellRing size={14} color="#FFFFFF" />
+                              <Text style={styles.sendAlertBtnText}>Send Alert</Text>
                             </>
                           )}
                         </TouchableOpacity>
@@ -452,10 +432,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notSharingCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFF5F5',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: '#FECACA',
     padding: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -468,16 +448,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notSharingAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: '#FCA5A5',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   notSharingAvatarText: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Comfortaa_700Bold',
     color: '#7F1D1D',
   },
@@ -485,13 +465,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notSharingName: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#0F172A',
+    color: '#991B1B',
   },
   notSharingSub: {
-    fontSize: 11,
-    fontFamily: 'Comfortaa_400Regular',
+    fontSize: 11.5,
+    fontFamily: 'Comfortaa_500Medium',
     color: '#64748B',
     marginTop: 1,
   },
@@ -502,36 +482,16 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   notSharingActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
     marginLeft: 8,
-  },
-  historyBtn: {
-    backgroundColor: '#EFF6FF',
-    paddingHorizontal: 9,
-    paddingVertical: 7,
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  historyBtnText: {
-    color: '#1D4ED8',
-    fontSize: 11,
-    fontFamily: 'Comfortaa_700Bold',
   },
   sendAlertBtn: {
     backgroundColor: '#22C55E',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginLeft: 8,
+    gap: 6,
   },
   sendAlertBtnText: {
     color: '#FFFFFF',
