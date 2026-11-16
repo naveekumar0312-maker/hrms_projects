@@ -34,6 +34,7 @@ export const AdminHRHeader: React.FC<AdminHRHeaderProps> = ({
   const insets = useSafeAreaInsets();
   const isHR = role === 'HR';
   const logoUri = resolveMediaUrl(companyLogo);
+  const [imageError, setImageError] = React.useState(false);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 16) }]}>
@@ -42,11 +43,12 @@ export const AdminHRHeader: React.FC<AdminHRHeaderProps> = ({
       {/* Top Banner for HR or Super Admin */}
       {(companyName || logoUri) ? (
         <View style={styles.companyBanner}>
-          {logoUri ? (
+          {logoUri && !imageError ? (
             <Image
               source={{ uri: logoUri }}
               style={styles.companyLogoImg}
               resizeMode="contain"
+              onError={() => setImageError(true)}
             />
           ) : (
             <Building2 size={16} color={colors.primary} strokeWidth={2} />
