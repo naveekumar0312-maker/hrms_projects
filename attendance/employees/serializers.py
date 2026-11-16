@@ -185,27 +185,32 @@ class EmployeeSerializer(serializers.ModelSerializer):
         response['role'] = getattr(instance.user, 'role', 'EMPLOYEE')
         response['name'] = instance.full_name
 
-        company = instance.branch.company if instance.branch and instance.branch.company else None
+        company = None
+        if instance.branch and instance.branch.company:
+            company = instance.branch.company
+        elif instance.user and instance.user.company:
+            company = instance.user.company
+
         request = self.context.get('request')
 
+        logo_url = None
+        if company and company.logo:
+            if request:
+                uri = request.build_absolute_uri(company.logo.url)
+                if uri.startswith('http://hrms.yaazh360digitech.in'):
+                    uri = uri.replace('http://', 'https://', 1)
+                logo_url = uri
+            else:
+                logo_url = company.logo.url
+
         response['company_name'] = company.name if company else None
-        response['company_logo'] = (
-            request.build_absolute_uri(company.logo.url)
-            if company and company.logo and request
-            else company.logo.url if (company and company.logo)
-            else None
-        )
+        response['company_logo'] = logo_url
 
         response['company'] = (
             {
                 'id': company.id,
                 'name': company.name,
-                'logo': (
-                    request.build_absolute_uri(company.logo.url)
-                    if company.logo and request
-                    else company.logo.url if company.logo
-                    else None
-                ),
+                'logo': logo_url,
             }
             if company
             else None

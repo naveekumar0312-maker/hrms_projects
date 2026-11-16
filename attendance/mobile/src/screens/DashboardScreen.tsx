@@ -6,7 +6,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { Camera, CameraView, CameraType } from 'expo-camera';
 import { AuthContext, api } from '../context/AuthContext';
-import { MapPin, Target, Clock, Calendar, BarChart, User, LogIn, LogOut, ChevronRight, CheckCircle, XCircle, House, Bell, SwitchCamera, RefreshCw, CalendarDays, SlidersHorizontal, Search, FileText, Palmtree, AlertCircle } from 'lucide-react-native';
+import { MapPin, Target, Clock, Calendar, BarChart, User, LogIn, LogOut, ChevronRight, CheckCircle, XCircle, House, Bell, SwitchCamera, RefreshCw, CalendarDays, SlidersHorizontal, Search, FileText, Palmtree, AlertCircle, Building2 } from 'lucide-react-native';
+import { resolveMediaUrl } from '../utils/imageUtils';
 import { AppSearchBar } from '../components/AppSearchBar';
 import { CategoryBubblesRow } from '../components/CategoryBubblesRow';
 import { checkIn, checkOut, getHistory, getTodayAttendance } from '../services/attendanceService';
@@ -905,17 +906,19 @@ export default function DashboardScreen({ navigation }: any) {
         {/* MODERN CLEAN HEADER (REFERENCE DESIGN) */}
         <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
           {/* Company Brand Pill with Logo & Name */}
-          {(employee?.company?.name || employee?.company_name || employee?.company?.logo || employee?.company_logo) && (
+          {(employee?.company?.name || employee?.company_name || employee?.company?.logo || employee?.company_logo || user?.company_name || user?.company_logo) && (
             <View style={styles.companyBannerPill}>
-              {(employee?.company?.logo || employee?.company_logo) ? (
+              {resolveMediaUrl(employee?.company?.logo || employee?.company_logo || user?.company_logo) ? (
                 <Image
-                  source={{ uri: getImageUrl(employee?.company?.logo || employee?.company_logo)! }}
+                  source={{ uri: resolveMediaUrl(employee?.company?.logo || employee?.company_logo || user?.company_logo)! }}
                   style={styles.companyBannerLogo}
                   resizeMode="contain"
                 />
-              ) : null}
+              ) : (
+                <Building2 size={18} color="#22C55E" strokeWidth={2} />
+              )}
               <Text style={styles.companyBannerText} numberOfLines={1}>
-                {employee?.company?.name || employee?.company_name || 'Yaazh 360'}
+                {employee?.company?.name || employee?.company_name || user?.company_name || 'Yaazh 360'}
               </Text>
             </View>
           )}
