@@ -575,14 +575,27 @@ def build_employee_attendance_report(
                     "latitude": float(rec.check_in_latitude),
                     "longitude": float(rec.check_in_longitude),
                     "accuracy": rec.check_in_accuracy,
-                    "location_name": rec.check_in_location_name,
+                    "location_name": rec.check_in_location_name or (
+                        employee.branch.branch_name if employee and employee.branch else f"{rec.check_in_latitude:.4f}, {rec.check_in_longitude:.4f}"
+                    ),
                 }
+            elif rec.check_in:
+                check_in_loc = {
+                    "location_name": rec.check_in_location_name or (employee.branch.branch_name if employee and employee.branch else "Office"),
+                }
+
             if rec.check_out_latitude and rec.check_out_longitude:
                 check_out_loc = {
                     "latitude": float(rec.check_out_latitude),
                     "longitude": float(rec.check_out_longitude),
                     "accuracy": rec.check_out_accuracy,
-                    "location_name": rec.check_out_location_name,
+                    "location_name": rec.check_out_location_name or (
+                        employee.branch.branch_name if employee and employee.branch else f"{rec.check_out_latitude:.4f}, {rec.check_out_longitude:.4f}"
+                    ),
+                }
+            elif rec.check_out:
+                check_out_loc = {
+                    "location_name": rec.check_out_location_name or (employee.branch.branch_name if employee and employee.branch else "Office"),
                 }
 
         # Count summaries
@@ -631,6 +644,8 @@ def build_employee_attendance_report(
             "check_out_photo": check_out_photo,
             "check_in_location": check_in_loc,
             "check_out_location": check_out_loc,
+            "check_in_location_name": check_in_loc.get("location_name") if check_in_loc else None,
+            "check_out_location_name": check_out_loc.get("location_name") if check_out_loc else None,
         }
 
         if hol:

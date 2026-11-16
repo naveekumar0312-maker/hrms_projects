@@ -1173,7 +1173,7 @@ export default function DashboardScreen({ navigation }: any) {
             <Text style={styles.summaryValue}>{getWorkingHours()}</Text>
           </View>
           
-          {/* NEW APPROVAL BOX */}
+          {/* NEW APPROVAL & LOCATION BOX */}
           {todayAttendance && (
             <View style={[styles.summaryBox, { backgroundColor: approvalBg, width: '97%' }]}>
               <ApprovalIcon size={20} color={approvalColor} style={styles.summaryIcon} />
@@ -1185,6 +1185,22 @@ export default function DashboardScreen({ navigation }: any) {
                 <Text style={{ fontSize: 12, color: COLORS.danger, marginTop: 8, fontStyle: 'italic' }}>
                   Reason: {todayAttendance.rejection_reason}
                 </Text>
+              )}
+              {Boolean(todayAttendance.check_in_location_name || todayAttendance.check_in_location?.location_name) && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
+                  <MapPin size={12} color="#E56108" />
+                  <Text style={{ fontSize: 11, color: '#334155', fontFamily: 'Comfortaa_500Medium' }} numberOfLines={1}>
+                    In: {todayAttendance.check_in_location_name || todayAttendance.check_in_location?.location_name}
+                  </Text>
+                </View>
+              )}
+              {Boolean(todayAttendance.check_out_location_name || todayAttendance.check_out_location?.location_name) && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
+                  <MapPin size={12} color="#0369A1" />
+                  <Text style={{ fontSize: 11, color: '#334155', fontFamily: 'Comfortaa_500Medium' }} numberOfLines={1}>
+                    Out: {todayAttendance.check_out_location_name || todayAttendance.check_out_location?.location_name}
+                  </Text>
+                </View>
               )}
             </View>
           )}

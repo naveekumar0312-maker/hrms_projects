@@ -249,7 +249,18 @@ export const MobileRolePendingActionsModal: React.FC<MobileRolePendingActionsMod
                 if (items.length > 0) {
                   onNavigateAction(items[0]);
                 } else {
-                  onClose();
+                  // Fallback to default approval screen based on summary or role
+                  if ((summary.pending_punches || 0) > 0) {
+                    onNavigateAction({ type: 'ATTENDANCE_PUNCH' } as any);
+                  } else if ((summary.pending_leaves || 0) > 0) {
+                    onNavigateAction({ type: 'LEAVE' } as any);
+                  } else if ((summary.pending_permissions || 0) > 0) {
+                    onNavigateAction({ type: 'PERMISSION' } as any);
+                  } else if ((summary.pending_wfh || 0) > 0) {
+                    onNavigateAction({ type: 'WFH' } as any);
+                  } else {
+                    onNavigateAction({ type: role === 'REPORTING_MANAGER' ? 'ATTENDANCE_PUNCH' : 'LEAVE' } as any);
+                  }
                 }
               }}
             >

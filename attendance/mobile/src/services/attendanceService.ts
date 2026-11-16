@@ -191,3 +191,8 @@ export const rejectAttendanceRecord = async (id: number, reason: string, type?: 
   const response = await api.post(`/attendance/${id}/reject/`, { reason, rejection_reason: reason, type });
   return response.data;
 };
+
+export const undoAttendanceRecord = async (id: number, type?: 'check_in' | 'check_out'): Promise<any> => {
+  const response = await api.post(`/attendance/${id}/undo/`, { type });
+  return response.data;
+};

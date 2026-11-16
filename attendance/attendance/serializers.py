@@ -209,6 +209,18 @@ class AttendanceSerializer(serializers.ModelSerializer):
         if 'check_out' in response:
             del response['check_out']
             
+        # Address / Location name display fallbacks
+        response['check_in_location_name'] = instance.check_in_location_name or (
+            f"{instance.check_in_latitude:.4f}, {instance.check_in_longitude:.4f}"
+            if instance.check_in_latitude and instance.check_in_longitude
+            else (employee.branch.branch_name if employee and employee.branch else None)
+        )
+        response['check_out_location_name'] = instance.check_out_location_name or (
+            f"{instance.check_out_latitude:.4f}, {instance.check_out_longitude:.4f}"
+            if instance.check_out_latitude and instance.check_out_longitude
+            else (employee.branch.branch_name if employee and employee.branch else None)
+        )
+
         # Formatting utility
         def format_duration(minutes):
             if not minutes or minutes <= 0:

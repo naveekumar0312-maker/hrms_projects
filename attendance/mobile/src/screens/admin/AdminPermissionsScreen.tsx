@@ -22,6 +22,7 @@ import {
   ChevronRight,
   X,
   FileText,
+  RotateCcw,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
@@ -29,6 +30,7 @@ import { formatAttendanceTime } from '../../utils/dateUtils';
 import {
   fetchPermissions,
   updatePermissionStatus,
+  undoPermission,
   PermissionRequestItem,
 } from '../../services/adminHRService';
 
@@ -80,6 +82,33 @@ export const AdminPermissionsScreen = ({ navigation }: any) => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleUndo = async (permission: PermissionRequestItem) => {
+    Alert.alert(
+      'Undo Action',
+      `Revert permission decision for ${permission.employee_name || 'this employee'} back to Pending?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Undo',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await undoPermission(permission.id);
+              Alert.alert('Success', 'Permission request reverted to pending.');
+              setModalVisible(false);
+              loadPermissions();
+            } catch (error: any) {
+              Alert.alert('Undo Failed', error?.response?.data?.error || 'Could not revert permission request.');
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -267,6 +296,19 @@ export const AdminPermissionsScreen = ({ navigation }: any) => {
                       </TouchableOpacity>
                     </View>
                   </>
+                )}
+
+                {(selectedPermission.status === 'APPROVED' || selectedPermission.status === 'REJECTED') && (
+                  <View style={{ marginTop: 20 }}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.undoBtn]}
+                      onPress={() => handleUndo(selectedPermission)}
+                      disabled={actionLoading}
+                    >
+                      <RotateCcw size={18} color="#475569" />
+                      <Text style={styles.undoBtnText}>Undo Decision (Revert to Pending)</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
             )}
@@ -517,6 +559,16 @@ const styles = StyleSheet.create({
   },
   rejectBtn: {
     backgroundColor: '#EF4444',
+  },
+  undoBtn: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  undoBtnText: {
+    color: '#334155',
+    fontFamily: 'Comfortaa_700Bold',
+    fontSize: 13,
   },
   actionBtnText: {
     color: '#FFFFFF',

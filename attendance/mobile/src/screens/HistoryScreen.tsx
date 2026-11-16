@@ -5,7 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { getReports } from '../services/attendanceService';
 import { AuthContext } from '../context/AuthContext';
-import { Calendar as CalendarIcon, ChevronDown, Check, Clock, X, Sparkles, ChevronRight, PartyPopper, Image as ImageIcon, Briefcase, FileText } from 'lucide-react-native';
+import { Calendar as CalendarIcon, ChevronDown, Check, Clock, X, Sparkles, ChevronRight, PartyPopper, Image as ImageIcon, Briefcase, FileText, MapPin } from 'lucide-react-native';
 import { formatAttendanceTime, formatWorkingHours } from '../utils/dateUtils';
 import { resolveMediaUrl } from '../utils/imageUtils';
 import { COLORS } from '../constants/theme';
@@ -574,10 +574,34 @@ export default function HistoryScreen({ navigation }: any) {
                   <Text style={styles.detailsValue}>{formatAttendanceTime(selectedRecord.check_in_time)}</Text>
                 </View>
 
+                {(selectedRecord.check_in_location_name || selectedRecord.check_in_location?.location_name) && (
+                  <View style={[styles.detailsRow, { alignItems: 'flex-start' }]}>
+                    <Text style={styles.detailsLabel}>In Location:</Text>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 4 }}>
+                      <MapPin size={13} color="#E56108" style={{ marginTop: 2 }} />
+                      <Text style={[styles.detailsValue, { textAlign: 'right', flexShrink: 1, color: '#334155' }]}>
+                        {selectedRecord.check_in_location_name || selectedRecord.check_in_location?.location_name}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
                 <View style={styles.detailsRow}>
                   <Text style={styles.detailsLabel}>Check Out:</Text>
                   <Text style={styles.detailsValue}>{formatAttendanceTime(selectedRecord.check_out_time)}</Text>
                 </View>
+
+                {(selectedRecord.check_out_location_name || selectedRecord.check_out_location?.location_name) && (
+                  <View style={[styles.detailsRow, { alignItems: 'flex-start' }]}>
+                    <Text style={styles.detailsLabel}>Out Location:</Text>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 4 }}>
+                      <MapPin size={13} color="#0369A1" style={{ marginTop: 2 }} />
+                      <Text style={[styles.detailsValue, { textAlign: 'right', flexShrink: 1, color: '#334155' }]}>
+                        {selectedRecord.check_out_location_name || selectedRecord.check_out_location?.location_name}
+                      </Text>
+                    </View>
+                  </View>
+                )}
 
                 <View style={styles.detailsRow}>
                   <Text style={styles.detailsLabel}>Working Hours:</Text>

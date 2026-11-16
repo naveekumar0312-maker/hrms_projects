@@ -34,6 +34,7 @@ import {
   AlertCircle,
   LogIn,
   LogOut as LogOutIcon,
+  RotateCcw,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
@@ -43,6 +44,7 @@ import {
   deleteAttendanceRecord,
   approveAttendanceRecord,
   rejectAttendanceRecord,
+  undoAttendanceRecord,
 } from '../../services/attendanceService';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatAttendanceTime } from '../../utils/dateUtils';
@@ -100,6 +102,33 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleUndoPunch = async (rec: any, type: 'check_in' | 'check_out') => {
+    const label = type === 'check_in' ? 'Check In' : 'Check Out';
+    Alert.alert(
+      'Undo Approval',
+      `Revert ${label} decision for ${rec.employee?.full_name || 'employee'} back to Pending?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Undo',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              await undoAttendanceRecord(rec.id, type);
+              Alert.alert('Success', `${label} status reverted to pending.`);
+              loadAttendance(selectedDate);
+            } catch (e: any) {
+              Alert.alert('Error', e?.message || `Failed to undo ${label.toLowerCase()}.`);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const loadAttendance = async (dateStr: string) => {
@@ -490,7 +519,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                       ) : null}
 
                       {/* Check In Action Buttons */}
-                      {Boolean(item.check_in_time || item.check_in) && item.check_in_approval_status !== 'APPROVED' && (
+                      {Boolean(item.check_in_time || item.check_in) && item.check_in_approval_status !== 'APPROVED' && item.check_in_approval_status !== 'REJECTED' && (
                         <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                           <TouchableOpacity
                             style={{
@@ -533,6 +562,31 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                           >
                             <XCircle size={12} color="#DC2626" strokeWidth={2.2} />
                             <Text style={{ color: '#DC2626', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Reject In</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
+                      {/* Check In Undo Button */}
+                      {Boolean(item.check_in_time || item.check_in) && (item.check_in_approval_status === 'APPROVED' || item.check_in_approval_status === 'REJECTED') && (
+                        <View style={{ marginTop: 8 }}>
+                          <TouchableOpacity
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              paddingVertical: 5,
+                              borderRadius: 6,
+                              backgroundColor: '#F1F5F9',
+                              borderWidth: 1,
+                              borderColor: '#CBD5E1',
+                              gap: 4,
+                            }}
+                            onPress={() => handleUndoPunch(item, 'check_in')}
+                            disabled={actionLoading}
+                            activeOpacity={0.8}
+                          >
+                            <RotateCcw size={12} color="#475569" strokeWidth={2.2} />
+                            <Text style={{ color: '#334155', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Undo In Approval</Text>
                           </TouchableOpacity>
                         </View>
                       )}
@@ -583,7 +637,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                       ) : null}
 
                       {/* Check Out Action Buttons */}
-                      {Boolean(item.check_out_time || item.check_out) && item.check_out_approval_status !== 'APPROVED' && (
+                      {Boolean(item.check_out_time || item.check_out) && item.check_out_approval_status !== 'APPROVED' && item.check_out_approval_status !== 'REJECTED' && (
                         <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                           <TouchableOpacity
                             style={{
@@ -626,6 +680,31 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                           >
                             <XCircle size={12} color="#DC2626" strokeWidth={2.2} />
                             <Text style={{ color: '#DC2626', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Reject Out</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
+                      {/* Check Out Undo Button */}
+                      {Boolean(item.check_out_time || item.check_out) && (item.check_out_approval_status === 'APPROVED' || item.check_out_approval_status === 'REJECTED') && (
+                        <View style={{ marginTop: 8 }}>
+                          <TouchableOpacity
+                            style={{
+                              flexDirection: 'row',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              paddingVertical: 5,
+                              borderRadius: 6,
+                              backgroundColor: '#F1F5F9',
+                              borderWidth: 1,
+                              borderColor: '#CBD5E1',
+                              gap: 4,
+                            }}
+                            onPress={() => handleUndoPunch(item, 'check_out')}
+                            disabled={actionLoading}
+                            activeOpacity={0.8}
+                          >
+                            <RotateCcw size={12} color="#475569" strokeWidth={2.2} />
+                            <Text style={{ color: '#334155', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Undo Out Approval</Text>
                           </TouchableOpacity>
                         </View>
                       )}

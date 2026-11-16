@@ -1830,6 +1830,30 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(attendance, context={'request': request})
         return Response(serializer.data)
 
+    @action(detail=True, methods=['patch', 'post'], permission_classes=[IsAdminUser], url_path='undo')
+    def undo(self, request, pk=None):
+        attendance = self.get_object()
+        punch_type = request.data.get('type')  # 'check_in', 'check_out', or None
+
+        if punch_type == 'check_in':
+            attendance.check_in_approval_status = 'PENDING'
+            attendance.check_in_rejection_reason = None
+        elif punch_type == 'check_out':
+            attendance.check_out_approval_status = 'PENDING'
+            attendance.check_out_rejection_reason = None
+        else:
+            attendance.approval_status = 'PENDING'
+            attendance.rejection_reason = None
+            attendance.check_in_approval_status = 'PENDING'
+            attendance.check_in_rejection_reason = None
+            if attendance.check_out:
+                attendance.check_out_approval_status = 'PENDING'
+                attendance.check_out_rejection_reason = None
+
+        attendance.save()
+        serializer = self.get_serializer(attendance, context={'request': request})
+        return Response(serializer.data)
+
     @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='check-in-photo')
     def get_check_in_photo(self, request, pk=None):
         import os
@@ -2975,6 +2999,34 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
         wfh_request.approved_at = timezone.now()
         wfh_request.save()
         notify_employee_request_decision(wfh_request, kind='wfh')
+
+        return Response(
+            WFHRequestSerializer(
+                wfh_request,
+                context={'request': request},
+            ).data
+        )
+
+    @action(
+        detail=True,
+        methods=['patch'],
+        permission_classes=[IsAdminUser],
+        url_path='undo'
+    )
+    def undo(self, request, pk=None):
+        wfh_request = self.get_object()
+
+        if wfh_request.status not in ('APPROVED', 'REJECTED'):
+            return Response(
+                {"error": "Only approved or rejected WFH requests can be undone."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        wfh_request.status = 'PENDING'
+        wfh_request.approved_by = None
+        wfh_request.approved_at = None
+        wfh_request.rejection_reason = None
+        wfh_request.save()
 
         return Response(
             WFHRequestSerializer(

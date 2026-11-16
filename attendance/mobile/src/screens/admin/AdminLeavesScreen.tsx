@@ -24,12 +24,14 @@ import {
   ChevronRight,
   X,
   FileText,
+  RotateCcw,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
 import {
   fetchLeaves,
   updateLeaveStatus,
+  undoLeave,
   LeaveRequestItem,
 } from '../../services/adminHRService';
 
@@ -81,6 +83,33 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleUndo = async (leave: LeaveRequestItem) => {
+    Alert.alert(
+      'Undo Action',
+      `Revert leave decision for ${leave.employee_name || 'this employee'} back to Pending?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Undo',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading(true);
+            try {
+              await undoLeave(leave.id);
+              Alert.alert('Success', 'Leave request reverted to pending.');
+              setModalVisible(false);
+              loadLeaves();
+            } catch (error: any) {
+              Alert.alert('Undo Failed', error?.response?.data?.error || 'Could not revert leave request.');
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const getStatusBadge = (status: string) => {
@@ -275,6 +304,19 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
                       </TouchableOpacity>
                     </View>
                   </>
+                )}
+
+                {(selectedLeave.status === 'APPROVED' || selectedLeave.status === 'REJECTED') && (
+                  <View style={{ marginTop: 20 }}>
+                    <TouchableOpacity
+                      style={[styles.actionBtn, styles.undoBtn]}
+                      onPress={() => handleUndo(selectedLeave)}
+                      disabled={actionLoading}
+                    >
+                      <RotateCcw size={18} color="#475569" />
+                      <Text style={styles.undoBtnText}>Undo Decision (Revert to Pending)</Text>
+                    </TouchableOpacity>
+                  </View>
                 )}
               </View>
             )}
@@ -527,6 +569,16 @@ const styles = StyleSheet.create({
   },
   rejectBtn: {
     backgroundColor: '#EF4444',
+  },
+  undoBtn: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  undoBtnText: {
+    color: '#334155',
+    fontFamily: 'Comfortaa_700Bold',
+    fontSize: 13,
   },
   actionBtnText: {
     color: '#FFFFFF',

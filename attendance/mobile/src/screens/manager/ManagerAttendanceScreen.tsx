@@ -27,10 +27,11 @@ import {
   X,
   LogIn,
   LogOut as LogOutIcon,
+  RotateCcw,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { getManagerTeamAttendance, ManagerAttendanceRow } from '../../services/managerService';
-import { approveAttendanceRecord, rejectAttendanceRecord } from '../../services/attendanceService';
+import { approveAttendanceRecord, rejectAttendanceRecord, undoAttendanceRecord } from '../../services/attendanceService';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatAttendanceTime } from '../../utils/dateUtils';
 import { COLORS } from '../../constants/theme';
@@ -141,6 +142,35 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleUndoPunch = async (item: ManagerAttendanceRow, type: 'check_in' | 'check_out') => {
+    if (!item.attendance_id) return;
+    const attendanceId = item.attendance_id;
+    const label = type === 'check_in' ? 'Check In' : 'Check Out';
+    Alert.alert(
+      'Undo Approval',
+      `Revert ${label} decision for ${item.full_name} back to Pending?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Undo',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              await undoAttendanceRecord(attendanceId, type);
+              Alert.alert('Success', `${label} status reverted to pending.`);
+              loadAttendance(selectedDate);
+            } catch (err: any) {
+              Alert.alert('Error', err?.message || `Failed to undo ${label.toLowerCase()}.`);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const filteredList = attendanceList.filter((row) => {
@@ -292,27 +322,51 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
           ) : null}
 
           {item.attendance_id && item.check_in ? (
-            <View style={styles.punchActionRow}>
-              <TouchableOpacity
-                style={[styles.miniActionBtn, styles.miniApproveBtn, inApproved && styles.miniBtnDisabled]}
-                onPress={() => handleApprovePunch(item, 'check_in')}
-                disabled={actionLoading || inApproved}
-                activeOpacity={0.8}
-              >
-                <CheckCircle size={13} color="#FFFFFF" strokeWidth={2.2} />
-                <Text style={styles.miniApproveBtnText}>{inApproved ? 'Approved' : 'Approve Check In'}</Text>
-              </TouchableOpacity>
+            !inApproved && item.check_in_approval_status !== 'REJECTED' ? (
+              <View style={styles.punchActionRow}>
+                <TouchableOpacity
+                  style={[styles.miniActionBtn, styles.miniApproveBtn]}
+                  onPress={() => handleApprovePunch(item, 'check_in')}
+                  disabled={actionLoading}
+                  activeOpacity={0.8}
+                >
+                  <CheckCircle size={13} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text style={styles.miniApproveBtnText}>Approve Check In</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.miniActionBtn, styles.miniRejectBtn]}
-                onPress={() => handleOpenReject(item, 'check_in')}
-                disabled={actionLoading}
-                activeOpacity={0.8}
-              >
-                <XCircle size={13} color="#DC2626" strokeWidth={2.2} />
-                <Text style={styles.miniRejectBtnText}>Reject</Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  style={[styles.miniActionBtn, styles.miniRejectBtn]}
+                  onPress={() => handleOpenReject(item, 'check_in')}
+                  disabled={actionLoading}
+                  activeOpacity={0.8}
+                >
+                  <XCircle size={13} color="#DC2626" strokeWidth={2.2} />
+                  <Text style={styles.miniRejectBtnText}>Reject</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ marginTop: 8 }}>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: 5,
+                    borderRadius: 6,
+                    backgroundColor: '#F1F5F9',
+                    borderWidth: 1,
+                    borderColor: '#CBD5E1',
+                    gap: 4,
+                  }}
+                  onPress={() => handleUndoPunch(item, 'check_in')}
+                  disabled={actionLoading}
+                  activeOpacity={0.8}
+                >
+                  <RotateCcw size={12} color="#475569" strokeWidth={2.2} />
+                  <Text style={{ color: '#334155', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Undo In Approval</Text>
+                </TouchableOpacity>
+              </View>
+            )
           ) : null}
         </View>
 
@@ -334,27 +388,51 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
           ) : null}
 
           {item.attendance_id && item.check_out ? (
-            <View style={styles.punchActionRow}>
-              <TouchableOpacity
-                style={[styles.miniActionBtn, styles.miniApproveBtn, outApproved && styles.miniBtnDisabled]}
-                onPress={() => handleApprovePunch(item, 'check_out')}
-                disabled={actionLoading || outApproved}
-                activeOpacity={0.8}
-              >
-                <CheckCircle size={13} color="#FFFFFF" strokeWidth={2.2} />
-                <Text style={styles.miniApproveBtnText}>{outApproved ? 'Approved' : 'Approve Check Out'}</Text>
-              </TouchableOpacity>
+            !outApproved && item.check_out_approval_status !== 'REJECTED' ? (
+              <View style={styles.punchActionRow}>
+                <TouchableOpacity
+                  style={[styles.miniActionBtn, styles.miniApproveBtn]}
+                  onPress={() => handleApprovePunch(item, 'check_out')}
+                  disabled={actionLoading}
+                  activeOpacity={0.8}
+                >
+                  <CheckCircle size={13} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text style={styles.miniApproveBtnText}>Approve Check Out</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.miniActionBtn, styles.miniRejectBtn]}
-                onPress={() => handleOpenReject(item, 'check_out')}
-                disabled={actionLoading}
-                activeOpacity={0.8}
-              >
-                <XCircle size={13} color="#DC2626" strokeWidth={2.2} />
-                <Text style={styles.miniRejectBtnText}>Reject</Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  style={[styles.miniActionBtn, styles.miniRejectBtn]}
+                  onPress={() => handleOpenReject(item, 'check_out')}
+                  disabled={actionLoading}
+                  activeOpacity={0.8}
+                >
+                  <XCircle size={13} color="#DC2626" strokeWidth={2.2} />
+                  <Text style={styles.miniRejectBtnText}>Reject</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ marginTop: 8 }}>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: 5,
+                    borderRadius: 6,
+                    backgroundColor: '#F1F5F9',
+                    borderWidth: 1,
+                    borderColor: '#CBD5E1',
+                    gap: 4,
+                  }}
+                  onPress={() => handleUndoPunch(item, 'check_out')}
+                  disabled={actionLoading}
+                  activeOpacity={0.8}
+                >
+                  <RotateCcw size={12} color="#475569" strokeWidth={2.2} />
+                  <Text style={{ color: '#334155', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Undo Out Approval</Text>
+                </TouchableOpacity>
+              </View>
+            )
           ) : (
             item.attendance_id && (
               <Text style={styles.noCheckOutText}>Check Out not punched yet</Text>

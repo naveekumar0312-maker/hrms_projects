@@ -294,6 +294,11 @@ export const updateLeaveStatus = async (id: number, status: 'APPROVED' | 'REJECT
   return response.data;
 };
 
+export const undoLeave = async (id: number): Promise<any> => {
+  const response = await api.patch(`/attendance/leaves/${id}/undo/`);
+  return response.data;
+};
+
 export const fetchPermissions = async (companyId?: number, status?: string): Promise<PermissionRequestItem[]> => {
   const params: any = {};
   if (companyId) params.company = companyId;
@@ -310,6 +315,11 @@ export const updatePermissionStatus = async (id: number, status: 'APPROVED' | 'R
   return response.data;
 };
 
+export const undoPermission = async (id: number): Promise<any> => {
+  const response = await api.patch(`/attendance/permissions/${id}/undo/`);
+  return response.data;
+};
+
 export const fetchWFHRequests = async (companyId?: number, status?: string): Promise<WFHRequestItem[]> => {
   const params: any = {};
   if (companyId) params.company = companyId;
@@ -323,6 +333,11 @@ export const updateWFHStatus = async (id: number, status: 'APPROVED' | 'REJECTED
     status,
     rejection_reason: rejectionReason || '',
   });
+  return response.data;
+};
+
+export const undoWFH = async (id: number): Promise<any> => {
+  const response = await api.patch(`/attendance/wfh/${id}/undo/`);
   return response.data;
 };
 
