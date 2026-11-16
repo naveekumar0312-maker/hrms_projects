@@ -64,7 +64,15 @@ export default function ManagerTeamScreen() {
     try {
       setLoading(true);
       const data = await getManagerTeam(search.trim());
-      setTeam(data);
+      const list = Array.isArray(data) ? data : [];
+      // Arrange strictly by employee_id
+      const sorted = [...list].sort((a, b) =>
+        (a.employee_id || '').localeCompare(b.employee_id || '', undefined, {
+          numeric: true,
+          sensitivity: 'base',
+        })
+      );
+      setTeam(sorted);
     } catch (err) {
       console.error('Failed to load team:', err);
     } finally {

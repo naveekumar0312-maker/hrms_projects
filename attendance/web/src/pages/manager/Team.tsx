@@ -54,7 +54,15 @@ const ManagerTeam: React.FC = () => {
       setLoading(true);
       const params = search ? { search } : {};
       const res = await api.get('/employees/manager/team/', { params });
-      setTeam(res.data);
+      const rows: TeamEmployee[] = Array.isArray(res.data) ? res.data : [];
+      // Arrange strictly by employee_id (e.g. EMP-001, EMP-002, etc.)
+      const sorted = [...rows].sort((a, b) => {
+        return (a.employee_id || '').localeCompare(b.employee_id || '', undefined, {
+          numeric: true,
+          sensitivity: 'base',
+        });
+      });
+      setTeam(sorted);
     } catch (err) {
       console.error('Failed to load team:', err);
     } finally {

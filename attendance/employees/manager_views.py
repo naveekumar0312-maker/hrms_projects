@@ -319,18 +319,16 @@ class ManagerPortalBaseView(views.APIView):
             # Strictly scoped to this branch only
             qs = Employee.objects.filter(
                 branch=manager.branch
-            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by('employee_id')
         elif manager.user and manager.user.company_id:
             # Scoped to company
             qs = Employee.objects.filter(
                 branch__company_id=manager.user.company_id
-            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by('employee_id')
         else:
-            # Global Access: all employees across all companies
+            # Global Access: all employees across all companies ordered by employee_id
             qs = Employee.objects.filter(
-            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by(
-                'branch__company__name', 'branch__branch_name', 'full_name'
-            )
+            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by('employee_id')
 
         if status_filter is True:
             qs = qs.filter(status=True)

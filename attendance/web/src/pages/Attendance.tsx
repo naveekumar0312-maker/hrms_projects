@@ -394,12 +394,6 @@ const Attendance = () => {
   }, [viewRecord, approveRecord, rejectRecord, previewImage]);
 
   useEffect(() => {
-    if (isManager) {
-      setCompanies([]);
-      setBranches([]);
-      return;
-    }
-
     Promise.all([
       api.get('/companies/'),
       api.get('/branches/'),
@@ -416,7 +410,7 @@ const Attendance = () => {
       .catch((error) => {
         console.error('Failed to load companies/branches:', error);
       });
-  }, [isManager]);
+  }, []);
 
   const fetchAttendance = async () => {
     setLoading(true);
@@ -737,44 +731,40 @@ const Attendance = () => {
         </div>
 
         <div className="admin-filters-row">
-          {!isManager && (
-            <>
-              <CustomSelect
-                options={[
-                  { value: '', label: 'All Companies' },
-                  ...companies.map((company) => ({
-                    value: company.id.toString(),
-                    label: company.name,
-                  })),
-                ]}
-                value={selectedCompany}
-                onChange={(value) => {
-                  setSelectedCompany(value);
-                  setSelectedBranch('');
-                }}
-                placeholder="All Companies"
-                icon={<Building2 size={18} />}
-                searchPlaceholder="Search companies..."
-              />
+          <CustomSelect
+            options={[
+              { value: '', label: 'All Companies' },
+              ...companies.map((company) => ({
+                value: company.id.toString(),
+                label: company.name,
+              })),
+            ]}
+            value={selectedCompany}
+            onChange={(value) => {
+              setSelectedCompany(value);
+              setSelectedBranch('');
+            }}
+            placeholder="All Companies"
+            icon={<Building2 size={18} />}
+            searchPlaceholder="Search companies..."
+          />
 
-              <CustomSelect
-                options={[
-                  { value: '', label: 'All Branches' },
-                  ...filteredBranches.map((branch) => ({
-                    value: branch.id.toString(),
-                    label:
-                      branch.branch_name ||
-                      `Branch ${branch.id}`,
-                  })),
-                ]}
-                value={selectedBranch}
-                onChange={setSelectedBranch}
-                placeholder="All Branches"
-                icon={<MapPin size={18} />}
-                searchPlaceholder="Search branches..."
-              />
-            </>
-          )}
+          <CustomSelect
+            options={[
+              { value: '', label: 'All Branches' },
+              ...filteredBranches.map((branch) => ({
+                value: branch.id.toString(),
+                label:
+                  branch.branch_name ||
+                  `Branch ${branch.id}`,
+              })),
+            ]}
+            value={selectedBranch}
+            onChange={setSelectedBranch}
+            placeholder="All Branches"
+            icon={<MapPin size={18} />}
+            searchPlaceholder="Search branches..."
+          />
 
           {/* Standardized LiveLocations DatePicker */}
           <div style={{ minWidth: '220px' }}>
