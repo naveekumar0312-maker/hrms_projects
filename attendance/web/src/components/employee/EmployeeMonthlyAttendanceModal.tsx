@@ -431,7 +431,7 @@ const EmployeeMonthlyAttendanceModal = ({
             align-items: center;
             justify-content: center;
             background: rgba(0, 86, 179, 0.08);
-            color: #E56108;
+            color: #22C55E;
             flex-shrink: 0;
           }
 
@@ -464,7 +464,7 @@ const EmployeeMonthlyAttendanceModal = ({
 
           .employee-calendar-close:hover {
             background: rgba(0, 86, 179, 0.08);
-            color: #E56108;
+            color: #22C55E;
           }
 
           .employee-calendar-body {
@@ -526,7 +526,7 @@ const EmployeeMonthlyAttendanceModal = ({
 
           .employee-calendar-nav button:hover {
             border-color: #86D49E;
-            color: #E56108;
+            color: #22C55E;
           }
 
           .employee-calendar-weekdays,
@@ -1064,7 +1064,7 @@ const EmployeeMonthlyAttendanceModal = ({
                             style={{
                               borderColor:
                                 selectedDay?.date === cell.date
-                                  ? '#E56108'
+                                  ? '#22C55E'
                                   : info.border,
                               boxShadow:
                                 selectedDay?.date === cell.date

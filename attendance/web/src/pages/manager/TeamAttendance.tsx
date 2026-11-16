@@ -140,7 +140,7 @@ const ManagerTeamAttendance: React.FC = () => {
       case 'WEEKLY_OFF':
         return <span className="rm-badge" style={{ background: '#f3f4f6', color: '#4b5563' }}>Weekly Off</span>;
       case 'HALF_DAY':
-        return <span className="rm-badge" style={{ background: '#fff7ed', color: '#ea580c' }}>Half Day</span>;
+        return <span className="rm-badge" style={{ background: '#f0fdf4', color: '#ea580c' }}>Half Day</span>;
       default:
         return <span className="rm-badge" style={{ background: '#f9fafb', color: '#6b7280' }}>{status}</span>;
     }
@@ -192,7 +192,7 @@ const ManagerTeamAttendance: React.FC = () => {
             style={{
               padding: '3px 7px',
               borderRadius: '4px',
-              background: isApproved ? '#94a3b8' : '#E56108',
+              background: isApproved ? '#94a3b8' : '#22C55E',
               color: '#ffffff',
               fontSize: '11px',
               fontWeight: 600,

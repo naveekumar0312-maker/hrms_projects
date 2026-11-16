@@ -70,7 +70,7 @@
 }
 
 .mgr-nav-link.active {
-  background: var(--primary, #E56108);
+  background: var(--primary, #22C55E);
   color: #fff;
   font-weight: 600;
 }

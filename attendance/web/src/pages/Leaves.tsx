@@ -472,7 +472,7 @@ const Leaves: React.FC = () => {
                 padding: '10px',
                 border: 'none',
                 borderRadius: '9px',
-                background: '#E56108',
+                background: '#22C55E',
                 color: '#fff',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -584,7 +584,7 @@ const Leaves: React.FC = () => {
         }
 
         .eyebrow {
-          color: #E56108;
+          color: #22C55E;
           font-size: 11px;
           font-weight: 800;
           letter-spacing: 1.5px;
@@ -614,7 +614,7 @@ const Leaves: React.FC = () => {
         }
 
         .summary strong {
-          color: #E56108;
+          color: #22C55E;
           font-size: 26px;
         }
 
@@ -634,7 +634,7 @@ const Leaves: React.FC = () => {
 
         .alert.success {
           background: #eff6ff;
-          color: #E56108;
+          color: #22C55E;
         }
 
         .alert.error {
@@ -674,7 +674,7 @@ const Leaves: React.FC = () => {
         .leaves-page .refresh {
           border: 1px solid #bfdbfe;
           background: #eff6ff;
-          color: #E56108;
+          color: #22C55E;
           padding: 9px 14px;
           border-radius: 9px;
           font-weight: 700;
@@ -745,7 +745,7 @@ const Leaves: React.FC = () => {
 
         .status.approved {
           background: #eff6ff;
-          color: #E56108;
+          color: #22C55E;
         }
 
         .status.rejected {
@@ -784,7 +784,7 @@ const Leaves: React.FC = () => {
         }
 
         .approve {
-          background: #E56108;
+          background: #22C55E;
           color: white;
         }
 
@@ -804,7 +804,7 @@ const Leaves: React.FC = () => {
           padding: 6px 12px;
           border: 1px solid #d97706;
           border-radius: 6px;
-          background: #fff7ed;
+          background: #f0fdf4;
           color: #9a3412;
           font-size: 12px;
           font-weight: 700;

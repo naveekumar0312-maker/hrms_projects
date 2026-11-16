@@ -276,7 +276,7 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
       <View style={styles.cardHeader}>
         <View style={styles.iconBox}>
           {anyEnabled ? (
-            <Bell size={22} color="#E56108" strokeWidth={2.2} />
+            <Bell size={22} color="#22C55E" strokeWidth={2.2} />
           ) : (
             <BellOff size={22} color="#666666" strokeWidth={2.2} />
           )}
@@ -331,12 +331,12 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
                 <View style={styles.tagsRow}>
                   {hasDays ? (
                     <View style={styles.tagBadge}>
-                      <CalendarDays size={11} color="#E56108" strokeWidth={2} style={{ marginRight: 3 }} />
+                      <CalendarDays size={11} color="#22C55E" strokeWidth={2} style={{ marginRight: 3 }} />
                       <Text style={styles.tagText}>{alarm.days_of_week!.join(', ')}</Text>
                     </View>
                   ) : hasDates ? (
                     <View style={styles.tagBadge}>
-                      <Calendar size={11} color="#E56108" strokeWidth={2} style={{ marginRight: 3 }} />
+                      <Calendar size={11} color="#22C55E" strokeWidth={2} style={{ marginRight: 3 }} />
                       <Text style={styles.tagText}>{alarm.specific_dates!.join(', ')}</Text>
                     </View>
                   ) : (
@@ -351,13 +351,13 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
               {/* Action Controls */}
               <View style={styles.alarmItemControls}>
                 {savingId === alarm.id ? (
-                  <ActivityIndicator size="small" color="#E56108" />
+                  <ActivityIndicator size="small" color="#22C55E" />
                 ) : (
                   <Switch
                     value={alarm.is_enabled}
                     onValueChange={(nextVal) => void handleToggle(alarm, nextVal)}
                     trackColor={{ false: '#E5E5E5', true: '#FED7AA' }}
-                    thumbColor={alarm.is_enabled ? '#E56108' : '#FFFFFF'}
+                    thumbColor={alarm.is_enabled ? '#22C55E' : '#FFFFFF'}
                   />
                 )}
 
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#F0FDF4',
     borderWidth: 1,
     borderColor: '#FED7AA',
     justifyContent: 'center',
@@ -605,7 +605,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   badgeActive: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#F0FDF4',
   },
   badgeInactive: {
     backgroundColor: '#F5F5F5',
@@ -615,7 +615,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   badgeTextActive: {
-    color: '#E56108',
+    color: '#22C55E',
   },
   badgeTextInactive: {
     color: '#666666',
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -696,7 +696,7 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   alarmItemControls: {
     flexDirection: 'row',
@@ -786,7 +786,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pickerItemSelected: {
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#F0FDF4',
   },
   pickerItemText: {
     fontSize: 14,
@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
   },
   pickerItemTextSelected: {
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   ampmContainer: {
     flex: 1,
@@ -811,7 +811,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#EEEEEE',
   },
   ampmBtnSelected: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
   },
   ampmBtnText: {
     fontSize: 13,
@@ -835,8 +835,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   dayChipSelected: {
-    backgroundColor: '#E56108',
-    borderColor: '#E56108',
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
   },
   dayChipText: {
     fontSize: 11,
@@ -874,7 +874,7 @@ const styles = StyleSheet.create({
   dateTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF7ED',
+    backgroundColor: '#F0FDF4',
     borderWidth: 1,
     borderColor: '#FED7AA',
     borderRadius: 6,
@@ -885,7 +885,7 @@ const styles = StyleSheet.create({
   dateTagText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   modalActions: {
     flexDirection: 'row',
@@ -905,7 +905,7 @@ const styles = StyleSheet.create({
     color: '#666666',
   },
   modalConfirmBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 10,

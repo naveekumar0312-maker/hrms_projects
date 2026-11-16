@@ -22,7 +22,7 @@
 .employee-brand {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #E56108;
+  color: #22C55E;
 }
 
 .employee-nav {
@@ -43,13 +43,13 @@
 
 .employee-nav-item:hover {
   background-color: #EFF6FF;
-  color: #E56108;
+  color: #22C55E;
 }
 
 .employee-nav-item.active {
   background-color: #EFF6FF;
-  color: #E56108;
-  border-right: 3px solid #E56108;
+  color: #22C55E;
+  border-right: 3px solid #22C55E;
 }
 
 .employee-sidebar-footer {
@@ -154,6 +154,6 @@
   }
   
   .employee-bottom-nav-item.active {
-    color: #E56108;
+    color: #22C55E;
   }
 }

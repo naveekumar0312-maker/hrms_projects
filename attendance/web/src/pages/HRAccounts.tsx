@@ -209,7 +209,7 @@ const HRAccounts = () => {
             Create and manage HR access for each company.
           </p>
         </div>
-        <button type="button" onClick={openCreate} style={{ ...buttonStyle, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--primary, #e56108)', color: '#fff', borderColor: 'transparent' }}>
+        <button type="button" onClick={openCreate} style={{ ...buttonStyle, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--primary, #22c55e)', color: '#fff', borderColor: 'transparent' }}>
           <Plus size={17} /> Create HR Account
         </button>
       </div>
@@ -220,7 +220,7 @@ const HRAccounts = () => {
         </div>
       )}
       {notice && (
-        <div role="status" style={{ padding: 13, marginBottom: 16, borderRadius: 8, background: '#eff6ff', color: '#E56108' }}>
+        <div role="status" style={{ padding: 13, marginBottom: 16, borderRadius: 8, background: '#eff6ff', color: '#22C55E' }}>
           {notice}
         </div>
       )}
@@ -270,7 +270,7 @@ const HRAccounts = () => {
                     <button type="button" onClick={() => openEdit(account)} style={buttonStyle} title="Edit account">
                       <Pencil size={15} />
                     </button>
-                    <button type="button" onClick={() => void toggleStatus(account)} style={{ ...buttonStyle, color: account.is_active ? '#b91c1c' : '#E56108' }}>
+                    <button type="button" onClick={() => void toggleStatus(account)} style={{ ...buttonStyle, color: account.is_active ? '#b91c1c' : '#22C55E' }}>
                       {account.is_active ? 'Deactivate' : 'Reactivate'}
                     </button>
                   </div>
@@ -334,7 +334,7 @@ const HRAccounts = () => {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 4 }}>
                 <button type="button" disabled={saving} onClick={() => setShowForm(false)} style={buttonStyle}>Cancel</button>
-                <button type="submit" disabled={saving} style={{ ...buttonStyle, background: 'var(--primary, #e56108)', color: '#fff', borderColor: 'transparent' }}>
+                <button type="submit" disabled={saving} style={{ ...buttonStyle, background: 'var(--primary, #22c55e)', color: '#fff', borderColor: 'transparent' }}>
                   {saving ? 'Saving...' : editing ? 'Save Changes' : 'Create Account'}
                 </button>
               </div>

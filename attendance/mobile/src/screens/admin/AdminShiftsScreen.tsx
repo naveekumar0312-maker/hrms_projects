@@ -175,7 +175,7 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#E56108" />
+          <ActivityIndicator size="large" color="#22C55E" />
           <Text style={styles.loadingText}>Loading shifts...</Text>
         </View>
       ) : (
@@ -187,7 +187,7 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
             <View style={styles.shiftCard}>
               <View style={styles.cardTop}>
                 <View style={styles.shiftIconBg}>
-                  <Clock size={20} color="#E56108" />
+                  <Clock size={20} color="#22C55E" />
                 </View>
                 <View style={styles.shiftDetails}>
                   <Text style={styles.shiftName}>{item.name}</Text>
@@ -216,8 +216,8 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
                   onPress={() => setViewingShift(item)}
                   activeOpacity={0.7}
                 >
-                  <Eye size={13} color="#E56108" />
-                  <Text style={[styles.actionBtnText, { color: '#E56108' }]}>View</Text>
+                  <Eye size={13} color="#22C55E" />
+                  <Text style={[styles.actionBtnText, { color: '#22C55E' }]}>View</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -225,8 +225,8 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
                   onPress={() => openEditModal(item)}
                   activeOpacity={0.7}
                 >
-                  <Pencil size={13} color="#E56108" />
-                  <Text style={[styles.actionBtnText, { color: '#E56108' }]}>Edit</Text>
+                  <Pencil size={13} color="#22C55E" />
+                  <Text style={[styles.actionBtnText, { color: '#22C55E' }]}>Edit</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -317,7 +317,7 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
           <View style={styles.viewModalContent}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <Clock size={20} color="#E56108" />
+                <Clock size={20} color="#22C55E" />
                 <Text style={styles.modalTitle}>Shift Details</Text>
               </View>
               <TouchableOpacity onPress={() => setViewingShift(null)}>
@@ -344,7 +344,7 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
 
                 <View style={styles.viewDetailRow}>
                   <Text style={styles.viewLabel}>Status:</Text>
-                  <Text style={[styles.viewValue, { color: viewingShift.is_active ? '#CC5200' : '#666666' }]}>
+                  <Text style={[styles.viewValue, { color: viewingShift.is_active ? '#16A34A' : '#666666' }]}>
                     {viewingShift.is_active ? 'ACTIVE' : 'INACTIVE'}
                   </Text>
                 </View>
@@ -358,8 +358,8 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
                       openEditModal(cur);
                     }}
                   >
-                    <Pencil size={15} color="#E56108" />
-                    <Text style={[styles.actionBtnText, { color: '#E56108', fontSize: 13 }]}>Edit Shift</Text>
+                    <Pencil size={15} color="#22C55E" />
+                    <Text style={[styles.actionBtnText, { color: '#22C55E', fontSize: 13 }]}>Edit Shift</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -402,7 +402,7 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -469,7 +469,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   statusTextActive: {
-    color: '#CC5200',
+    color: '#16A34A',
   },
   statusTextInactive: {
     color: '#000000',

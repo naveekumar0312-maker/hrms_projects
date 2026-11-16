@@ -74,7 +74,7 @@ export async function enableLocationSharing() {
         foregroundService: {
           notificationTitle: 'Attendance location sharing',
           notificationBody: 'Location sharing is enabled. You can turn it off in the Attendance app.',
-          notificationColor: '#E56108',
+          notificationColor: '#22C55E',
         },
       });
     }

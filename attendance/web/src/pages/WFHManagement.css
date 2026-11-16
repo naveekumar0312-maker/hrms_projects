@@ -18,7 +18,7 @@
 
 .leaves-page .eyebrow {
   margin-bottom: 8px;
-  color: #E56108;
+  color: #22C55E;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 1.2px;
@@ -48,7 +48,7 @@
   background: #eff6ff;
   border: 1px solid #bfdbfe;
   border-radius: 14px;
-  color: #E56108;
+  color: #22C55E;
 }
 
 .leaves-page .summary strong {
@@ -98,7 +98,7 @@
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 9px;
-  color: #E56108;
+  color: #22C55E;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
@@ -137,7 +137,7 @@
 }
 
 .leaves-page .alert.success {
-  color: #E56108;
+  color: #22C55E;
   background: #eff6ff;
   border: 1px solid #bfdbfe;
 }
@@ -220,7 +220,7 @@
 }
 
 .leaves-page .status.approved {
-  color: #E56108;
+  color: #22C55E;
   background: #eff6ff;
 }
 
@@ -247,11 +247,11 @@
 
 .leaves-page .actions .approve {
   color: #ffffff;
-  background: #E56108;
+  background: #22C55E;
 }
 
 .leaves-page .actions .approve:hover {
-  background: #cc5200;
+  background: #16a34a;
 }
 
 .leaves-page .actions .reject {

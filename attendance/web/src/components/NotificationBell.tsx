@@ -88,7 +88,7 @@ export default function NotificationBell() {
       >
         <Bell size={20} />
         {unread > 0 && (
-          <span style={{ position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, padding: '0 4px', borderRadius: 20, background: '#e56108', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ position: 'absolute', top: -5, right: -5, minWidth: 18, height: 18, padding: '0 4px', borderRadius: 20, background: '#22c55e', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -100,7 +100,7 @@ export default function NotificationBell() {
             <strong>Notifications{unread > 0 ? ` (${unread})` : ''}</strong>
             <div style={{ display: 'flex', gap: 8 }}>
               {unread > 0 && (
-                <button type="button" title="Mark all as read" onClick={() => void markAllRead()} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: '#e56108' }}>
+                <button type="button" title="Mark all as read" onClick={() => void markAllRead()} style={{ border: 0, background: 'transparent', cursor: 'pointer', color: '#22c55e' }}>
                   <CheckCheck size={18} />
                 </button>
               )}
@@ -114,11 +114,11 @@ export default function NotificationBell() {
           {!error && items.length === 0 && <p style={{ padding: 18, color: '#6b7280', fontSize: 13 }}>No notifications yet.</p>}
 
           {items.map(item => (
-            <div key={item.id} style={{ padding: 13, borderBottom: '1px solid #f1f1f1', background: item.is_read ? '#fff' : '#fff7ed' }}>
+            <div key={item.id} style={{ padding: 13, borderBottom: '1px solid #f1f1f1', background: item.is_read ? '#fff' : '#f0fdf4' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
                 <strong style={{ fontSize: 13 }}>{item.title}</strong>
                 {!item.is_read && (
-                  <button type="button" onClick={() => void markRead(item.id)} style={{ border: 0, background: 'transparent', color: '#e56108', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap' }}>
+                  <button type="button" onClick={() => void markRead(item.id)} style={{ border: 0, background: 'transparent', color: '#22c55e', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap' }}>
                     Mark read
                   </button>
                 )}

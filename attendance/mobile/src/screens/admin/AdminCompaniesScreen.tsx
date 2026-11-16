@@ -54,7 +54,7 @@ export const AdminCompaniesScreen = ({ navigation }: any) => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
-  const [primaryColor, setPrimaryColor] = useState('#E56108');
+  const [primaryColor, setPrimaryColor] = useState('#22C55E');
 
   const loadData = async () => {
     setLoading(true);
@@ -80,7 +80,7 @@ export const AdminCompaniesScreen = ({ navigation }: any) => {
     setEmail('');
     setPhone('');
     setAddress('');
-    setPrimaryColor('#E56108');
+    setPrimaryColor('#22C55E');
     setModalVisible(true);
   };
 
@@ -92,7 +92,7 @@ export const AdminCompaniesScreen = ({ navigation }: any) => {
     setEmail((c as any).email || '');
     setPhone((c as any).phone_number || '');
     setAddress((c as any).address || '');
-    setPrimaryColor(c.primary_color || '#E56108');
+    setPrimaryColor(c.primary_color || '#22C55E');
     setModalVisible(true);
   };
 
@@ -202,7 +202,7 @@ export const AdminCompaniesScreen = ({ navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#E56108" />
+          <ActivityIndicator size="large" color="#22C55E" />
           <Text style={styles.loadingText}>Loading organizations...</Text>
         </View>
       ) : (
@@ -217,7 +217,7 @@ export const AdminCompaniesScreen = ({ navigation }: any) => {
                 activeOpacity={0.7}
                 onPress={() => openViewModal(item)}
               >
-                <View style={[styles.avatarBox, { backgroundColor: item.primary_color || '#E56108' }]}>
+                <View style={[styles.avatarBox, { backgroundColor: item.primary_color || '#22C55E' }]}>
                   <Text style={styles.avatarText}>
                     {item.name
                       ?.split(' ')
@@ -259,7 +259,7 @@ export const AdminCompaniesScreen = ({ navigation }: any) => {
                   onPress={() => openViewModal(item)}
                   activeOpacity={0.7}
                 >
-                  <Eye size={14} color="#E56108" />
+                  <Eye size={14} color="#22C55E" />
                   <Text style={styles.actionPillText}>View</Text>
                 </TouchableOpacity>
 
@@ -334,7 +334,7 @@ export const AdminCompaniesScreen = ({ navigation }: any) => {
 
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, marginBottom: 10 }}>
                   <TouchableOpacity
-                    style={[styles.submitBtn, { flex: 1, marginTop: 0, backgroundColor: '#E56108' }]}
+                    style={[styles.submitBtn, { flex: 1, marginTop: 0, backgroundColor: '#22C55E' }]}
                     onPress={() => {
                       setViewModalVisible(false);
                       openEditModal(selectedCompany);
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
@@ -610,7 +610,7 @@ const styles = StyleSheet.create({
   actionPillText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   emptyContainer: {
     padding: 30,
@@ -689,7 +689,7 @@ const styles = StyleSheet.create({
     color: '#0D1B2A',
   },
   submitBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',

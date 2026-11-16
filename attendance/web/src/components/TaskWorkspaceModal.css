@@ -120,7 +120,7 @@
 }
 
 .task-input-title:focus {
-  border-color: #E56108;
+  border-color: #22C55E;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
@@ -140,7 +140,7 @@
 }
 
 .task-textarea-desc:focus {
-  border-color: #E56108;
+  border-color: #22C55E;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
@@ -206,8 +206,8 @@
 }
 
 .task-tab-btn.active {
-  color: #E56108;
-  border-bottom-color: #E56108;
+  color: #22C55E;
+  border-bottom-color: #22C55E;
 }
 
 /* TAB CONTENT SCROLL */
@@ -381,7 +381,7 @@
 }
 
 .task-composer-textarea:focus {
-  border-color: #E56108;
+  border-color: #22C55E;
 }
 
 .task-composer-toolbar {
@@ -421,7 +421,7 @@
 }
 
 .task-send-btn {
-  background: #E56108;
+  background: #22C55E;
   color: #ffffff;
   border: none;
   border-radius: 6px;
@@ -435,7 +435,7 @@
 }
 
 .task-send-btn:hover {
-  background: #CC5200;
+  background: #16A34A;
 }
 
 .task-send-btn:disabled {
@@ -496,7 +496,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #E56108;
+  background: #22C55E;
   margin-top: 6px;
   flex-shrink: 0;
 }
@@ -578,7 +578,7 @@
 
 .task-voice-btn:hover:not(:disabled) {
   background: #e2e8f0;
-  color: #E56108;
+  color: #22C55E;
   border-color: #94a3b8;
 }
 
@@ -626,8 +626,8 @@
 }
 
 .task-input-title-modern:focus {
-  border-color: #E56108;
-  box-shadow: 0 0 0 3px rgba(229, 97, 8, 0.15);
+  border-color: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
 }
 
 .task-input-title-modern:disabled {
@@ -656,8 +656,8 @@
 }
 
 .task-textarea-modern:focus {
-  border-color: #E56108;
-  box-shadow: 0 0 0 3px rgba(229, 97, 8, 0.15);
+  border-color: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
 }
 
 .task-textarea-modern:disabled {
@@ -708,7 +708,7 @@
 }
 
 .task-select-modern:focus {
-  border-color: #E56108;
+  border-color: #22C55E;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
@@ -731,7 +731,7 @@
 /* Status Color Palette */
 .status-dot-pending { background-color: #94a3b8; box-shadow: 0 0 0 2px #e2e8f0; } /* Grey: To Do */
 .status-dot-in_progress { background-color: #2563eb; box-shadow: 0 0 0 2px #dbeafe; } /* Blue: In Progress */
-.status-dot-completed { background-color: #E56108; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.12); } /* Green: Completed */
+.status-dot-completed { background-color: #22C55E; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.12); } /* Green: Completed */
 .status-dot-on_hold { background-color: #ea580c; box-shadow: 0 0 0 2px #ffedd5; } /* Orange: On Hold */
 .status-dot-cancelled { background-color: #dc2626; box-shadow: 0 0 0 2px #fee2e2; } /* Red: Cancelled */
 
@@ -739,7 +739,7 @@
 .priority-dot-high,
 .priority-dot-urgent { background-color: #dc2626; box-shadow: 0 0 0 2px #fee2e2; } /* Red: High / Urgent */
 .priority-dot-medium { background-color: #f59e0b; box-shadow: 0 0 0 2px #fef3c7; } /* Orange / Amber: Medium */
-.priority-dot-low { background-color: #E56108; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.12); } /* Green: Low */
+.priority-dot-low { background-color: #22C55E; box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.12); } /* Green: Low */
 
 /* Footer Actions */
 .task-panel-left-actions {
@@ -901,7 +901,7 @@
 }
 .task-mobile-tab-btn.active {
   background: #ffffff;
-  color: #E56108;
+  color: #22C55E;
   border-color: #fdba74;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }

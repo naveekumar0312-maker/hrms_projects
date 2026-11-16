@@ -151,7 +151,7 @@ export default function NotificationsScreen({ navigation }: any) {
         {item.event === 'LOCATION_REQUIRED' ? (
           <MapPin size={19} color="#DC2626" />
         ) : (
-          <Bell size={19} color={item.is_read ? '#666666' : '#E56108'} />
+          <Bell size={19} color={item.is_read ? '#666666' : '#22C55E'} />
         )}
       </View>
 
@@ -174,7 +174,7 @@ export default function NotificationsScreen({ navigation }: any) {
       </View>
 
       {updatingId === item.id && (
-        <ActivityIndicator size="small" color="#E56108" />
+        <ActivityIndicator size="small" color="#22C55E" />
       )}
     </TouchableOpacity>
   );
@@ -217,7 +217,7 @@ export default function NotificationsScreen({ navigation }: any) {
 
       {loading ? (
         <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color="#E56108" />
+          <ActivityIndicator size="large" color="#22C55E" />
           <Text style={styles.helperText}>Loading notifications...</Text>
         </View>
       ) : (
@@ -237,7 +237,7 @@ export default function NotificationsScreen({ navigation }: any) {
                 setRefreshing(true);
                 fetchNotifications(false);
               }}
-              colors={['#E56108']}
+              colors={['#22C55E']}
             />
           }
           ListEmptyComponent={
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   header: {
     minHeight: 112,
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 18,
@@ -349,7 +349,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     marginLeft: 8,
   },
   notificationMessage: {

@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   sendAlertBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 8,

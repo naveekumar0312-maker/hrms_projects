@@ -1188,7 +1188,7 @@ export default function DashboardScreen({ navigation }: any) {
               )}
               {Boolean(todayAttendance.check_in_location_name || todayAttendance.check_in_location?.location_name) && (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}>
-                  <MapPin size={12} color="#E56108" />
+                  <MapPin size={12} color="#22C55E" />
                   <Text style={{ fontSize: 11, color: '#334155', fontFamily: 'Comfortaa_500Medium' }} numberOfLines={1}>
                     In: {todayAttendance.check_in_location_name || todayAttendance.check_in_location?.location_name}
                   </Text>
@@ -1498,7 +1498,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   lateModalSubmitBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 10,

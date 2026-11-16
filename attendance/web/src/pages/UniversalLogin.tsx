@@ -24,7 +24,7 @@ interface CompanyBranding {
   status: boolean
 }
 
-const DEFAULT_PANEL_COLOR = '#E56108'
+const DEFAULT_PANEL_COLOR = '#22C55E'
 const DEFAULT_BUTTON_COLOR = '#E56717'
 
 const UniversalLogin = ({ loginMode = 'general' }: UniversalLoginProps) => {

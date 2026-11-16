@@ -361,7 +361,7 @@ const EmployeeAttendanceHistory: React.FC = () => {
           ? 'Completed'
           : 'Present',
       background: '#E5F8EF',
-      color: '#E56108',
+      color: '#22C55E',
     };
   };
 
@@ -447,7 +447,7 @@ const EmployeeAttendanceHistory: React.FC = () => {
             background:
               linear-gradient(
                 135deg,
-                #CC5200 0%,
+                #16A34A 0%,
                 #22A35A 48%,
                 #65D58C 100%
               );
@@ -545,7 +545,7 @@ const EmployeeAttendanceHistory: React.FC = () => {
 
           .attendance-month-item:hover {
             background: #EAF8F0;
-            color: #CC5200;
+            color: #16A34A;
           }
 
           .attendance-week-card {
@@ -593,8 +593,8 @@ const EmployeeAttendanceHistory: React.FC = () => {
           }
 
           .attendance-week-day.selected {
-            background: #CC5200;
-            border-color: #CC5200;
+            background: #16A34A;
+            border-color: #16A34A;
             box-shadow: 0 5px 14px rgba(21, 128, 61, .22);
           }
 
@@ -785,7 +785,7 @@ const EmployeeAttendanceHistory: React.FC = () => {
             border: 0;
             border-radius: 9px;
             background: #EAF8F0;
-            color: #CC5200;
+            color: #16A34A;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -961,7 +961,7 @@ const EmployeeAttendanceHistory: React.FC = () => {
                 >
                   <CalendarDays
                     size={18}
-                    color="#CC5200"
+                    color="#16A34A"
                   />
 
                   {months[selectedMonth - 1]}{' '}
@@ -1070,7 +1070,7 @@ const EmployeeAttendanceHistory: React.FC = () => {
               style={{
                 border: 0,
                 background: 'transparent',
-                color: '#CC5200',
+                color: '#16A34A',
                 fontSize: 12,
                 fontWeight: 750,
                 cursor: 'pointer',
@@ -1091,7 +1091,7 @@ const EmployeeAttendanceHistory: React.FC = () => {
               className="attendance-summary-icon"
               style={{
                 background: '#DDF5E6',
-                color: '#E56108',
+                color: '#22C55E',
               }}
             >
               <CheckCircle2 size={20} />
@@ -1157,7 +1157,7 @@ const EmployeeAttendanceHistory: React.FC = () => {
               className="attendance-summary-icon"
               style={{
                 background: '#DDF5E6',
-                color: '#CC5200',
+                color: '#16A34A',
               }}
             >
               <BriefcaseBusiness size={20} />

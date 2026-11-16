@@ -133,7 +133,7 @@ export default function EmployeeHolidays() {
           <article key={holiday.id} style={{
             padding: 20, background: '#FFFFFF',
             border: '1px solid #E5E7EB', borderRadius: 12,
-            borderLeft: '4px solid #E56108',
+            borderLeft: '4px solid #22C55E',
           }}>
             <p style={{
               margin: '0 0 8px', fontSize: 12,

@@ -200,8 +200,8 @@ export const AdminHolidaysScreen = ({ navigation }: any) => {
                   onPress={() => setViewingHoliday(item)}
                   activeOpacity={0.7}
                 >
-                  <Eye size={13} color="#E56108" />
-                  <Text style={[styles.actionBtnText, { color: '#E56108' }]}>View</Text>
+                  <Eye size={13} color="#22C55E" />
+                  <Text style={[styles.actionBtnText, { color: '#22C55E' }]}>View</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -209,8 +209,8 @@ export const AdminHolidaysScreen = ({ navigation }: any) => {
                   onPress={() => openEditModal(item)}
                   activeOpacity={0.7}
                 >
-                  <Pencil size={13} color="#E56108" />
-                  <Text style={[styles.actionBtnText, { color: '#E56108' }]}>Edit</Text>
+                  <Pencil size={13} color="#22C55E" />
+                  <Text style={[styles.actionBtnText, { color: '#22C55E' }]}>Edit</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -300,7 +300,7 @@ export const AdminHolidaysScreen = ({ navigation }: any) => {
           <View style={styles.viewModalContent}>
             <View style={styles.modalHeader}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <CalendarDays size={20} color="#E56108" />
+                <CalendarDays size={20} color="#22C55E" />
                 <Text style={styles.modalTitle}>Holiday Details</Text>
               </View>
               <TouchableOpacity onPress={() => setViewingHoliday(null)}>
@@ -336,8 +336,8 @@ export const AdminHolidaysScreen = ({ navigation }: any) => {
                       openEditModal(cur);
                     }}
                   >
-                    <Pencil size={15} color="#E56108" />
-                    <Text style={[styles.actionBtnText, { color: '#E56108', fontSize: 13 }]}>Edit</Text>
+                    <Pencil size={15} color="#22C55E" />
+                    <Text style={[styles.actionBtnText, { color: '#22C55E', fontSize: 13 }]}>Edit</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_500Medium',
   },
   submitBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',

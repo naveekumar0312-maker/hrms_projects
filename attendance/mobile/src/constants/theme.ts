@@ -9,8 +9,8 @@ export const FONTS = {
 
 export const COLORS = {
   // Modern Clean iOS Reference Palette
-  primary: colors.primary,             // #E56108 Accent Blue
-  primaryDark: colors.primaryDark,     // #CC5200
+  primary: colors.primary,             // #22C55E Accent Blue
+  primaryDark: colors.primaryDark,     // #16A34A
   primaryLight: colors.primaryLight,   // #F0F2FF Soft Pastel Blue Bubble
   secondary: colors.textSecondary,     // #7B8192 Slate Grey
   background: colors.background,       // #FFFFFF White

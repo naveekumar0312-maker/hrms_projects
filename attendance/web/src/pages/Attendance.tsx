@@ -665,7 +665,7 @@ const Attendance = () => {
             color: '#fff',
             backgroundColor:
               toast.type === 'success'
-                ? '#E56108'
+                ? '#22C55E'
                 : '#ef4444',
             boxShadow: '0 10px 25px rgba(0,0,0,0.12)',
           }}
@@ -1029,7 +1029,7 @@ const Attendance = () => {
                                   padding: '3px 8px',
                                   borderRadius: '999px',
                                   background: '#EFF6FF',
-                                  color: '#CC5200',
+                                  color: '#16A34A',
                                   fontSize: '11px',
                                   fontWeight: 600,
                                   whiteSpace: 'nowrap',
@@ -1486,9 +1486,9 @@ const Attendance = () => {
                       <button
                         style={{
                           width: '100%',
-                          border: '1.5px solid #E56108',
+                          border: '1.5px solid #22C55E',
                           background: '#EBF3FC',
-                          color: '#E56108',
+                          color: '#22C55E',
                           borderRadius: '10px',
                           padding: '10px 14px',
                           fontSize: '0.85rem',
@@ -1501,7 +1501,7 @@ const Attendance = () => {
                         }}
                         onClick={() => setViewRecord(record)}
                       >
-                        <Eye size={16} color="#E56108" />
+                        <Eye size={16} color="#22C55E" />
                         View Attendance Details
                       </button>
 
@@ -1552,9 +1552,9 @@ const Attendance = () => {
                               <button
                                 style={{
                                   flex: 1,
-                                  border: '1px solid #E56108',
+                                  border: '1px solid #22C55E',
                                   background: '#eff6ff',
-                                  color: '#CC5200',
+                                  color: '#16A34A',
                                   borderRadius: '8px',
                                   padding: '8px 12px',
                                   fontSize: '0.78rem',
@@ -1647,9 +1647,9 @@ const Attendance = () => {
                               <button
                                 style={{
                                   flex: 1,
-                                  border: '1px solid #E56108',
+                                  border: '1px solid #22C55E',
                                   background: '#eff6ff',
-                                  color: '#CC5200',
+                                  color: '#16A34A',
                                   borderRadius: '8px',
                                   padding: '8px 12px',
                                   fontSize: '0.78rem',
@@ -2680,7 +2680,7 @@ const Attendance = () => {
                         color:
                           viewRecord.approval_status ===
                           'APPROVED'
-                            ? '#E56108'
+                            ? '#22C55E'
                             : viewRecord.approval_status ===
                                 'REJECTED'
                               ? '#ef4444'
@@ -2870,7 +2870,7 @@ const Attendance = () => {
                         height: '10px',
                         borderRadius: '50%',
                         backgroundColor:
-                          '#E56108',
+                          '#22C55E',
                       }}
                     />
                     Punch In Details
@@ -3432,9 +3432,9 @@ const Attendance = () => {
                           className="btn btn-primary"
                           style={{
                             backgroundColor:
-                              '#E56108',
+                              '#22C55E',
                             borderColor:
-                              '#E56108',
+                              '#22C55E',
                             color: 'white',
                           }}
                           onClick={() =>

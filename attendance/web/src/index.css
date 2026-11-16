@@ -7,29 +7,29 @@
   --bg-card: rgba(255, 255, 255, 0.95);
   --bg-card-solid: #FFFFFF;
   --bg-sidebar: #1C1917;
-  --bg-sidebar-hover: rgba(229, 97, 8, 0.12);
+  --bg-sidebar-hover: rgba(34, 197, 94, 0.12);
   --bg-blur: blur(20px);
 
   --text-primary: #0D1B2A;
   --text-secondary: #5A6A80;
   --text-muted: #8E9BAE;
   --text-sidebar: #B0C4DE;
-  --text-sidebar-active: #E56108;
+  --text-sidebar-active: #22C55E;
 
   --border: rgba(6, 27, 58, 0.08);
   --border-subtle: rgba(6, 27, 58, 0.04);
 
   /* Signature Orange */
-  --primary: #E56108;
-  --primary-hover: #CC5200;
-  --primary-light: rgba(229, 97, 8, 0.08);
-  --primary-glow: rgba(229, 97, 8, 0.25);
+  --primary: #22C55E;
+  --primary-hover: #16A34A;
+  --primary-light: rgba(34, 197, 94, 0.08);
+  --primary-glow: rgba(34, 197, 94, 0.25);
 
   /* Signature Radiant Metallic Gold / Amber */
-  --accent-gold: #E56108;
-  --accent-gold-hover: #CC5200;
-  --accent-gold-light: rgba(229, 97, 8, 0.12);
-  --accent-gold-glow: rgba(229, 97, 8, 0.3);
+  --accent-gold: #22C55E;
+  --accent-gold-hover: #16A34A;
+  --accent-gold-light: rgba(34, 197, 94, 0.12);
+  --accent-gold-glow: rgba(34, 197, 94, 0.3);
 
   --success: #34C759;
   --success-bg: rgba(52, 199, 89, 0.12);
@@ -200,7 +200,7 @@ button {
 }
 
 .nav-link.active {
-  background: linear-gradient(135deg, #E56108 0%, #CC5200 100%);
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
   color: #FFFFFF;
   font-weight: 600;
   box-shadow: 0 4px 14px rgba(0, 86, 179, 0.35);
@@ -2887,7 +2887,7 @@ body {
 
   .mobile-announcement-button {
     background: #fff0e5 !important;
-    color: #e56108 !important;
+    color: #22c55e !important;
     border: 1px solid #ffdcc4 !important;
   }
 
@@ -2922,7 +2922,7 @@ body {
     justify-content: center !important;
     border-radius: 12px !important;
     background: #fff0e5 !important;
-    color: #e56108 !important;
+    color: #22c55e !important;
     border: 1px solid #ffdcc4 !important;
   }
 
@@ -3129,7 +3129,7 @@ body {
     min-width: 40px !important;
     padding: 0 !important;
     border-radius: 10px !important;
-    background: #e56108 !important;
+    background: #22c55e !important;
     color: #ffffff !important;
     flex-shrink: 0 !important;
   }
@@ -3265,7 +3265,7 @@ body {
   min-height: 48px !important;
   border: 0 !important;
   border-radius: 12px !important;
-  background: #e56108 !important;
+  background: #22c55e !important;
   color: #ffffff !important;
   font-size: 16px !important;
   font-weight: 700 !important;
@@ -3323,7 +3323,7 @@ body {
 
 .push-choice-disable {
   border: 1px solid #e5e7eb;
-  background: #fff7ed;
+  background: #f0fdf4;
   color: #c2410c;
 }
 
@@ -3935,12 +3935,12 @@ body {
 .holiday-form-card input:focus,
 .holiday-form-card textarea:focus {
   outline: none;
-  border-color: #e56108;
-  box-shadow: 0 0 0 3px rgba(229, 97, 8, .12);
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, .12);
 }
 
 .holiday-form-card button[type="submit"] {
-  background: #e56108 !important;
+  background: #22c55e !important;
   color: #fff !important;
   border-radius: 9px;
 }
@@ -4038,8 +4038,8 @@ body {
 .holiday-form-card textarea:focus {
   outline: none;
   background: #ffffff;
-  border-color: #e56108;
-  box-shadow: 0 0 0 3px rgba(229, 97, 8, 0.12);
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
 }
 
 .holiday-form-card .holiday-company-field {
@@ -4062,14 +4062,14 @@ body {
 }
 
 .holiday-form-card button[type="submit"] {
-  background: #e56108 !important;
+  background: #22c55e !important;
   color: #ffffff !important;
-  box-shadow: 0 3px 8px rgba(229, 97, 8, .16);
+  box-shadow: 0 3px 8px rgba(34, 197, 94, .16);
 }
 
 .holiday-form-card button[type="submit"]:hover:not(:disabled) {
   background: #c95105 !important;
-  box-shadow: 0 5px 12px rgba(229, 97, 8, .22);
+  box-shadow: 0 5px 12px rgba(34, 197, 94, .22);
   transform: translateY(-1px);
 }
 
@@ -4162,8 +4162,8 @@ body {
 .holiday-form-card .custom-date-input:focus,
 .holiday-form-card .custom-date-control input:focus {
   outline: none;
-  border-color: #e56108;
-  box-shadow: 0 0 0 3px rgba(229, 97, 8, .12);
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, .12);
 }
 
 .holiday-form-card .custom-date-icon-button {
@@ -4258,7 +4258,7 @@ body {
 }
 
 .holiday-form-card .attendance-custom-calendar .react-datepicker__day--today {
-  border: 1px solid #e56108;
+  border: 1px solid #22c55e;
   font-weight: 700;
 }
 
@@ -4359,7 +4359,7 @@ body {
 }
 
 .sidebar-brand span:not(.sidebar-brand-name) {
-  background: linear-gradient(135deg, #FF8C38 0%, #E56108 100%);
+  background: linear-gradient(135deg, #4ADE80 0%, #22C55E 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -4391,15 +4391,15 @@ body {
 }
 
 .nav-link.active {
-  background: linear-gradient(135deg, rgba(229, 97, 8, 0.22) 0%, rgba(204, 82, 0, 0.12) 100%) !important;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.22) 0%, rgba(204, 82, 0, 0.12) 100%) !important;
   color: #FF9B4E !important;
   font-weight: 600;
-  border: 1px solid rgba(229, 97, 8, 0.35) !important;
-  box-shadow: 0 4px 18px rgba(229, 97, 8, 0.18) !important;
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  box-shadow: 0 4px 18px rgba(34, 197, 94, 0.18) !important;
 }
 
 .nav-link.active svg {
-  color: #FF8C38 !important;
+  color: #4ADE80 !important;
 }
 
 .nav-dropdown-trigger {
@@ -4440,9 +4440,9 @@ body {
 }
 
 .nav-sub-link.active {
-  background: rgba(229, 97, 8, 0.16) !important;
-  color: #FF8C38 !important;
-  border: 1px solid rgba(229, 97, 8, 0.25) !important;
+  background: rgba(34, 197, 94, 0.16) !important;
+  color: #4ADE80 !important;
+  border: 1px solid rgba(34, 197, 94, 0.25) !important;
 }
 
 .sidebar-footer {

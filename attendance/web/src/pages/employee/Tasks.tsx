@@ -61,7 +61,7 @@ const EmployeeTasks: React.FC = () => {
       IN_PROGRESS: { label: 'In Progress', bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' },
       UNDER_REVIEW: { label: 'Under Review', bg: '#faf5ff', color: '#7e22ce', border: '#e9d5ff' },
       COMPLETED: { label: 'Completed', bg: '#ecfdf5', color: '#065f46', border: '#a7f3d0' },
-      ON_HOLD: { label: 'On Hold', bg: '#fff7ed', color: '#c2410c', border: '#ffedd5' },
+      ON_HOLD: { label: 'On Hold', bg: '#f0fdf4', color: '#c2410c', border: '#ffedd5' },
       CANCELLED: { label: 'Cancelled', bg: '#f1f5f9', color: '#64748b', border: '#cbd5e1' },
       OVERDUE: { label: 'Overdue', bg: '#fee2e2', color: '#dc2626', border: '#fca5a5' },
     };

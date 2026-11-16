@@ -578,7 +578,7 @@ export default function HistoryScreen({ navigation }: any) {
                   <View style={[styles.detailsRow, { alignItems: 'flex-start' }]}>
                     <Text style={styles.detailsLabel}>In Location:</Text>
                     <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 4 }}>
-                      <MapPin size={13} color="#E56108" style={{ marginTop: 2 }} />
+                      <MapPin size={13} color="#22C55E" style={{ marginTop: 2 }} />
                       <Text style={[styles.detailsValue, { textAlign: 'right', flexShrink: 1, color: '#334155' }]}>
                         {selectedRecord.check_in_location_name || selectedRecord.check_in_location?.location_name}
                       </Text>

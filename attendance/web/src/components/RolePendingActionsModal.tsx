@@ -95,7 +95,7 @@ export const RolePendingActionsModal: React.FC<RolePendingActionsModalProps> = (
   const getItemBadgeStyle = (type: string) => {
     switch (type) {
       case 'LEAVE':
-        return { bg: '#fff7ed', color: '#c2410c', border: '#ffedd5' };
+        return { bg: '#f0fdf4', color: '#c2410c', border: '#ffedd5' };
       case 'PERMISSION':
         return { bg: '#eff6ff', color: '#1d4ed8', border: '#bfdbfe' };
       case 'WFH':
@@ -103,7 +103,7 @@ export const RolePendingActionsModal: React.FC<RolePendingActionsModalProps> = (
       case 'ATTENDANCE_PUNCH':
         return { bg: '#fef2f2', color: '#dc2626', border: '#fecaca' };
       default:
-        return { bg: '#eff6ff', color: '#E56108', border: '#bfdbfe' };
+        return { bg: '#eff6ff', color: '#22C55E', border: '#bfdbfe' };
     }
   };
 

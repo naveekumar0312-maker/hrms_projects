@@ -168,7 +168,7 @@ const triggerAlarm = useCallback((event: 'SHIFT_START' | 'SHIFT_END') => {
           color: '#172033',
           textAlign: 'center',
           boxShadow: '0 24px 80px rgba(0,0,0,0.3)',
-          borderTop: '5px solid #e56108',
+          borderTop: '5px solid #22c55e',
         }}
       >
         <div
@@ -181,7 +181,7 @@ const triggerAlarm = useCallback((event: 'SHIFT_START' | 'SHIFT_END') => {
             display: 'grid',
             placeItems: 'center',
             background: '#fff0e5',
-            color: '#e56108',
+            color: '#22c55e',
             fontSize: 32,
           }}
         >
@@ -227,7 +227,7 @@ const triggerAlarm = useCallback((event: 'SHIFT_START' | 'SHIFT_END') => {
             padding: 13,
             border: 0,
             borderRadius: 9,
-            background: '#e56108',
+            background: '#22c55e',
             color: '#fff',
             fontWeight: 700,
             cursor: 'pointer',

@@ -202,7 +202,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
       case 'ON_LEAVE':
         return '#7C3AED';
       case 'HOLIDAY':
-        return '#E56108';
+        return '#22C55E';
       case 'WEEKLY_OFF':
         return '#4B5563';
       case 'HALF_DAY':
@@ -227,7 +227,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
       case 'WEEKLY_OFF':
         return '#F3F4F6';
       case 'HALF_DAY':
-        return '#FFF7ED';
+        return '#F0FDF4';
       default:
         return '#F9FAFB';
     }
@@ -304,7 +304,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
         <View style={styles.punchBlock}>
           <View style={styles.punchHeader}>
             <View style={styles.punchTypeLeft}>
-              <LogIn size={15} color="#E56108" />
+              <LogIn size={15} color="#22C55E" />
               <Text style={styles.punchTypeTitle}>Check In</Text>
               <Text style={styles.punchTimeText}>
                 {formatAttendanceTime(item.check_in)}
@@ -320,7 +320,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
 
           {Boolean(item.check_in_location_name) && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
-              <MapPin size={11} color="#E56108" />
+              <MapPin size={11} color="#22C55E" />
               <Text style={{ fontSize: 11, color: '#475569', fontFamily: 'Comfortaa_500Medium', flex: 1 }} numberOfLines={1}>
                 {item.check_in_location_name}
               </Text>
@@ -782,7 +782,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
   },
   chipActive: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
   },
   chipText: {
     fontSize: 12,
@@ -889,7 +889,7 @@ const styles = StyleSheet.create({
   punchTimeText: {
     fontSize: 12,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#E56108',
+    color: '#22C55E',
     marginLeft: 2,
   },
   lateTag: {
@@ -944,7 +944,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   miniApproveBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
   },
   miniBtnDisabled: {
     backgroundColor: '#94A3B8',

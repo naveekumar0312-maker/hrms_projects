@@ -36,7 +36,7 @@ interface Branding {
   status?: boolean
 }
 
-const DEFAULT_PANEL_COLOR = '#E56108'
+const DEFAULT_PANEL_COLOR = '#22C55E'
 const DEFAULT_BUTTON_COLOR = '#E56717'
 
 const BrandingSettings = () => {
@@ -261,7 +261,7 @@ const BrandingSettings = () => {
     if (!branding || !companyId) return
 
     if (!/^#[0-9a-fA-F]{6}$/.test(branding.left_panel_color)) {
-      setError('Enter a valid left-panel hex colour, such as #E56108.')
+      setError('Enter a valid left-panel hex colour, such as #22C55E.')
       return
     }
 
@@ -516,7 +516,7 @@ const BrandingSettings = () => {
                   update('left_panel_color', event.target.value)
                 }
                 maxLength={7}
-                placeholder="#E56108"
+                placeholder="#22C55E"
               />
             </div>
 

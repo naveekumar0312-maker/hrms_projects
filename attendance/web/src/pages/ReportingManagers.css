@@ -58,13 +58,13 @@
 }
 
 .rm-btn-primary {
-  background: var(--primary, #E56108);
+  background: var(--primary, #22C55E);
   color: #ffffff;
-  box-shadow: 0 2px 8px rgba(229, 97, 8, 0.25);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
 }
 
 .rm-btn-primary:hover:not(:disabled) {
-  background: #CC5200;
+  background: #16A34A;
 }
 
 .rm-btn-secondary {
@@ -143,7 +143,7 @@
 }
 
 .rm-search-input:focus {
-  border-color: #E56108;
+  border-color: #22C55E;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
 }
 
@@ -402,7 +402,7 @@
 }
 
 .rm-input:focus, .rm-select:focus {
-  border-color: #E56108;
+  border-color: #22C55E;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
 
@@ -504,7 +504,7 @@
 
 .rm-spinner-icon {
   animation: rmSpin 0.8s linear infinite;
-  color: #E56108;
+  color: #22C55E;
   margin-bottom: 12px;
 }
 

@@ -191,7 +191,7 @@ export const AdminHRAccountsScreen = ({ navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#E56108" />
+          <ActivityIndicator size="large" color="#22C55E" />
           <Text style={styles.loadingText}>Loading HR accounts...</Text>
         </View>
       ) : (
@@ -207,7 +207,7 @@ export const AdminHRAccountsScreen = ({ navigation }: any) => {
             >
               <View style={styles.cardTop}>
                 <View style={styles.iconCircle}>
-                  <ShieldAlert size={20} color="#E56108" />
+                  <ShieldAlert size={20} color="#22C55E" />
                 </View>
 
                 <View style={styles.accountInfo}>
@@ -234,7 +234,7 @@ export const AdminHRAccountsScreen = ({ navigation }: any) => {
                   onPress={() => openViewModal(item)}
                   activeOpacity={0.7}
                 >
-                  <Eye size={14} color="#E56108" />
+                  <Eye size={14} color="#22C55E" />
                   <Text style={styles.actionPillText}>View</Text>
                 </TouchableOpacity>
 
@@ -312,7 +312,7 @@ export const AdminHRAccountsScreen = ({ navigation }: any) => {
 
                 <View style={{ flexDirection: 'row', gap: 10, marginTop: 24, marginBottom: 10 }}>
                   <TouchableOpacity
-                    style={[styles.submitBtn, { flex: 1, marginTop: 0, backgroundColor: '#E56108' }]}
+                    style={[styles.submitBtn, { flex: 1, marginTop: 0, backgroundColor: '#22C55E' }]}
                     onPress={() => {
                       setViewModalVisible(false);
                       openEditModal(selectedHR);
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   addBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 14,
     paddingVertical: 7,
     borderRadius: 20,
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   statusTextActive: {
-    color: '#CC5200',
+    color: '#16A34A',
   },
   statusTextInactive: {
     color: '#000000',
@@ -552,7 +552,7 @@ const styles = StyleSheet.create({
   actionPillText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   emptyContainer: {
     padding: 30,

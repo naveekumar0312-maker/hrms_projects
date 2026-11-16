@@ -148,7 +148,7 @@ export default function PersonalAlarmManager() {
         vibrationPattern: [0, 800, 400, 800, 400, 800],
         enableVibrate: true,
         enableLights: true,
-        lightColor: '#E56108',
+        lightColor: '#22C55E',
         lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
         bypassDnd: true,
       });
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
   timeHighlight: {
     fontSize: 28,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
     marginBottom: 8,
     textAlign: 'center',
   },

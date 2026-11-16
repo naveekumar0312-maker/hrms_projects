@@ -103,7 +103,7 @@ const ManagerDashboard: React.FC = () => {
       title: 'Present Today',
       value: summary?.present_today ?? 0,
       icon: UserCheck,
-      color: '#E56108',
+      color: '#22C55E',
       bg: '#f0fdf4',
     },
     {
@@ -151,7 +151,7 @@ const ManagerDashboard: React.FC = () => {
             height: '48px',
             borderRadius: '12px',
             background: '#ecfdf5',
-            color: '#E56108',
+            color: '#22C55E',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

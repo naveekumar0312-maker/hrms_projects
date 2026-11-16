@@ -114,7 +114,7 @@ export const AdminWFHScreen = ({ navigation }: any) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'APPROVED':
-        return { bg: '#ECFDF5', text: '#CC5200', icon: CheckCircle };
+        return { bg: '#ECFDF5', text: '#16A34A', icon: CheckCircle };
       case 'REJECTED':
         return { bg: '#F5F5F5', text: '#000000', icon: XCircle };
       default:
@@ -148,7 +148,7 @@ export const AdminWFHScreen = ({ navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#E56108" />
+          <ActivityIndicator size="large" color="#22C55E" />
           <Text style={styles.loadingText}>Loading WFH requests...</Text>
         </View>
       ) : (
@@ -203,7 +203,7 @@ export const AdminWFHScreen = ({ navigation }: any) => {
                   <Text style={styles.appliedDate}>Applied: {item.applied_at?.split('T')[0] || 'Recent'}</Text>
                   <View style={styles.reviewPrompt}>
                     <Text style={styles.reviewPromptText}>View details</Text>
-                    <ChevronRight size={14} color="#E56108" />
+                    <ChevronRight size={14} color="#22C55E" />
                   </View>
                 </View>
               </TouchableOpacity>
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   approveBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
   },
   rejectBtn: {
     backgroundColor: '#EF4444',

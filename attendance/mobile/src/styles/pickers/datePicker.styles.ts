@@ -16,7 +16,7 @@ export const datePickerStyles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   requiredStar: {
-    color: '#E56108',
+    color: '#22C55E',
   },
   triggerButton: {
     flexDirection: 'row',
@@ -31,7 +31,7 @@ export const datePickerStyles = StyleSheet.create({
     minHeight: 46,
   },
   triggerButtonFocused: {
-    borderColor: '#E56108',
+    borderColor: '#22C55E',
     backgroundColor: '#F8F9FC',
   },
   triggerButtonError: {
@@ -80,7 +80,7 @@ export const datePickerStyles = StyleSheet.create({
   dayOfWeekBadgeText: {
     fontSize: 10,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   errorText: {
     fontSize: 11,
@@ -208,12 +208,12 @@ export const datePickerStyles = StyleSheet.create({
   },
   dayCellToday: {
     borderWidth: 1.5,
-    borderColor: '#E56108',
+    borderColor: '#22C55E',
     backgroundColor: '#EBF3FC',
   },
   dayCellSelected: {
-    backgroundColor: '#E56108',
-    shadowColor: '#E56108',
+    backgroundColor: '#22C55E',
+    shadowColor: '#22C55E',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -232,7 +232,7 @@ export const datePickerStyles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   dayTextToday: {
-    color: '#E56108',
+    color: '#22C55E',
     fontFamily: 'Comfortaa_700Bold',
   },
   dayTextDisabled: {
@@ -261,9 +261,9 @@ export const datePickerStyles = StyleSheet.create({
     flex: 2,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     alignItems: 'center',
-    shadowColor: '#E56108',
+    shadowColor: '#22C55E',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

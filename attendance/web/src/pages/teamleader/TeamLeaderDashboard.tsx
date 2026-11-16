@@ -86,7 +86,7 @@ const TeamLeaderDashboard: React.FC = () => {
       title: 'Present Today',
       value: summary?.present_today ?? 0,
       icon: UserCheck,
-      color: '#E56108',
+      color: '#22C55E',
       bg: '#f0fdf4',
     },
     {
@@ -124,7 +124,7 @@ const TeamLeaderDashboard: React.FC = () => {
       title: 'Completed Tasks',
       value: summary?.completed_tasks ?? 0,
       icon: CheckCircle2,
-      color: '#E56108',
+      color: '#22C55E',
       bg: '#ecfdf5',
     },
     {

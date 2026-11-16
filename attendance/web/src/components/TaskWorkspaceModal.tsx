@@ -648,8 +648,8 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
             <span
               className="task-mode-tag"
               style={{
-                background: isDraft ? '#f1f5f9' : '#fff7ed',
-                color: isDraft ? '#64748b' : '#E56108',
+                background: isDraft ? '#f1f5f9' : '#f0fdf4',
+                color: isDraft ? '#64748b' : '#22C55E',
               }}
             >
               {isDraft ? 'Draft' : (taskId ? 'Published' : 'New Task')}
@@ -802,7 +802,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                           value={selectedCompanyFilter}
                           onChange={(val) => setSelectedCompanyFilter(val)}
                           placeholder="Filter by Company"
-                          icon={<Building2 size={15} color="#E56108" />}
+                          icon={<Building2 size={15} color="#22C55E" />}
                           alignRight={true}
                           direction="down"
                           options={[

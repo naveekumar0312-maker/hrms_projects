@@ -4,8 +4,8 @@
 ========================================================= */
 
 .employee-dashboard {
-  --dashboard-green: #E56108; /* Yaazh Royal Blue */
-  --dashboard-green-dark: #CC5200; /* Yaazh Deep Royal Blue */
+  --dashboard-green: #22C55E; /* Yaazh Royal Blue */
+  --dashboard-green-dark: #16A34A; /* Yaazh Deep Royal Blue */
   --dashboard-green-light: rgba(0, 86, 179, 0.12); /* Soft Royal Tint */
   --dashboard-green-soft: #F8F9FC; /* Luxury Canvas Tint */
   --dashboard-text: #0f172a;
@@ -67,8 +67,8 @@
     ),
     linear-gradient(
       135deg,
-      #CC5200 0%,
-      #E56108 48%,
+      #16A34A 0%,
+      #22C55E 48%,
       #38BDF8 100%
     );
 
@@ -238,7 +238,7 @@
     linear-gradient(
       145deg,
       #22c55e,
-      #CC5200
+      #16A34A
     );
 
   color: white;
@@ -301,7 +301,7 @@
 
 .status-ontime,
 .status-completed {
-  color: #CC5200;
+  color: #16A34A;
   background: rgba(0, 86, 179, 0.12);
 }
 
@@ -369,7 +369,7 @@
     linear-gradient(
       135deg,
       #22c55e,
-      #CC5200
+      #16A34A
     );
 
   box-shadow:
@@ -531,12 +531,12 @@
 }
 
 .history-icon {
-  color: #CC5200;
+  color: #16A34A;
   background: rgba(0, 86, 179, 0.12);
 }
 
 .reports-icon {
-  color: #CC5200;
+  color: #16A34A;
   background: rgba(0, 86, 179, 0.08);
 }
 
@@ -591,7 +591,7 @@
 
   background: #F8F9FC;
 
-  color: #CC5200;
+  color: #16A34A;
 
   font-size: 0.78rem;
   font-weight: 700;
@@ -646,7 +646,7 @@
 }
 
 .summary-green .summary-card-icon {
-  color: #E56108;
+  color: #22C55E;
   background: rgba(0, 86, 179, 0.12);
 }
 
@@ -676,12 +676,12 @@
 }
 
 .summary-blue .summary-card-icon {
-  color: #CC5200;
+  color: #16A34A;
   background: rgba(0, 86, 179, 0.12);
 }
 
 .summary-status {
-  color: #CC5200 !important;
+  color: #16A34A !important;
 
   padding: 0.35rem 0.75rem;
 
@@ -1275,7 +1275,7 @@
   padding: 7px 16px;
   border: 0;
   border-radius: 7px;
-  background: #e56108;
+  background: #22c55e;
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -1345,13 +1345,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  color: #E56108;
+  color: #22C55E;
   background: #F8F9FC;
   border: 1px solid rgba(0, 86, 179, 0.12);
 }
 
 .live-tracking-icon-active {
-  color: #E56108;
+  color: #22C55E;
   animation: pulse-tracking 2s infinite ease-in-out;
 }
 
@@ -1399,7 +1399,7 @@
 
 .live-tracking-badge.badge-active {
   background: rgba(0, 86, 179, 0.12);
-  color: #CC5200;
+  color: #16A34A;
   border: 1px solid #bbf7d0;
 }
 
@@ -1485,13 +1485,13 @@
 }
 
 .live-tracking-btn-enable {
-  background: #E56108;
+  background: #22C55E;
   color: #ffffff;
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.25);
 }
 
 .live-tracking-btn-enable:hover:not(:disabled) {
-  background: #CC5200;
+  background: #16A34A;
   box-shadow: 0 6px 16px rgba(22, 163, 74, 0.35);
   transform: translateY(-1px);
 }

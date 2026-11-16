@@ -497,8 +497,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   companyChipActive: {
-    backgroundColor: '#E56108',
-    borderColor: '#E56108',
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
   },
   companyChipText: {
     fontSize: 12,

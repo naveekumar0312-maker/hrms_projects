@@ -224,7 +224,7 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerLoading}>
-          <ActivityIndicator size="large" color="#E56108" />
+          <ActivityIndicator size="large" color="#22C55E" />
           <Text style={styles.loadingText}>Loading employee route history...</Text>
         </View>
       ) : error && gpsPoints.length === 0 ? (
@@ -409,7 +409,7 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
                             cx={x}
                             cy={y}
                             r="18"
-                            fill="#E56108"
+                            fill="#22C55E"
                             opacity={0.35}
                           />
                           {/* Bike background circle */}
@@ -418,7 +418,7 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
                             cy={y}
                             r="14"
                             fill="#FFFFFF"
-                            stroke="#E56108"
+                            stroke="#22C55E"
                             strokeWidth="2.5"
                           />
                           {/* Bike SVG Icon centered at (x, y) */}
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,

@@ -309,7 +309,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
         </TouchableOpacity>
 
         <View style={styles.dateDisplay}>
-          <CalendarClock size={16} color="#E56108" />
+          <CalendarClock size={16} color="#22C55E" />
           <Text style={styles.dateText}>{selectedDate}</Text>
         </View>
 
@@ -363,7 +363,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
       {/* Summary KPI Badges */}
       <View style={styles.summaryRow}>
         <View style={styles.chip}>
-          <Text style={[styles.chipVal, { color: '#E56108' }]}>{totalCount}</Text>
+          <Text style={[styles.chipVal, { color: '#22C55E' }]}>{totalCount}</Text>
           <Text style={styles.chipLabel}>Total</Text>
         </View>
         <View style={styles.chip}>
@@ -386,7 +386,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#E56108" />
+          <ActivityIndicator size="large" color="#22C55E" />
           <Text style={styles.loadingText}>Fetching attendance records...</Text>
         </View>
       ) : (
@@ -398,7 +398,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#E56108']}
+              colors={['#22C55E']}
             />
           }
           renderItem={({ item }) => {
@@ -459,7 +459,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                     </View>
 
                     <View style={styles.timeCol}>
-                      <Text style={[styles.timeText, { color: '#E56108', fontFamily: 'Comfortaa_700Bold' }]}>
+                      <Text style={[styles.timeText, { color: '#22C55E', fontFamily: 'Comfortaa_700Bold' }]}>
                         Hrs: {item.working_hours || '00:00'}
                       </Text>
                     </View>
@@ -479,7 +479,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                     }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <LogIn size={14} color="#E56108" />
+                          <LogIn size={14} color="#22C55E" />
                           <Text style={{ fontSize: 12, fontFamily: 'Comfortaa_700Bold', color: '#1E293B' }}>Check In</Text>
                           <Text style={{ fontSize: 12, color: '#64748B' }}>
                             {formatAttendanceTime(item.check_in_time || item.check_in)}
@@ -507,7 +507,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
 
                       {Boolean(item.check_in_location_name || item.check_in_location?.location_name) && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
-                          <MapPin size={11} color="#E56108" />
+                          <MapPin size={11} color="#22C55E" />
                           <Text style={{ fontSize: 11, color: '#475569', fontFamily: 'Comfortaa_500Medium', flex: 1 }} numberOfLines={1}>
                             {item.check_in_location_name || item.check_in_location?.location_name}
                           </Text>
@@ -539,7 +539,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                               justifyContent: 'center',
                               paddingVertical: 6,
                               borderRadius: 6,
-                              backgroundColor: '#E56108',
+                              backgroundColor: '#22C55E',
                               gap: 4
                             }}
                             onPress={() => handleApprovePunch(item, 'check_in')}
@@ -666,7 +666,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                               justifyContent: 'center',
                               paddingVertical: 6,
                               borderRadius: 6,
-                              backgroundColor: '#E56108',
+                              backgroundColor: '#22C55E',
                               gap: 4
                             }}
                             onPress={() => handleApprovePunch(item, 'check_out')}
@@ -738,8 +738,8 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                     onPress={() => setSelectedRecord(item)}
                     activeOpacity={0.7}
                   >
-                    <Eye size={13} color="#E56108" />
-                    <Text style={[styles.actionBtnText, { color: '#E56108' }]}>View</Text>
+                    <Eye size={13} color="#22C55E" />
+                    <Text style={[styles.actionBtnText, { color: '#22C55E' }]}>View</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -747,8 +747,8 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                     onPress={() => openEditModal(item)}
                     activeOpacity={0.7}
                   >
-                    <Pencil size={13} color="#E56108" />
-                    <Text style={[styles.actionBtnText, { color: '#E56108' }]}>Edit</Text>
+                    <Pencil size={13} color="#22C55E" />
+                    <Text style={[styles.actionBtnText, { color: '#22C55E' }]}>Edit</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -806,7 +806,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                 </View>
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Status</Text>
-                  <Text style={[styles.detailValue, { fontFamily: 'Comfortaa_700Bold', color: '#E56108' }]}>
+                  <Text style={[styles.detailValue, { fontFamily: 'Comfortaa_700Bold', color: '#22C55E' }]}>
                     {selectedRecord.status}
                   </Text>
                 </View>
@@ -822,7 +822,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                   <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
                     <Text style={styles.detailLabel}>In Location</Text>
                     <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 4 }}>
-                      <MapPin size={12} color="#E56108" style={{ marginTop: 2 }} />
+                      <MapPin size={12} color="#22C55E" style={{ marginTop: 2 }} />
                       <Text style={[styles.detailValue, { flexShrink: 1, textAlign: 'right', color: '#475569' }]}>
                         {selectedRecord.check_in_location_name || selectedRecord.check_in_location?.location_name}
                       </Text>
@@ -906,8 +906,8 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                       openEditModal(cur);
                     }}
                   >
-                    <Pencil size={15} color="#E56108" />
-                    <Text style={[styles.actionBtnText, { color: '#E56108', fontSize: 13 }]}>Edit Record</Text>
+                    <Pencil size={15} color="#22C55E" />
+                    <Text style={[styles.actionBtnText, { color: '#22C55E', fontSize: 13 }]}>Edit Record</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -1139,8 +1139,8 @@ const styles = StyleSheet.create({
     borderColor: '#ECEEF3',
   },
   filterPillActive: {
-    backgroundColor: '#E56108',
-    borderColor: '#E56108',
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
   },
   filterPillText: {
     fontSize: 11,
@@ -1226,7 +1226,7 @@ const styles = StyleSheet.create({
   avatarText: {
     fontSize: 13,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   nameCol: {
     flex: 1,
@@ -1409,8 +1409,8 @@ const styles = StyleSheet.create({
     borderColor: '#ECEEF3',
   },
   statusSelectPillActive: {
-    backgroundColor: '#E56108',
-    borderColor: '#E56108',
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
   },
   statusSelectText: {
     fontSize: 12,
@@ -1421,7 +1421,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   submitBtn: {
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: 'center',

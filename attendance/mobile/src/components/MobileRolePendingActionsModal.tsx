@@ -106,7 +106,7 @@ export const MobileRolePendingActionsModal: React.FC<MobileRolePendingActionsMod
   const getItemBadgeStyle = (type: string) => {
     switch (type) {
       case 'LEAVE':
-        return { bg: '#fff7ed', text: '#c2410c' };
+        return { bg: '#f0fdf4', text: '#c2410c' };
       case 'PERMISSION':
         return { bg: '#eff6ff', text: '#1d4ed8' };
       case 'WFH':
@@ -161,7 +161,7 @@ export const MobileRolePendingActionsModal: React.FC<MobileRolePendingActionsMod
           {/* Summary Badges */}
           <View style={styles.statsRow}>
             {(summary.pending_leaves || 0) > 0 && (
-              <View style={[styles.statBadge, { backgroundColor: '#fff7ed', borderColor: '#fed7aa' }]}>
+              <View style={[styles.statBadge, { backgroundColor: '#f0fdf4', borderColor: '#fed7aa' }]}>
                 <Text style={[styles.statVal, { color: '#c2410c' }]}>{summary.pending_leaves}</Text>
                 <Text style={[styles.statLbl, { color: '#9a3412' }]}>Leaves</Text>
               </View>
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: '#fff7ed',
+    backgroundColor: '#f0fdf4',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
@@ -474,7 +474,7 @@ const styles = StyleSheet.create({
     borderTopColor: '#f1f5f9',
   },
   actionBtn: {
-    backgroundColor: '#e56108',
+    backgroundColor: '#22c55e',
     borderRadius: 8,
     paddingVertical: 11,
     flexDirection: 'row',

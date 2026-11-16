@@ -38,8 +38,8 @@
 .custom-select-trigger:focus-visible,
 .custom-select-trigger.active {
   outline: none;
-  border-color: #E56108;
-  box-shadow: 0 0 0 3px rgba(229, 97, 8, 0.15);
+  border-color: #22C55E;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
 }
 
 .custom-select-trigger:disabled {
@@ -188,8 +188,8 @@
 }
 
 .custom-select-option:hover {
-  background: #FFF7ED;
-  color: #E56108;
+  background: #F0FDF4;
+  color: #22C55E;
 }
 
 .custom-select-option.selected {
@@ -207,7 +207,7 @@
 }
 
 .custom-select-option-check {
-  color: #E56108;
+  color: #22C55E;
   flex-shrink: 0;
   display: flex;
   align-items: center;

@@ -123,7 +123,7 @@ export default function EnablePushNotifications({ triggerMode = 'bell' }: { trig
         aria-label="Enable push notifications"
         title={enabled ? "Disable push notifications" : "Enable push notifications"}
         style={{
-          background: '#e56108',
+          background: '#22C55E',
           color: '#fff',
           border: 0,
           borderRadius: 8,

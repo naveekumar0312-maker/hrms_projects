@@ -140,7 +140,7 @@ const CompanyBrandingList = () => {
                       {company.logo ? (
                         <img src={mediaUrl(company.logo)} alt="" style={{ width: 42, height: 42, objectFit: 'contain', borderRadius: 8, border: '1px solid #e5e7eb' }} />
                       ) : (
-                        <div style={{ width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: 8, background: '#fff7ed', color: '#c2410c' }}><Building2 size={20} /></div>
+                        <div style={{ width: 42, height: 42, display: 'grid', placeItems: 'center', borderRadius: 8, background: '#f0fdf4', color: '#c2410c' }}><Building2 size={20} /></div>
                       )}
                       <div>
                         <div style={{ fontWeight: 650 }}>{company.name}</div>
@@ -151,7 +151,7 @@ const CompanyBrandingList = () => {
                   <td style={{ padding: '15px 16px', borderBottom: '1px solid #f1f5f9' }}>{company.slug || ''}</td>
                   <td style={{ padding: '15px 16px', borderBottom: '1px solid #f1f5f9' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      {[company.primary_color || '#E56717', company.left_panel_color || '#E56108', company.login_button_color || '#2563EB'].map((color, index) => (
+                      {[company.primary_color || '#E56717', company.left_panel_color || '#22C55E', company.login_button_color || '#2563EB'].map((color, index) => (
                         <span key={index} title={color} style={{ width: 22, height: 22, borderRadius: 6, background: color, border: '1px solid #e5e7eb' }} />
                       ))}
                     </div>
@@ -166,7 +166,7 @@ const CompanyBrandingList = () => {
                       <button type="button" title="View branding" onClick={() => setSelected(company)}
                         style={{ padding: 8, border: '1px solid #d1d5db', borderRadius: 7, background: 'white', cursor: 'pointer' }}><Eye size={16} /></button>
                       <button type="button" title="Edit branding" onClick={() => navigate(`/admin/branding-settings?company=${company.id}`)}
-                        style={{ padding: 8, border: '1px solid #fed7aa', borderRadius: 7, background: '#fff7ed', color: '#c2410c', cursor: 'pointer' }}><Pencil size={16} /></button>
+                        style={{ padding: 8, border: '1px solid #fed7aa', borderRadius: 7, background: '#f0fdf4', color: '#c2410c', cursor: 'pointer' }}><Pencil size={16} /></button>
                       <button type="button" title="Remove branding" disabled={busyId === company.id} onClick={() => void deleteBranding(company)}
                         style={{ padding: 8, border: '1px solid #fecaca', borderRadius: 7, background: '#fef2f2', color: '#b91c1c', cursor: 'pointer' }}><Trash2 size={16} /></button>
                     </div>

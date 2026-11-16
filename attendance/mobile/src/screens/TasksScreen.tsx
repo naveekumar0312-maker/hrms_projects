@@ -606,11 +606,11 @@ export const TasksScreen: React.FC = () => {
   });
 
   const getPriorityBadge = (p: string) => {
-    let color = '#e56108';
+    let color = '#22c55e';
     let bg = '#F0F9FF';
     let borderColor = '#BAE6FD';
     if (p === 'MEDIUM') {
-      color = '#E56108';
+      color = '#22C55E';
       bg = '#F0F9FF';
       borderColor = '#BAE6FD';
     } else if (p === 'HIGH') {
@@ -634,7 +634,7 @@ export const TasksScreen: React.FC = () => {
       bg = '#FEF3C7';
       borderColor = '#FDE68A';
     } else if (s === 'IN_PROGRESS') {
-      color = '#E56108';
+      color = '#22C55E';
       bg = '#EBF3FC';
       borderColor = '#BAE6FD';
     } else if (s === 'COMPLETED') {
@@ -858,7 +858,7 @@ export const TasksScreen: React.FC = () => {
                   activeOpacity={0.8}
                 >
                   {transcribing && voiceTypingTarget === 'title' ? (
-                    <ActivityIndicator size="small" color="#E56108" />
+                    <ActivityIndicator size="small" color="#22C55E" />
                   ) : (
                     <>
                       <Mic
@@ -891,9 +891,9 @@ export const TasksScreen: React.FC = () => {
                     onPress={() => playAudio(titleVoiceAudioUri, 'title_voice')}
                   >
                     {playingAudioId === 'title_voice' ? (
-                      <Pause size={14} color="#E56108" />
+                      <Pause size={14} color="#22C55E" />
                     ) : (
-                      <Play size={14} color="#E56108" />
+                      <Play size={14} color="#22C55E" />
                     )}
                     <Text style={styles.voiceAudioPlayText}>Play Title Voice</Text>
                   </TouchableOpacity>
@@ -921,7 +921,7 @@ export const TasksScreen: React.FC = () => {
                   activeOpacity={0.8}
                 >
                   {transcribing && voiceTypingTarget === 'description' ? (
-                    <ActivityIndicator size="small" color="#E56108" />
+                    <ActivityIndicator size="small" color="#22C55E" />
                   ) : (
                     <>
                       <Mic
@@ -956,9 +956,9 @@ export const TasksScreen: React.FC = () => {
                     onPress={() => playAudio(descVoiceAudioUri, 'desc_voice')}
                   >
                     {playingAudioId === 'desc_voice' ? (
-                      <Pause size={14} color="#E56108" />
+                      <Pause size={14} color="#22C55E" />
                     ) : (
-                      <Play size={14} color="#E56108" />
+                      <Play size={14} color="#22C55E" />
                     )}
                     <Text style={styles.voiceAudioPlayText}>Play Description Voice</Text>
                   </TouchableOpacity>
@@ -1046,7 +1046,7 @@ export const TasksScreen: React.FC = () => {
                     style={[styles.webTabItem, createModalTab === 'comment' && styles.webTabItemActive]}
                     onPress={() => setCreateModalTab('comment')}
                   >
-                    <MessageSquare size={14} color={createModalTab === 'comment' ? '#E56108' : '#666666'} />
+                    <MessageSquare size={14} color={createModalTab === 'comment' ? '#22C55E' : '#666666'} />
                     <Text style={[styles.webTabText, createModalTab === 'comment' && styles.webTabTextActive]}>
                       Discussion & Media
                     </Text>
@@ -1058,11 +1058,11 @@ export const TasksScreen: React.FC = () => {
                   {createAttachedFile && (
                     <View style={styles.attachmentPill}>
                       {createCommentType === 'AUDIO' ? (
-                        <Mic size={14} color="#E56108" />
+                        <Mic size={14} color="#22C55E" />
                       ) : createCommentType === 'IMAGE' ? (
-                        <ImageIcon size={14} color="#E56108" />
+                        <ImageIcon size={14} color="#22C55E" />
                       ) : (
-                        <FileText size={14} color="#E56108" />
+                        <FileText size={14} color="#22C55E" />
                       )}
                       <Text style={styles.attachmentPillText} numberOfLines={1}>
                         {createAttachedFile.name} ({createAttachedFile.size})
@@ -1075,7 +1075,7 @@ export const TasksScreen: React.FC = () => {
 
                   {createCommentType === 'LINK' && (
                     <View style={styles.linkInputRow}>
-                      <Link2 size={15} color="#E56108" />
+                      <Link2 size={15} color="#22C55E" />
                       <TextInput
                         style={styles.linkInput}
                         placeholder="Paste link URL (e.g. https://...)"
@@ -1107,7 +1107,7 @@ export const TasksScreen: React.FC = () => {
                         onPress={() => pickImage(true)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
-                        <ImageIcon size={18} color="#E56108" />
+                        <ImageIcon size={18} color="#22C55E" />
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -1115,7 +1115,7 @@ export const TasksScreen: React.FC = () => {
                         onPress={() => pickDocument(true)}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
-                        <Paperclip size={18} color="#E56108" />
+                        <Paperclip size={18} color="#22C55E" />
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -1123,7 +1123,7 @@ export const TasksScreen: React.FC = () => {
                         onPress={() => (isRecording ? stopLiveRecording(true) : startLiveRecording(true))}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
-                        {isRecording ? <Square size={16} color="#EF4444" /> : <Mic size={18} color="#E56108" />}
+                        {isRecording ? <Square size={16} color="#EF4444" /> : <Mic size={18} color="#22C55E" />}
                       </TouchableOpacity>
 
                       <TouchableOpacity
@@ -1131,7 +1131,7 @@ export const TasksScreen: React.FC = () => {
                         onPress={() => setCreateCommentType('LINK')}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
-                        <Link2 size={18} color="#E56108" />
+                        <Link2 size={18} color="#22C55E" />
                       </TouchableOpacity>
 
                       {isRecording && (
@@ -1204,10 +1204,10 @@ export const TasksScreen: React.FC = () => {
                 {/* Priority & Status Bar */}
                 <View style={styles.modalBadgeRow}>
                   <View style={[styles.badgePill, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
-                    <Text style={[styles.badgeText, { color: '#E56108' }]}>{selectedTask.priority}</Text>
+                    <Text style={[styles.badgeText, { color: '#22C55E' }]}>{selectedTask.priority}</Text>
                   </View>
                   <View style={[styles.badgePill, { backgroundColor: '#EBF3FC', borderColor: '#BAE6FD' }]}>
-                    <Text style={[styles.badgeText, { color: '#E56108' }]}>{selectedTask.status.replace(/_/g, ' ')}</Text>
+                    <Text style={[styles.badgeText, { color: '#22C55E' }]}>{selectedTask.status.replace(/_/g, ' ')}</Text>
                   </View>
                 </View>
 
@@ -1251,7 +1251,7 @@ export const TasksScreen: React.FC = () => {
                 {/* Discussion Thread & Rich Comments List */}
                 <Text style={styles.sectionHeading}>Discussion Thread ({taskCommentsList.length})</Text>
                 {loadingComments ? (
-                  <ActivityIndicator size="small" color="#E56108" style={{ marginVertical: 10 }} />
+                  <ActivityIndicator size="small" color="#22C55E" style={{ marginVertical: 10 }} />
                 ) : taskCommentsList.length === 0 ? (
                   <Text style={styles.noCommentsText}>No comments or attachments posted yet.</Text>
                 ) : (
@@ -1317,11 +1317,11 @@ export const TasksScreen: React.FC = () => {
                               })
                             }
                           >
-                            <FileText size={15} color="#E56108" />
+                            <FileText size={15} color="#22C55E" />
                             <Text style={styles.fileNameText} numberOfLines={1}>
                               {comm.file_name || 'View Attachment'}
                             </Text>
-                            <Eye size={14} color="#E56108" />
+                            <Eye size={14} color="#22C55E" />
                           </TouchableOpacity>
                         )}
 
@@ -1331,7 +1331,7 @@ export const TasksScreen: React.FC = () => {
                             style={styles.linkPill}
                             onPress={() => Linking.openURL(comm.link_url)}
                           >
-                            <Link2 size={14} color="#E56108" />
+                            <Link2 size={14} color="#22C55E" />
                             <Text style={styles.linkText} numberOfLines={1}>{comm.link_url}</Text>
                           </TouchableOpacity>
                         )}
@@ -1346,11 +1346,11 @@ export const TasksScreen: React.FC = () => {
                   {attachedFile && (
                     <View style={styles.attachmentPill}>
                       {activeCommentType === 'AUDIO' ? (
-                        <Mic size={14} color="#E56108" />
+                        <Mic size={14} color="#22C55E" />
                       ) : activeCommentType === 'IMAGE' ? (
-                        <ImageIcon size={14} color="#E56108" />
+                        <ImageIcon size={14} color="#22C55E" />
                       ) : (
-                        <FileText size={14} color="#E56108" />
+                        <FileText size={14} color="#22C55E" />
                       )}
                       <Text style={styles.attachmentPillText} numberOfLines={1}>
                         {attachedFile.name} ({attachedFile.size})
@@ -1363,7 +1363,7 @@ export const TasksScreen: React.FC = () => {
 
                   {activeCommentType === 'LINK' && (
                     <View style={styles.linkInputRow}>
-                      <Link2 size={15} color="#E56108" />
+                      <Link2 size={15} color="#22C55E" />
                       <TextInput
                         style={styles.linkInput}
                         placeholder="Paste link URL..."
@@ -1394,28 +1394,28 @@ export const TasksScreen: React.FC = () => {
                         style={styles.toolIconBtn}
                         onPress={() => pickImage(false)}
                       >
-                        <ImageIcon size={18} color="#E56108" />
+                        <ImageIcon size={18} color="#22C55E" />
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={styles.toolIconBtn}
                         onPress={() => pickDocument(false)}
                       >
-                        <Paperclip size={18} color="#E56108" />
+                        <Paperclip size={18} color="#22C55E" />
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={[styles.toolIconBtn, isRecording && styles.toolIconBtnActive]}
                         onPress={() => (isRecording ? stopLiveRecording(false) : startLiveRecording(false))}
                       >
-                        {isRecording ? <Square size={16} color="#EF4444" /> : <Mic size={18} color="#E56108" />}
+                        {isRecording ? <Square size={16} color="#EF4444" /> : <Mic size={18} color="#22C55E" />}
                       </TouchableOpacity>
 
                       <TouchableOpacity
                         style={styles.toolIconBtn}
                         onPress={() => setActiveCommentType('LINK')}
                       >
-                        <Link2 size={18} color="#E56108" />
+                        <Link2 size={18} color="#22C55E" />
                       </TouchableOpacity>
 
                       {isRecording && (
@@ -1532,7 +1532,7 @@ export const TasksScreen: React.FC = () => {
             ) : (
               <View style={styles.filePreviewContainer}>
                 <View style={styles.fileIconBig}>
-                  <FileText size={48} color="#E56108" />
+                  <FileText size={48} color="#22C55E" />
                 </View>
                 <Text style={styles.filePreviewName} numberOfLines={2}>
                   {viewingMedia?.title}
@@ -1569,7 +1569,7 @@ const styles = StyleSheet.create({
   createTaskHeaderBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
@@ -1607,7 +1607,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_500Medium',
   },
   tabTextActive: {
-    color: '#E56108',
+    color: '#22C55E',
     fontFamily: 'Comfortaa_700Bold',
   },
   centerBox: {
@@ -1636,7 +1636,7 @@ const styles = StyleSheet.create({
   emptyCreateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 10,
@@ -1776,7 +1776,7 @@ const styles = StyleSheet.create({
   openBtnText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
   },
 
   // Modals Styles
@@ -1886,7 +1886,7 @@ const styles = StyleSheet.create({
   voiceAudioPlayText: {
     fontSize: 11,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   formInput: {
     backgroundColor: '#F8F9FC',
@@ -1927,7 +1927,7 @@ const styles = StyleSheet.create({
   },
   selectorPillActive: {
     backgroundColor: '#EBF3FC',
-    borderColor: '#E56108',
+    borderColor: '#22C55E',
   },
   selectorPillText: {
     fontSize: 11,
@@ -1935,7 +1935,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_500Medium',
   },
   selectorPillTextActive: {
-    color: '#E56108',
+    color: '#22C55E',
     fontFamily: 'Comfortaa_700Bold',
   },
   webTabContainer: {
@@ -1961,7 +1961,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   webTabItemActive: {
-    borderBottomColor: '#E56108',
+    borderBottomColor: '#22C55E',
     backgroundColor: '#FFFFFF',
   },
   webTabText: {
@@ -1970,7 +1970,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_500Medium',
   },
   webTabTextActive: {
-    color: '#E56108',
+    color: '#22C55E',
     fontFamily: 'Comfortaa_700Bold',
   },
   webTabBody: {
@@ -2050,7 +2050,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 11,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   linkInputRow: {
     flexDirection: 'row',
@@ -2104,13 +2104,13 @@ const styles = StyleSheet.create({
   draftBtnText: {
     fontSize: 12,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   submitTaskBtn: {
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
   },
   submitTaskBtnText: {
     fontSize: 12,
@@ -2214,7 +2214,7 @@ const styles = StyleSheet.create({
   commentAuthor: {
     fontSize: 12,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   commentTime: {
     fontSize: 10,
@@ -2237,7 +2237,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
@@ -2265,7 +2265,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 11,
     fontFamily: 'Comfortaa_600SemiBold',
-    color: '#E56108',
+    color: '#22C55E',
   },
   linkPill: {
     flexDirection: 'row',
@@ -2280,7 +2280,7 @@ const styles = StyleSheet.create({
   linkText: {
     flex: 1,
     fontSize: 11,
-    color: '#E56108',
+    color: '#22C55E',
     fontFamily: 'Comfortaa_600SemiBold',
     textDecorationLine: 'underline',
   },
@@ -2311,7 +2311,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -2330,8 +2330,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statusBtnActive: {
-    backgroundColor: '#E56108',
-    borderColor: '#E56108',
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
   },
   statusBtnText: {
     fontSize: 11,
@@ -2377,7 +2377,7 @@ const styles = StyleSheet.create({
     flex: 2,
     paddingVertical: 12,
     borderRadius: 8,
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     alignItems: 'center',
   },
   saveBtnText: {
@@ -2457,7 +2457,7 @@ const styles = StyleSheet.create({
   openExternalBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E56108',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 10,
