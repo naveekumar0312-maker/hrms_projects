@@ -143,7 +143,7 @@ class LoginSerializer(serializers.Serializer):
                     'detail': 'Company login page not found or inactive.'
                 })
 
-            if user.role != 'SUPER_ADMIN' and user.company_id != company.id:
+            if user.company_id != company.id:
                 raise serializers.ValidationError({
                     'detail': 'Your account does not belong to this company.'
                 })

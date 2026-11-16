@@ -115,14 +115,13 @@ const UniversalLogin = ({ loginMode = 'general' }: UniversalLoginProps) => {
       const response = await api.post('/auth/login/', payload)
       const user = response.data?.user || response.data
 
-      // If logging into a specific company, verify tenant match if user has company assigned
-      if (companySlug && user?.company) {
+      // If logging into a specific company, verify tenant match strictly
+      if (companySlug) {
         const userCompanySlug =
-          typeof user.company === 'object'
-            ? user.company.slug || user.company_slug
-            : user.company_slug
+          user?.company_slug ||
+          (typeof user?.company === 'object' ? user?.company?.slug : null)
 
-        if (userCompanySlug && userCompanySlug !== companySlug) {
+        if (userCompanySlug !== companySlug) {
           setError('Your account does not belong to this company.')
           return
         }
@@ -135,7 +134,10 @@ const UniversalLogin = ({ loginMode = 'general' }: UniversalLoginProps) => {
         user?.company_slug ||
         (typeof user?.company === 'object' ? user?.company?.slug : null)
 
-      const activeSlug = companySlug || assignedSlug
+      const activeSlug = (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN')
+        ? (assignedSlug || null)
+        : (companySlug || assignedSlug)
+
       if (activeSlug) {
         localStorage.setItem('attendance_company_slug', activeSlug)
       } else {

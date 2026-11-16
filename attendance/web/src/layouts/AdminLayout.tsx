@@ -73,6 +73,12 @@ const Sidebar = ({
         let targetComp = null;
         if (user?.role === 'HR') {
           targetComp = companies.find((c: any) => c.slug === user?.company_slug || c.name === user?.company_name) || companies[0];
+        } else if (user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') {
+          // Super admin only scopes to a specific company if explicitly on a scoped route
+          const slug = routeSlug;
+          if (slug) {
+            targetComp = companies.find((c: any) => c.slug === slug);
+          }
         } else {
           // If viewing specific company in URL or localStorage
           const slug = activeCompanySlug;
