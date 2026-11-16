@@ -891,7 +891,7 @@ const Attendance = () => {
                     <th style={{ minWidth: '120px' }}>
                       Punch In
                     </th>
-                    <th style={{ minWidth: '110px' }}>
+                    <th style={{ minWidth: '180px', width: '220px' }}>
                       Late
                     </th>
                     <th style={{ minWidth: '120px' }}>
@@ -1016,13 +1016,14 @@ const Attendance = () => {
                           </div>
                         </td>
 
-                        <td>
+                        <td style={{ minWidth: '180px', maxWidth: '240px' }}>
                           <div
                             style={{
                               display: 'flex',
                               flexDirection: 'column',
                               alignItems: 'flex-start',
-                              gap: '5px',
+                              gap: '6px',
+                              width: '100%',
                             }}
                           >
                             <span
@@ -1040,23 +1041,25 @@ const Attendance = () => {
                             </span>
 
                             {record.late_reason && (
-                              <span
+                              <div
                                 style={{
-                                  display: 'inline-block',
-                                  maxWidth: '220px',
+                                  display: 'block',
+                                  width: '100%',
+                                  boxSizing: 'border-box',
                                   fontSize: '11px',
                                   color: '#dc2626',
                                   background: '#fef2f2',
                                   border: '1px solid #fecaca',
-                                  padding: '2px 6px',
+                                  padding: '4px 8px',
                                   borderRadius: '6px',
-                                  lineHeight: 1.3,
+                                  lineHeight: 1.35,
                                   wordBreak: 'break-word',
+                                  whiteSpace: 'normal',
                                 }}
                                 title={`Late Reason: ${record.late_reason}`}
                               >
-                                Reason: {record.late_reason}
-                              </span>
+                                <span style={{ fontWeight: 700 }}>Reason:</span> {record.late_reason}
+                              </div>
                             )}
 
                             {record.grace_used && (
