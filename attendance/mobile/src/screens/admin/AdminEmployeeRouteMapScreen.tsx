@@ -373,7 +373,7 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
                       <Path
                         d={svgPathData}
                         fill="none"
-                        stroke="#FED7AA"
+                        stroke="#BBF7D0"
                         strokeWidth="7"
                         strokeLinecap="round"
                         strokeLinejoin="round"

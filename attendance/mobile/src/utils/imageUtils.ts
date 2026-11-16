@@ -16,10 +16,14 @@ export const resolveMediaUrl = (url: string | null | undefined): string | null =
       ) {
         fullUrl = `${apiBase}${parsed.pathname}${parsed.search}`;
       } else {
-        fullUrl = rawUrl;
+        // Enforce HTTPS if scheme was http on production domain
+        if (parsed.protocol === 'http:' && parsed.hostname.includes('yaazh360digitech.in')) {
+          parsed.protocol = 'https:';
+        }
+        fullUrl = parsed.toString();
       }
     } catch {
-      fullUrl = rawUrl;
+      fullUrl = rawUrl.replace(/^http:\/\//i, 'https://');
     }
   } else {
     const cleanPath = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;

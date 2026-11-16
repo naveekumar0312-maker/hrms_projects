@@ -25,7 +25,11 @@ class UserSerializer(serializers.ModelSerializer):
             return None
         request = self.context.get('request')
         if request:
-            return request.build_absolute_uri(company.logo.url)
+            uri = request.build_absolute_uri(company.logo.url)
+            # Ensure HTTPS for production domain
+            if uri.startswith('http://hrms.yaazh360digitech.in'):
+                uri = uri.replace('http://', 'https://', 1)
+            return uri
         return company.logo.url
 
 class LoginSerializer(serializers.Serializer):

@@ -356,7 +356,7 @@ export default function PersonalAlarmCard({ onAlarmChanged }: PersonalAlarmCardP
                   <Switch
                     value={alarm.is_enabled}
                     onValueChange={(nextVal) => void handleToggle(alarm, nextVal)}
-                    trackColor={{ false: '#E5E5E5', true: '#FED7AA' }}
+                    trackColor={{ false: '#E5E5E5', true: '#BBF7D0' }}
                     thumbColor={alarm.is_enabled ? '#22C55E' : '#FFFFFF'}
                   />
                 )}
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: '#F0FDF4',
     borderWidth: 1,
-    borderColor: '#FED7AA',
+    borderColor: '#BBF7D0',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -876,7 +876,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F0FDF4',
     borderWidth: 1,
-    borderColor: '#FED7AA',
+    borderColor: '#BBF7D0',
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
