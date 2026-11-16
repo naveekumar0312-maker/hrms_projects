@@ -13,8 +13,33 @@ class BranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branch
         fields = '__all__'
+        extra_kwargs = {
+            'branch_name': {'required': False},
+            'office_address': {'required': False},
+        }
+
+    def to_internal_value(self, data):
+        # Support aliases sent from mobile and web forms: name -> branch_name, address -> office_address, radius -> allowed_radius
+        data_copy = dict(data)
+        if 'name' in data_copy and 'branch_name' not in data_copy:
+            data_copy['branch_name'] = data_copy.pop('name')
+        if 'address' in data_copy and 'office_address' not in data_copy:
+            data_copy['office_address'] = data_copy.pop('address')
+        if 'radius' in data_copy and 'allowed_radius' not in data_copy:
+            data_copy['allowed_radius'] = data_copy.pop('radius')
+        if 'is_active' in data_copy and 'status' not in data_copy:
+            data_copy['status'] = data_copy.pop('is_active')
+
+        # Fallback if office_address is empty or missing
+        if not data_copy.get('office_address'):
+            data_copy['office_address'] = data_copy.get('branch_name') or 'Office Address'
+
+        return super().to_internal_value(data_copy)
 
     def validate(self, attrs):
+        if not attrs.get('branch_name'):
+            raise serializers.ValidationError({'branch_name': 'Branch name is required.'})
+
         request = self.context.get('request')
         user = getattr(request, 'user', None)
 
@@ -37,6 +62,13 @@ class BranchSerializer(serializers.ModelSerializer):
             if company is None and self.instance is None:
                 from companies.models import Company
                 attrs['company'] = Company.objects.get(pk=user.company_id)
+
+        # For Super Admin / Admin, if company is not provided and there's a default or first company, assign it
+        if not attrs.get('company') and self.instance is None:
+            from companies.models import Company
+            first_company = Company.objects.first()
+            if first_company:
+                attrs['company'] = first_company
 
         return attrs
 

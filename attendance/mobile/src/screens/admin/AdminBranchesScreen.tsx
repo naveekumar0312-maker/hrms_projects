@@ -135,12 +135,16 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
     try {
       const payload: any = {
         name,
+        branch_name: name,
         code,
-        address,
+        address: address || name,
+        office_address: address || name,
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
         radius: parseInt(radius, 10) || 100,
+        allowed_radius: parseInt(radius, 10) || 100,
         is_active: true,
+        status: true,
       };
       if (companyId) {
         payload.company = companyId;
@@ -157,7 +161,15 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
       setRadius('100');
       loadBranches();
     } catch (error: any) {
-      Alert.alert('Error', 'Failed to create branch. Check network or permissions.');
+      const serverErr =
+        error?.response?.data?.detail ||
+        (error?.response?.data && typeof error.response.data === 'object'
+          ? Object.values(error.response.data).flat().join(', ')
+          : null);
+      Alert.alert(
+        'Error',
+        serverErr || 'Failed to create branch. Check network or permissions.'
+      );
     } finally {
       setSubmitting(false);
     }
