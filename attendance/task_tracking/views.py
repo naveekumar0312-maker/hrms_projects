@@ -294,10 +294,11 @@ class TaskViewSet(viewsets.ModelViewSet):
             description=desc
         )
 
-        # In-app notifications to all assigned employees if not draft
+        # In-app & Push notifications to all assigned employees if not draft
         if not is_draft and assigned_emps:
             try:
                 from notifications.models import Notification
+                from notifications.fcm import send_web_push
                 for emp_item in assigned_emps:
                     if emp_item.user:
                         Notification.objects.create(
@@ -306,6 +307,13 @@ class TaskViewSet(viewsets.ModelViewSet):
                             message=f"You have been assigned: {task.title}",
                             notification_type="TASK_ASSIGNED",
                             data={"task_id": task.id}
+                        )
+                        send_web_push(
+                            user=emp_item.user,
+                            title="New Task Assigned",
+                            body=f"You have been assigned: {task.title}",
+                            url="https://hrms.yaazh360digitech.in/tasks",
+                            event="TASK_ASSIGNED"
                         )
             except Exception:
                 pass
@@ -354,6 +362,28 @@ class TaskViewSet(viewsets.ModelViewSet):
                 action="Task Submitted",
                 description=f"Task published from draft and assigned to {updated_task.assigned_to.full_name if updated_task.assigned_to else 'team'} by {user.username} ({role_display})."
             )
+            try:
+                from notifications.models import Notification
+                from notifications.fcm import send_web_push
+                assigned_list = list(updated_task.assigned_employees.all())
+                for emp_item in assigned_list:
+                    if emp_item.user:
+                        Notification.objects.create(
+                            recipient=emp_item.user,
+                            title="New Task Assigned",
+                            message=f"You have been assigned: {updated_task.title}",
+                            notification_type="TASK_ASSIGNED",
+                            data={"task_id": updated_task.id}
+                        )
+                        send_web_push(
+                            user=emp_item.user,
+                            title="New Task Assigned",
+                            body=f"You have been assigned: {updated_task.title}",
+                            url="https://hrms.yaazh360digitech.in/tasks",
+                            event="TASK_ASSIGNED"
+                        )
+            except Exception:
+                pass
         elif old_status != updated_task.status:
             TaskActivity.objects.create(
                 task=updated_task,

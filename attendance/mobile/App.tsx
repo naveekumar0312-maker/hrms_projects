@@ -208,6 +208,15 @@ const ManagerTabs = () => {
         }} 
       />
       <Tab.Screen 
+        name="ManagerAttendanceTab" 
+        component={ManagerAttendanceScreen} 
+        options={{ 
+          title: 'Team Attendance',
+          tabBarLabel: 'Attendance',
+          tabBarIcon: ({ color }) => <CalendarClock color={color} size={21} strokeWidth={2} /> 
+        }} 
+      />
+      <Tab.Screen 
         name="ManagerTeamTab" 
         component={ManagerTeamScreen} 
         options={{ 

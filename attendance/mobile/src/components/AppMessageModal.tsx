@@ -60,32 +60,32 @@ export const AppMessageModal: React.FC<AppMessageModalProps> = ({
   const getHeaderIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle2 size={36} color="#000000" strokeWidth={2.2} />;
+        return <CheckCircle2 size={36} color="#16A34A" strokeWidth={2.4} />;
       case 'error':
-        return <AlertCircle size={36} color="#000000" strokeWidth={2.2} />;
+        return <AlertCircle size={36} color="#DC2626" strokeWidth={2.4} />;
       case 'warning':
-        return <AlertTriangle size={36} color="#222222" strokeWidth={2.2} />;
+        return <AlertTriangle size={36} color="#D97706" strokeWidth={2.4} />;
       case 'confirm':
-        return <HelpCircle size={36} color={COLORS.primary || '#EA580C'} strokeWidth={2.2} />;
+        return <HelpCircle size={36} color="#2563EB" strokeWidth={2.4} />;
       case 'info':
       default:
-        return <Info size={36} color="#000000" strokeWidth={2.2} />;
+        return <Info size={36} color="#22C55E" strokeWidth={2.4} />;
     }
   };
 
   const getIconBackground = () => {
     switch (type) {
       case 'success':
-        return '#F5F5F5';
+        return '#DCFCE7';
       case 'error':
-        return '#F5F5F5';
+        return '#FEE2E2';
       case 'warning':
-        return '#F5F5F5';
+        return '#FEF3C7';
       case 'confirm':
-        return 'rgba(234, 88, 12, 0.10)';
+        return '#DBEAFE';
       case 'info':
       default:
-        return '#F5F5F5';
+        return 'rgba(34, 197, 94, 0.14)';
     }
   };
 
@@ -176,16 +176,18 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 360,
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingTop: 24,
-    paddingBottom: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingTop: 26,
+    paddingBottom: 22,
     paddingHorizontal: 22,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.25,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    elevation: 12,
   },
   iconWrapper: {
     width: 68,
@@ -196,16 +198,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 19,
+    fontSize: 18,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#000000',
+    color: '#0F172A',
     textAlign: 'center',
     marginBottom: 8,
   },
   message: {
     fontSize: 14,
-    lineHeight: 21,
-    color: '#444444',
+    lineHeight: 22,
+    color: '#475569',
     textAlign: 'center',
     marginBottom: 22,
   },
@@ -221,20 +223,28 @@ const styles = StyleSheet.create({
   button: {
     flex: 1,
     height: 48,
-    backgroundColor: COLORS.primary || '#EA580C',
+    backgroundColor: '#22C55E',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 3,
   },
   multiButton: {
     minWidth: 100,
   },
   cancelButton: {
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F1F5F9',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   destructiveButton: {
-    backgroundColor: '#000000',
+    backgroundColor: '#DC2626',
+    shadowColor: '#DC2626',
   },
   buttonText: {
     color: '#FFFFFF',
@@ -242,7 +252,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   cancelButtonText: {
-    color: '#444444',
+    color: '#64748B',
     fontFamily: 'Comfortaa_600SemiBold',
   },
   destructiveButtonText: {

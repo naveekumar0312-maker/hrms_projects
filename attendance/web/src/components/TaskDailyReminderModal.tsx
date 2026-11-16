@@ -35,6 +35,24 @@ export const TaskDailyReminderModal: React.FC<TaskDailyReminderModalProps> = ({
 }) => {
   if (!isOpen || tasks.length === 0) return null;
 
+  // Sort tasks strictly by Priority: URGENT -> HIGH -> MEDIUM -> LOW
+  const priorityWeight: Record<string, number> = {
+    URGENT: 4,
+    HIGH: 3,
+    MEDIUM: 2,
+    LOW: 1,
+  };
+
+  const sortedTasks = [...tasks].sort((a, b) => {
+    const weightDiff = (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
+    if (weightDiff !== 0) return weightDiff;
+    if (a.is_overdue && !b.is_overdue) return -1;
+    if (!a.is_overdue && b.is_overdue) return 1;
+    return a.id - b.id;
+  });
+
+  const urgentCount = tasks.filter((t) => t.priority === 'URGENT').length;
+  const highCount = tasks.filter((t) => t.priority === 'HIGH').length;
   const overdueCount = tasks.filter((t) => t.is_overdue).length;
   const inProgressCount = tasks.filter((t) => t.status === 'IN_PROGRESS').length;
   const pendingCount = tasks.filter((t) => t.status === 'PENDING').length;
@@ -84,8 +102,20 @@ export const TaskDailyReminderModal: React.FC<TaskDailyReminderModalProps> = ({
         <div className="daily-task-stats-banner">
           <div className="daily-task-stat-item">
             <span className="daily-task-stat-num">{tasks.length}</span>
-            <span className="daily-task-stat-label">Active</span>
+            <span className="daily-task-stat-label">Total</span>
           </div>
+          {urgentCount > 0 && (
+            <div className="daily-task-stat-item" style={{ background: '#fee2e2' }}>
+              <span className="daily-task-stat-num" style={{ color: '#dc2626' }}>{urgentCount}</span>
+              <span className="daily-task-stat-label" style={{ color: '#b91c1c' }}>Urgent</span>
+            </div>
+          )}
+          {highCount > 0 && (
+            <div className="daily-task-stat-item" style={{ background: '#fef3c7' }}>
+              <span className="daily-task-stat-num" style={{ color: '#d97706' }}>{highCount}</span>
+              <span className="daily-task-stat-label" style={{ color: '#b45309' }}>High</span>
+            </div>
+          )}
           {overdueCount > 0 && (
             <div className="daily-task-stat-item stat-overdue">
               <span className="daily-task-stat-num">{overdueCount}</span>
@@ -108,7 +138,7 @@ export const TaskDailyReminderModal: React.FC<TaskDailyReminderModalProps> = ({
 
         {/* Task list preview */}
         <div className="daily-task-list-scroll">
-          {tasks.slice(0, 6).map((task) => {
+          {sortedTasks.slice(0, 6).map((task) => {
             const priorityStyle = getPriorityBadgeStyle(task.priority);
             return (
               <div

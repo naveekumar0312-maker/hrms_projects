@@ -36,6 +36,24 @@ export const MobileTaskDailyReminderModal: React.FC<MobileTaskDailyReminderModal
 }) => {
   if (!visible || tasks.length === 0) return null;
 
+  // Sort tasks strictly by Priority: URGENT -> HIGH -> MEDIUM -> LOW
+  const priorityWeight: Record<string, number> = {
+    URGENT: 4,
+    HIGH: 3,
+    MEDIUM: 2,
+    LOW: 1,
+  };
+
+  const sortedTasks = [...tasks].sort((a, b) => {
+    const weightDiff = (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
+    if (weightDiff !== 0) return weightDiff;
+    if (a.is_overdue && !b.is_overdue) return -1;
+    if (!a.is_overdue && b.is_overdue) return 1;
+    return a.id - b.id;
+  });
+
+  const urgentCount = tasks.filter((t) => t.priority === 'URGENT').length;
+  const highCount = tasks.filter((t) => t.priority === 'HIGH').length;
   const overdueCount = tasks.filter((t) => t.is_overdue).length;
   const inProgressCount = tasks.filter((t) => t.status === 'IN_PROGRESS').length;
   const pendingCount = tasks.filter((t) => t.status === 'PENDING').length;
@@ -85,8 +103,20 @@ export const MobileTaskDailyReminderModal: React.FC<MobileTaskDailyReminderModal
           <View style={styles.statsBanner}>
             <View style={styles.statBox}>
               <Text style={styles.statNum}>{tasks.length}</Text>
-              <Text style={styles.statLabel}>Active</Text>
+              <Text style={styles.statLabel}>Total</Text>
             </View>
+            {urgentCount > 0 && (
+              <View style={[styles.statBox, { backgroundColor: '#fee2e2' }]}>
+                <Text style={[styles.statNum, { color: '#dc2626' }]}>{urgentCount}</Text>
+                <Text style={[styles.statLabel, { color: '#b91c1c' }]}>Urgent</Text>
+              </View>
+            )}
+            {highCount > 0 && (
+              <View style={[styles.statBox, { backgroundColor: '#fef3c7' }]}>
+                <Text style={[styles.statNum, { color: '#d97706' }]}>{highCount}</Text>
+                <Text style={[styles.statLabel, { color: '#b45309' }]}>High</Text>
+              </View>
+            )}
             {overdueCount > 0 && (
               <View style={[styles.statBox, styles.statBoxOverdue]}>
                 <Text style={[styles.statNum, { color: '#dc2626' }]}>{overdueCount}</Text>
@@ -99,17 +129,11 @@ export const MobileTaskDailyReminderModal: React.FC<MobileTaskDailyReminderModal
                 <Text style={[styles.statLabel, { color: '#1d4ed8' }]}>In Progress</Text>
               </View>
             )}
-            {pendingCount > 0 && (
-              <View style={styles.statBox}>
-                <Text style={styles.statNum}>{pendingCount}</Text>
-                <Text style={styles.statLabel}>Pending</Text>
-              </View>
-            )}
           </View>
 
           {/* Task List */}
           <ScrollView style={styles.taskList} showsVerticalScrollIndicator={false}>
-            {tasks.slice(0, 6).map((item) => {
+            {sortedTasks.slice(0, 6).map((item) => {
               const priorityStyle = getPriorityStyle(item.priority);
               return (
                 <View

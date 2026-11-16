@@ -39,7 +39,6 @@ import ReportingManagers from './pages/ReportingManagers';
 import ManagerLayout from './layouts/ManagerLayout';
 import ManagerDashboard from './pages/manager/Dashboard';
 import ManagerTeam from './pages/manager/Team';
-import ManagerTeamAttendance from './pages/manager/TeamAttendance';
 import TaskManager from './pages/manager/TaskManager';
 
 // ============================================================
@@ -279,7 +278,8 @@ const AppRoutes = () => {
           <Route path="dashboard" element={<ManagerDashboard />} />
           <Route path="team" element={<ManagerTeam />} />
           <Route path="tasks" element={<TaskManager />} />
-          <Route path="team-attendance" element={<ManagerTeamAttendance />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="team-attendance" element={<Attendance />} />
         </Route>
 
         {/* ==================================================

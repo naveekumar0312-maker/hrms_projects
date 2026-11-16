@@ -33,7 +33,7 @@
     }
   };
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useContext } from 'react';
 import {
   Calendar,
   MapPin,
@@ -50,6 +50,7 @@ import { CustomSelect } from '../components/CustomSelect';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 import { resolveMediaUrl } from '../utils/imageUtils';
 import api from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 import { getPermissions, type PermissionRequest } from '../api/permissions';
 import { type Company } from './Companies';
 import { type Branch } from './Branches';
@@ -332,6 +333,8 @@ const formatWorkingHours = (wh: string | null) => {
 
 
 const Attendance = () => {
+  const { user } = useContext(AuthContext);
+  const isManager = user?.role === 'REPORTING_MANAGER' || user?.role === 'TEAM_LEADER';
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -678,9 +681,11 @@ const Attendance = () => {
 
       <div className="flex-between page-header">
         <div>
-          <h2>Attendance</h2>
+          <h2>{isManager ? 'Team Attendance' : 'Attendance'}</h2>
           <div className="page-subtitle">
-            Monitor employee attendance across companies and branches.
+            {isManager
+              ? 'Monitor attendance, daily punches, and verify photo punches for your team.'
+              : 'Monitor employee attendance across companies and branches.'}
           </div>
         </div>
       </div>
@@ -726,40 +731,44 @@ const Attendance = () => {
         </div>
 
         <div className="admin-filters-row">
-          <CustomSelect
-            options={[
-              { value: '', label: 'All Companies' },
-              ...companies.map((company) => ({
-                value: company.id.toString(),
-                label: company.name,
-              })),
-            ]}
-            value={selectedCompany}
-            onChange={(value) => {
-              setSelectedCompany(value);
-              setSelectedBranch('');
-            }}
-            placeholder="All Companies"
-            icon={<Building2 size={18} />}
-            searchPlaceholder="Search companies..."
-          />
+          {!isManager && (
+            <>
+              <CustomSelect
+                options={[
+                  { value: '', label: 'All Companies' },
+                  ...companies.map((company) => ({
+                    value: company.id.toString(),
+                    label: company.name,
+                  })),
+                ]}
+                value={selectedCompany}
+                onChange={(value) => {
+                  setSelectedCompany(value);
+                  setSelectedBranch('');
+                }}
+                placeholder="All Companies"
+                icon={<Building2 size={18} />}
+                searchPlaceholder="Search companies..."
+              />
 
-          <CustomSelect
-            options={[
-              { value: '', label: 'All Branches' },
-              ...filteredBranches.map((branch) => ({
-                value: branch.id.toString(),
-                label:
-                  branch.branch_name ||
-                  `Branch ${branch.id}`,
-              })),
-            ]}
-            value={selectedBranch}
-            onChange={setSelectedBranch}
-            placeholder="All Branches"
-            icon={<MapPin size={18} />}
-            searchPlaceholder="Search branches..."
-          />
+              <CustomSelect
+                options={[
+                  { value: '', label: 'All Branches' },
+                  ...filteredBranches.map((branch) => ({
+                    value: branch.id.toString(),
+                    label:
+                      branch.branch_name ||
+                      `Branch ${branch.id}`,
+                  })),
+                ]}
+                value={selectedBranch}
+                onChange={setSelectedBranch}
+                placeholder="All Branches"
+                icon={<MapPin size={18} />}
+                searchPlaceholder="Search branches..."
+              />
+            </>
+          )}
 
           {/* Standardized LiveLocations DatePicker */}
           <div style={{ minWidth: '220px' }}>
