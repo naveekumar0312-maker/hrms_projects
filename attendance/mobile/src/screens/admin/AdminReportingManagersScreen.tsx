@@ -239,6 +239,7 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
         subtitle={`${managers.length} designated managers`}
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
         rightAction={
           <TouchableOpacity
             style={styles.addManagerBtn}

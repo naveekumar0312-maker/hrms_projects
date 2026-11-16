@@ -26,6 +26,7 @@ import {
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
+import { formatAttendanceTime } from '../../utils/dateUtils';
 import { TimePicker } from '../../components/pickers';
 import {
   fetchShifts,
@@ -159,6 +160,7 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
         subtitle={`${shifts.length} active work schedules`}
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
         rightAction={
           <TouchableOpacity
             style={styles.addBtn}
@@ -190,7 +192,7 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
                 <View style={styles.shiftDetails}>
                   <Text style={styles.shiftName}>{item.name}</Text>
                   <Text style={styles.shiftTiming}>
-                    {item.start_time} - {item.end_time}
+                    {formatAttendanceTime(item.start_time)} - {formatAttendanceTime(item.end_time)}
                   </Text>
                 </View>
                 <View style={[styles.statusBadge, item.is_active ? styles.statusActive : styles.statusInactive]}>
@@ -332,7 +334,7 @@ export const AdminShiftsScreen = ({ navigation }: any) => {
 
                 <View style={styles.viewDetailRow}>
                   <Text style={styles.viewLabel}>Timing:</Text>
-                  <Text style={styles.viewValue}>{viewingShift.start_time} - {viewingShift.end_time}</Text>
+                  <Text style={styles.viewValue}>{formatAttendanceTime(viewingShift.start_time)} - {formatAttendanceTime(viewingShift.end_time)}</Text>
                 </View>
 
                 <View style={styles.viewDetailRow}>

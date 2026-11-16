@@ -45,6 +45,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
 import { DropdownPicker, DatePicker } from '../../components/pickers';
 import { EmployeeMonthlyAttendanceModal } from '../../components/employee/EmployeeMonthlyAttendanceModal';
+import { formatAttendanceTime } from '../../utils/dateUtils';
 import {
   fetchEmployees,
   fetchBranches,
@@ -441,6 +442,7 @@ export const AdminEmployeesScreen = ({ navigation }: any) => {
         subtitle={`${filteredEmployees.length} registered personnel`}
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
         rightAction={
           <TouchableOpacity style={styles.addBtn} onPress={handleOpenCreate}>
             <UserPlus size={16} color="#FFFFFF" strokeWidth={2.2} />
@@ -1085,7 +1087,7 @@ export const AdminEmployeesScreen = ({ navigation }: any) => {
                     options={shifts.map((s) => ({
                       label: s.name,
                       value: String(s.id),
-                      sublabel: `${s.start_time} - ${s.end_time}`,
+                      sublabel: `${formatAttendanceTime(s.start_time)} - ${formatAttendanceTime(s.end_time)}`,
                     }))}
                     value={formData.shift}
                     onChange={(v) => setFormData({ ...formData, shift: String(v) })}

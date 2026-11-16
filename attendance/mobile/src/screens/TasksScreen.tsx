@@ -1261,7 +1261,7 @@ export const TasksScreen: React.FC = () => {
                         <View style={styles.commentHeader}>
                           <Text style={styles.commentAuthor}>{comm.author_name || 'Member'}</Text>
                           <Text style={styles.commentTime}>
-                            {new Date(comm.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(comm.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                           </Text>
                         </View>
 

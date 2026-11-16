@@ -25,6 +25,7 @@ import {
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
+import { formatAttendanceTime } from '../../utils/dateUtils';
 import {
   fetchPermissions,
   updatePermissionStatus,
@@ -99,6 +100,7 @@ export const AdminPermissionsScreen = ({ navigation }: any) => {
         subtitle="Short time & emergency permissions"
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
       />
 
       <View style={styles.tabContainer}>
@@ -156,7 +158,7 @@ export const AdminPermissionsScreen = ({ navigation }: any) => {
                   <View style={styles.timeBadge}>
                     <Clock size={12} color="#444444" />
                     <Text style={styles.timeBadgeText}>
-                      {item.start_time} - {item.end_time} ({item.duration_minutes || 60}m)
+                      {formatAttendanceTime(item.start_time)} - {formatAttendanceTime(item.end_time)} ({item.duration_minutes || 60}m)
                     </Text>
                   </View>
                 </View>
@@ -211,7 +213,7 @@ export const AdminPermissionsScreen = ({ navigation }: any) => {
                 <View style={styles.modalField}>
                   <Text style={styles.fieldLabel}>Date & Timing</Text>
                   <Text style={styles.fieldValue}>
-                    {selectedPermission.date} ({selectedPermission.start_time} to {selectedPermission.end_time})
+                    {selectedPermission.date} ({formatAttendanceTime(selectedPermission.start_time)} to {formatAttendanceTime(selectedPermission.end_time)})
                   </Text>
                 </View>
 

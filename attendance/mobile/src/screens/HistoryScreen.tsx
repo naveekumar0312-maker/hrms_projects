@@ -556,7 +556,7 @@ export default function HistoryScreen({ navigation }: any) {
                         </Text>
                         {p.start_time && p.end_time && (
                           <Text style={[styles.detailSectionSubText, { color: '#0284C7' }]}>
-                            Time: {p.start_time} - {p.end_time}
+                            Time: {formatAttendanceTime(p.start_time)} - {formatAttendanceTime(p.end_time)}
                           </Text>
                         )}
                         {p.reason && (

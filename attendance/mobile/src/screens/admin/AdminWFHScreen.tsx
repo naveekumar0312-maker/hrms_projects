@@ -100,6 +100,7 @@ export const AdminWFHScreen = ({ navigation }: any) => {
         subtitle="WFH requests & approvals"
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
       />
 
       <View style={styles.tabContainer}>

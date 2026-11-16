@@ -36,6 +36,7 @@ import {
   ManagerTeamEmployee,
 } from '../../services/managerService';
 import { COLORS } from '../../constants/theme';
+import { formatAttendanceTime } from '../../utils/dateUtils';
 
 export default function ManagerTeamScreen() {
   const insets = useSafeAreaInsets();
@@ -318,7 +319,7 @@ export default function ManagerTeamScreen() {
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Shift:</Text>
                   <Text style={styles.detailVal}>
-                    {selectedMember.shift ? `${selectedMember.shift.name} (${selectedMember.shift.start_time} - ${selectedMember.shift.end_time})` : '--'}
+                    {selectedMember.shift ? `${selectedMember.shift.name} (${formatAttendanceTime(selectedMember.shift.start_time)} - ${formatAttendanceTime(selectedMember.shift.end_time)})` : '--'}
                   </Text>
                 </View>
               </ScrollView>

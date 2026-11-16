@@ -170,6 +170,7 @@ export const AdminBranchesScreen = ({ navigation }: any) => {
         subtitle={`${branches.length} office zones configured`}
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
         rightAction={
           <TouchableOpacity
             style={styles.addBtn}

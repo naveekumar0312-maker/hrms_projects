@@ -870,13 +870,29 @@ export default function DashboardScreen({ navigation }: any) {
         
         {/* MODERN CLEAN HEADER (REFERENCE DESIGN) */}
         <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
+          {/* Company Brand Pill with Logo & Name */}
+          {(employee?.company?.name || employee?.company_name || employee?.company?.logo || employee?.company_logo) && (
+            <View style={styles.companyBannerPill}>
+              {(employee?.company?.logo || employee?.company_logo) ? (
+                <Image
+                  source={{ uri: getImageUrl(employee?.company?.logo || employee?.company_logo)! }}
+                  style={styles.companyBannerLogo}
+                  resizeMode="contain"
+                />
+              ) : null}
+              <Text style={styles.companyBannerText} numberOfLines={1}>
+                {employee?.company?.name || employee?.company_name || 'Yaazh 360'}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.headerTopRow}>
             <View style={styles.greetingBlock}>
               <Text style={styles.employeeName}>
                 Hello, {employee?.full_name?.split(' ')[0] || 'Ashish'}
               </Text>
               <Text style={styles.greeting}>
-                {getGreeting()} • {employee?.designation || employee?.branch?.branch_name || 'Yaazh 360'}
+                {getGreeting()} • {employee?.designation || employee?.branch?.branch_name || 'Staff'}
               </Text>
             </View>
 
@@ -1461,6 +1477,30 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
+  },
+  companyBannerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    marginBottom: 10,
+    gap: 6,
+    maxWidth: '90%',
+  },
+  companyBannerLogo: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+  },
+  companyBannerText: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#0F172A',
   },
   headerTopRow: {
     flexDirection: 'row',

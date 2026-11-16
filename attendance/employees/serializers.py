@@ -188,6 +188,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
         company = instance.branch.company if instance.branch and instance.branch.company else None
         request = self.context.get('request')
 
+        response['company_name'] = company.name if company else None
+        response['company_logo'] = (
+            request.build_absolute_uri(company.logo.url)
+            if company and company.logo and request
+            else company.logo.url if (company and company.logo)
+            else None
+        )
+
         response['company'] = (
             {
                 'id': company.id,

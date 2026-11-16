@@ -185,6 +185,7 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
         subtitle={employeeName || 'Live Tracking'}
         role={user?.role || 'SUPER_ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
         showBack={true}
         onBack={() => navigation.goBack()}
       />
@@ -232,10 +233,11 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
                 <View style={styles.metaItem}>
                   <Clock size={13} color="#15803D" />
                   <Text style={styles.metaText}>
-                    {new Date(selectedPoint.recorded_at).toLocaleTimeString('en-IN', {
+                    {new Date(selectedPoint.recorded_at).toLocaleTimeString('en-US', {
                       hour: '2-digit',
                       minute: '2-digit',
                       second: '2-digit',
+                      hour12: true,
                     })}
                   </Text>
                 </View>
@@ -473,10 +475,11 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
                     <View style={styles.timeBadge}>
                       <Clock size={11} color="#64748B" />
                       <Text style={styles.timeText}>
-                        {new Date(point.recorded_at).toLocaleTimeString('en-IN', {
+                        {new Date(point.recorded_at).toLocaleTimeString('en-US', {
                           hour: '2-digit',
                           minute: '2-digit',
                           second: '2-digit',
+                          hour12: true,
                         })}
                       </Text>
                     </View>

@@ -9,14 +9,24 @@ class UserSerializer(serializers.ModelSerializer):
     company_id = serializers.IntegerField(read_only=True, allow_null=True)
     company_slug = serializers.CharField(source='company.slug', read_only=True, allow_null=True)
     company_name = serializers.CharField(source='company.name', read_only=True, allow_null=True)
+    company_logo = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'phone_number', 'role',
-            'company_id', 'company_slug', 'company_name',
+            'company_id', 'company_slug', 'company_name', 'company_logo',
             'is_superuser', 'is_staff'
         ]
+
+    def get_company_logo(self, obj):
+        company = obj.company
+        if not company or not company.logo:
+            return None
+        request = self.context.get('request')
+        if request:
+            return request.build_absolute_uri(company.logo.url)
+        return company.logo.url
 
 class LoginSerializer(serializers.Serializer):
     phone_number = serializers.CharField(required=False, allow_blank=True)

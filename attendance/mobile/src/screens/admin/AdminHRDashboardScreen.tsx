@@ -151,10 +151,11 @@ export const AdminHRDashboardScreen = ({ navigation }: any) => {
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <AdminHRHeader
-        title="Operations Hub"
+        title={user?.company_name || 'Dashboard'}
         subtitle={`Today: ${stats?.date || new Date().toISOString().split('T')[0]}`}
         role={user?.role || 'ADMIN'}
-        companyName={user?.company_name || 'Organization'}
+        companyName={user?.company_name}
+        companyLogo={user?.company_logo}
         onNotificationsPress={() => navigation.navigate('Notifications')}
       />
 

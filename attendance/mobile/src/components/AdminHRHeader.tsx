@@ -4,12 +4,14 @@ import { Building2, Bell, Shield, ChevronLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { colors } from '../theme/colors';
+import { resolveMediaUrl } from '../utils/imageUtils';
 
 interface AdminHRHeaderProps {
   title: string;
   subtitle?: string;
   role: 'SUPER_ADMIN' | 'HR' | string;
   companyName?: string;
+  companyLogo?: string | null;
   onNotificationsPress?: () => void;
   rightAction?: React.ReactNode;
   showBack?: boolean;
@@ -22,6 +24,7 @@ export const AdminHRHeader: React.FC<AdminHRHeaderProps> = ({
   subtitle,
   role,
   companyName,
+  companyLogo,
   onNotificationsPress,
   rightAction,
   showBack = false,
@@ -30,18 +33,29 @@ export const AdminHRHeader: React.FC<AdminHRHeaderProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const isHR = role === 'HR';
+  const logoUri = resolveMediaUrl(companyLogo);
 
   return (
     <View style={[styles.container, { paddingTop: Math.max(insets.top + 8, 16) }]}>
       <StatusBar style="dark" hidden={false} />
 
-      {/* Top Banner for HR or Super Admin: Minimal Pill */}
-      {isHR && companyName ? (
+      {/* Top Banner for HR or Super Admin */}
+      {isHR && (companyName || logoUri) ? (
         <View style={styles.companyBanner}>
-          <Building2 size={13} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.companyBannerText} numberOfLines={1}>
-            {companyName}
-          </Text>
+          {logoUri ? (
+            <Image
+              source={{ uri: logoUri }}
+              style={styles.companyLogoImg}
+              resizeMode="contain"
+            />
+          ) : (
+            <Building2 size={13} color={colors.primary} strokeWidth={2} />
+          )}
+          {companyName ? (
+            <Text style={styles.companyBannerText} numberOfLines={1}>
+              {companyName}
+            </Text>
+          ) : null}
           <View style={styles.companyBadge}>
             <Text style={styles.companyBadgeText}>HR</Text>
           </View>
@@ -113,6 +127,12 @@ const styles = StyleSheet.create({
     gap: 6,
     borderWidth: 1,
     borderColor: 'rgba(70, 89, 199, 0.08)',
+    maxWidth: '90%',
+  },
+  companyLogoImg: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
   },
   companyBannerText: {
     fontSize: 11,

@@ -101,6 +101,7 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
         subtitle="Review and approve staff leaves"
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
       />
 
       {/* Status Filter Tabs */}

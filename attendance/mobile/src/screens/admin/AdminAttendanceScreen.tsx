@@ -265,6 +265,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
         subtitle={`${filteredRecords.length} records on ${selectedDate}`}
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
       />
 
       {/* Date Switcher */}

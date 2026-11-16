@@ -25,6 +25,7 @@ import {
 } from 'lucide-react-native';
 import { AuthContext, api } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
+import { formatAttendanceTime } from '../../utils/dateUtils';
 import {
   fetchLiveLocations,
   fetchEmployees,
@@ -123,6 +124,7 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
         subtitle={`${locations.length} active GPS beacons`}
         role={user?.role || 'ADMIN'}
         companyName={user?.company_name}
+        companyLogo={user?.company_logo}
         rightAction={
           <TouchableOpacity
             style={styles.refreshBtn}
@@ -258,9 +260,9 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
             const empCode = item.employee_id && typeof item.employee_id === 'string' ? item.employee_id : item.employee_code || '';
             const empBranch = item.branch || item.branch_name || '';
             const timeText = item.recorded_at 
-              ? new Date(item.recorded_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              ? new Date(item.recorded_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })
               : item.updated_at 
-                ? item.updated_at.split('T')[1]?.substring(0, 8) 
+                ? formatAttendanceTime(item.updated_at)
                 : 'Active';
 
             return (

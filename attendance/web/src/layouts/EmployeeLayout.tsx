@@ -51,6 +51,18 @@ const EmployeeSidebar = ({
     employee?.branch?.company_name ||
     employee?.branch?.company?.name ||
     '';
+  const rawSidebarLogo =
+    employee?.company_logo ||
+    (typeof employee?.company === 'object' ? employee.company?.logo : '') ||
+    employee?.branch?.company?.logo ||
+    '';
+  const [sidebarCompanyLogo, setSidebarCompanyLogo] = useState<string | null>(rawSidebarLogo || null);
+
+  useEffect(() => {
+    if (rawSidebarLogo) {
+      setSidebarCompanyLogo(rawSidebarLogo);
+    }
+  }, [rawSidebarLogo]);
   const navigate = useNavigate();
 
   const isAttendanceRelated = 
@@ -101,7 +113,17 @@ const EmployeeSidebar = ({
         <div className="sidebar-header">
 
           <div className="sidebar-brand">
-            {sidebarCompanyName || "Attendance"}
+            {sidebarCompanyLogo ? (
+              <img
+                src={sidebarCompanyLogo}
+                alt={sidebarCompanyName || 'Company Logo'}
+                className="sidebar-company-logo"
+                onError={() => setSidebarCompanyLogo(null)}
+              />
+            ) : null}
+            <span className="sidebar-brand-name">
+              {sidebarCompanyName || "Attendance"}
+            </span>
           </div>
 
           {/* Mobile Close Button */}

@@ -16,7 +16,7 @@ class LoginView(views.APIView):
         return Response({
             'access': tokens['access'],
             'refresh': tokens['refresh'],
-            'user': UserSerializer(user).data
+            'user': UserSerializer(user, context={'request': request}).data
         }, status=status.HTTP_200_OK)
 
 
@@ -38,7 +38,7 @@ class ManagerLoginView(views.APIView):
         return Response({
             'access': tokens['access'],
             'refresh': tokens['refresh'],
-            'user': UserSerializer(user).data
+            'user': UserSerializer(user, context={'request': request}).data
         }, status=status.HTTP_200_OK)
 
 class LogoutView(views.APIView):
@@ -52,7 +52,7 @@ class MeView(views.APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        serializer = UserSerializer(request.user)
+        serializer = UserSerializer(request.user, context={'request': request})
         return Response(serializer.data)
 
 
