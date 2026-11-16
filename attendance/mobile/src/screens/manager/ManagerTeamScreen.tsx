@@ -13,6 +13,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -35,6 +36,7 @@ import {
   assignTeamToLeader,
   ManagerTeamEmployee,
 } from '../../services/managerService';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 import { COLORS } from '../../constants/theme';
 import { formatAttendanceTime } from '../../utils/dateUtils';
 
@@ -208,11 +210,16 @@ export default function ManagerTeamScreen() {
           }
           renderItem={({ item }) => {
             const isTL = item.role === 'TEAM_LEADER';
+            const avatarUrl = resolveMediaUrl(item.profile_photo);
             return (
               <View style={styles.card}>
                 <View style={styles.cardTop}>
                   <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{item.full_name?.charAt(0) || 'U'}</Text>
+                    {avatarUrl ? (
+                      <Image source={{ uri: avatarUrl }} style={styles.avatarImage} />
+                    ) : (
+                      <Text style={styles.avatarText}>{item.full_name?.charAt(0) || 'U'}</Text>
+                    )}
                   </View>
 
                   <View style={styles.cardInfo}>
@@ -543,6 +550,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.surfaceSecondary,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   avatarText: {
     fontSize: 17,

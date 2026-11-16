@@ -42,7 +42,9 @@ export interface ManagerAttendanceRow {
   designation: string;
   profile_photo: string | null;
   branch_name?: string;
+  branch_id?: number | null;
   company_name?: string;
+  company_id?: number | null;
   calculated_status: string;
   status_reason: string;
   check_in: string | null;
@@ -91,8 +93,15 @@ export const getManagerTeamEmployeeDetail = async (id: number): Promise<any> => 
   return response.data;
 };
 
-export const getManagerTeamAttendance = async (dateStr: string): Promise<ManagerAttendanceResponse> => {
-  const response = await api.get('/employees/manager/team-attendance/', { params: { date: dateStr } });
+export const getManagerTeamAttendance = async (
+  dateStr: string,
+  companyId?: number | null,
+  branchId?: number | null
+): Promise<ManagerAttendanceResponse> => {
+  const params: any = { date: dateStr };
+  if (companyId) params.company = companyId;
+  if (branchId) params.branch = branchId;
+  const response = await api.get('/employees/manager/team-attendance/', { params });
   return response.data;
 };
 

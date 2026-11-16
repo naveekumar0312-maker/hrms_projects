@@ -29,9 +29,12 @@ import {
   LogOut as LogOutIcon,
   RotateCcw,
   MapPin,
+  Building,
+  Filter,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { getManagerTeamAttendance, ManagerAttendanceRow } from '../../services/managerService';
+import { fetchCompanies, fetchBranches } from '../../services/adminHRService';
 import { approveAttendanceRecord, rejectAttendanceRecord, undoAttendanceRecord } from '../../services/attendanceService';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatAttendanceTime } from '../../utils/dateUtils';
@@ -50,6 +53,12 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'ABSENT' | 'ON_LEAVE'>('ALL');
 
+  // Company & Branch Filter State
+  const [companies, setCompanies] = useState<any[]>([]);
+  const [branches, setBranches] = useState<any[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<number | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<number | null>(null);
+
   // Reject Modal State
   const [rejectingItem, setRejectingItem] = useState<{ item: ManagerAttendanceRow; type: 'check_in' | 'check_out' } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -64,10 +73,20 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
     return `+${m}m late`;
   };
 
-  const loadAttendance = useCallback(async (dateStr: string) => {
+  useEffect(() => {
+    fetchCompanies()
+      .then((data) => setCompanies(Array.isArray(data) ? data : []))
+      .catch((err) => console.log('Failed to fetch companies:', err));
+
+    fetchBranches()
+      .then((data) => setBranches(Array.isArray(data) ? data : []))
+      .catch((err) => console.log('Failed to fetch branches:', err));
+  }, []);
+
+  const loadAttendance = useCallback(async (dateStr: string, companyId?: number | null, branchId?: number | null) => {
     try {
       setLoading(true);
-      const data = await getManagerTeamAttendance(dateStr);
+      const data = await getManagerTeamAttendance(dateStr, companyId, branchId);
       setAttendanceList(data?.team_attendance || []);
       setSummary(data?.summary || null);
     } catch (error) {
@@ -79,12 +98,12 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
   }, []);
 
   useEffect(() => {
-    loadAttendance(selectedDate);
-  }, [selectedDate, loadAttendance]);
+    loadAttendance(selectedDate, selectedCompany, selectedBranch);
+  }, [selectedDate, selectedCompany, selectedBranch, loadAttendance]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    loadAttendance(selectedDate);
+    loadAttendance(selectedDate, selectedCompany, selectedBranch);
   };
 
   const changeDate = (days: number) => {
@@ -174,12 +193,25 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
     );
   };
 
+  const filteredBranches = branches.filter((b) => {
+    if (!selectedCompany) return true;
+    return String(b.company) === String(selectedCompany) || String(b.company_id) === String(selectedCompany);
+  });
+
   const filteredList = attendanceList.filter((row) => {
     const matchesSearch =
       !searchQuery ||
       row.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       row.employee_code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       row.department?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCompany =
+      !selectedCompany ||
+      (row.company_id && Number(row.company_id) === Number(selectedCompany));
+
+    const matchesBranch =
+      !selectedBranch ||
+      (row.branch_id && Number(row.branch_id) === Number(selectedBranch));
 
     const matchesStatus =
       statusFilter === 'ALL' ||
@@ -188,7 +220,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
       (statusFilter === 'ABSENT' && row.calculated_status === 'ABSENT') ||
       (statusFilter === 'ON_LEAVE' && (row.calculated_status === 'ON_LEAVE' || row.calculated_status === 'HOLIDAY'));
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesCompany && matchesBranch && matchesStatus;
   });
 
   const getStatusColor = (status: string) => {
@@ -504,6 +536,75 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
         </View>
       </View>
 
+      {/* Company & Branch Horizontal Filters */}
+      {(companies.length > 0 || branches.length > 0) && (
+        <View style={styles.dropdownFiltersWrapper}>
+          {companies.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollContent}>
+              <TouchableOpacity
+                style={[styles.dropdownChip, !selectedCompany && styles.dropdownChipActive]}
+                onPress={() => {
+                  setSelectedCompany(null);
+                  setSelectedBranch(null);
+                }}
+              >
+                <Building size={13} color={!selectedCompany ? '#FFFFFF' : '#475569'} />
+                <Text style={[styles.dropdownChipText, !selectedCompany && styles.dropdownChipTextActive]}>
+                  All Companies
+                </Text>
+              </TouchableOpacity>
+              {companies.map((c) => {
+                const active = selectedCompany === c.id;
+                return (
+                  <TouchableOpacity
+                    key={`comp-${c.id}`}
+                    style={[styles.dropdownChip, active && styles.dropdownChipActive]}
+                    onPress={() => {
+                      setSelectedCompany(active ? null : c.id);
+                      setSelectedBranch(null);
+                    }}
+                  >
+                    <Building size={13} color={active ? '#FFFFFF' : '#475569'} />
+                    <Text style={[styles.dropdownChipText, active && styles.dropdownChipTextActive]} numberOfLines={1}>
+                      {c.name}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          {filteredBranches.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.filterScrollContent, { marginTop: 6 }]}>
+              <TouchableOpacity
+                style={[styles.branchChip, !selectedBranch && styles.branchChipActive]}
+                onPress={() => setSelectedBranch(null)}
+              >
+                <MapPin size={12} color={!selectedBranch ? '#FFFFFF' : '#475569'} />
+                <Text style={[styles.branchChipText, !selectedBranch && styles.branchChipTextActive]}>
+                  All Branches
+                </Text>
+              </TouchableOpacity>
+              {filteredBranches.map((b) => {
+                const active = selectedBranch === b.id;
+                return (
+                  <TouchableOpacity
+                    key={`branch-${b.id}`}
+                    style={[styles.branchChip, active && styles.branchChipActive]}
+                    onPress={() => setSelectedBranch(active ? null : b.id)}
+                  >
+                    <MapPin size={12} color={active ? '#FFFFFF' : '#475569'} />
+                    <Text style={[styles.branchChipText, active && styles.branchChipTextActive]} numberOfLines={1}>
+                      {b.branch_name || `Branch ${b.id}`}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+      )}
+
       {/* Summary KPI Badges */}
       {summary ? (
         <View style={styles.summaryBar}>
@@ -724,6 +825,65 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Comfortaa_600SemiBold',
     color: '#0F172A',
+  },
+  dropdownFiltersWrapper: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  filterScrollContent: {
+    gap: 8,
+    alignItems: 'center',
+  },
+  dropdownChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  dropdownChipActive: {
+    backgroundColor: '#16A34A',
+    borderColor: '#16A34A',
+  },
+  dropdownChipText: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#475569',
+  },
+  dropdownChipTextActive: {
+    color: '#FFFFFF',
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  branchChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  branchChipActive: {
+    backgroundColor: '#0284C7',
+    borderColor: '#0284C7',
+  },
+  branchChipText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#475569',
+  },
+  branchChipTextActive: {
+    color: '#FFFFFF',
+    fontFamily: 'Comfortaa_700Bold',
   },
   summaryBar: {
     flexDirection: 'row',

@@ -415,9 +415,18 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
         else:
             selected_date = timezone.localdate()
 
-        assigned_employees = list(self.get_manager_team_queryset(manager, status_filter=True).select_related(
+        company_id_param = request.query_params.get('company')
+        branch_id_param = request.query_params.get('branch')
+
+        team_qs = self.get_manager_team_queryset(manager, status_filter=True).select_related(
             'branch', 'branch__company', 'shift'
-        ))
+        )
+        if company_id_param:
+            team_qs = team_qs.filter(branch__company_id=company_id_param)
+        if branch_id_param:
+            team_qs = team_qs.filter(branch_id=branch_id_param)
+
+        assigned_employees = list(team_qs)
 
         if not assigned_employees:
             return Response({
@@ -503,7 +512,9 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
                 "department": emp.department,
                 "designation": emp.designation,
                 "branch_name": emp.branch.branch_name if emp.branch else '',
+                "branch_id": emp.branch.id if emp.branch else None,
                 "company_name": emp.branch.company.name if (emp.branch and emp.branch.company) else '',
+                "company_id": emp.branch.company.id if (emp.branch and emp.branch.company) else None,
                 "profile_photo": emp.profile_photo.url if emp.profile_photo else None,
                 "calculated_status": calculated_status,
                 "status_reason": reason,
@@ -542,9 +553,18 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
         manager = self.get_manager_employee(request)
         today = timezone.localdate()
 
-        assigned_employees = list(self.get_manager_team_queryset(manager, status_filter=True).select_related(
+        company_id_param = request.query_params.get('company')
+        branch_id_param = request.query_params.get('branch')
+
+        team_qs = self.get_manager_team_queryset(manager, status_filter=True).select_related(
             'branch', 'branch__company', 'shift'
-        ))
+        )
+        if company_id_param:
+            team_qs = team_qs.filter(branch__company_id=company_id_param)
+        if branch_id_param:
+            team_qs = team_qs.filter(branch_id=branch_id_param)
+
+        assigned_employees = list(team_qs)
 
         total_employees = len(assigned_employees)
         if total_employees == 0:

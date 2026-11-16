@@ -729,10 +729,20 @@ const Attendance = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.80rem', color: '#475569', background: '#F1F5F9', padding: '4px 10px', borderRadius: '20px', fontWeight: 600 }}>
               {visibleRecords.length} {visibleRecords.length === 1 ? 'Record' : 'Records'}
             </span>
+            {absentRecords.length > 0 && (
+              <span style={{ fontSize: '0.80rem', color: '#DC2626', background: '#FEF2F2', border: '1px solid #FECACA', padding: '4px 10px', borderRadius: '20px', fontWeight: 700 }}>
+                {absentRecords.length} Absent
+              </span>
+            )}
+            {pendingRecords.length > 0 && (
+              <span style={{ fontSize: '0.80rem', color: '#D97706', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '4px 10px', borderRadius: '20px', fontWeight: 700 }}>
+                {pendingRecords.length} Pending
+              </span>
+            )}
             {(selectedCompany || selectedBranch || selectedDate || searchEmployee) && (
               <button
                 type="button"
