@@ -291,8 +291,19 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             emp = getattr(user, 'employee_profile', None)
             if not emp:
                 return queryset.none()
-            rep_ids = list(emp.direct_reports.filter(status=True).values_list('id', flat=True))
-            queryset = queryset.filter(employee_id__in=rep_ids)
+            is_global = (user.role == 'REPORTING_MANAGER' and emp.branch is None and user.company_id is None)
+            if is_global:
+                # Global Access Manager: access attendance of all employees across all companies
+                queryset = queryset.filter(employee__status=True)
+            elif user.company_id:
+                # Company-level Manager
+                queryset = queryset.filter(employee__branch__company_id=user.company_id, employee__status=True)
+            elif emp.branch_id:
+                # Branch-level Manager: all employees in this branch or direct reports
+                queryset = queryset.filter(employee__branch_id=emp.branch_id, employee__status=True)
+            else:
+                rep_ids = list(emp.direct_reports.filter(status=True).values_list('id', flat=True))
+                queryset = queryset.filter(employee_id__in=rep_ids)
 
         elif hasattr(user, 'employee_profile'):
             # Regular employees can only access their own attendance
@@ -586,7 +597,15 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         elif request.user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             mgr_emp = getattr(request.user, 'employee_profile', None)
             if mgr_emp:
-                employee_qs = employee_qs.filter(reporting_manager=mgr_emp)
+                is_global = (request.user.role == 'REPORTING_MANAGER' and mgr_emp.branch is None and request.user.company_id is None)
+                if is_global:
+                    employee_qs = employee_qs.filter(status=True)
+                elif request.user.company_id:
+                    employee_qs = employee_qs.filter(branch__company_id=request.user.company_id, status=True)
+                elif mgr_emp.branch_id:
+                    employee_qs = employee_qs.filter(branch_id=mgr_emp.branch_id, status=True)
+                else:
+                    employee_qs = employee_qs.filter(reporting_manager=mgr_emp)
             else:
                 employee_qs = employee_qs.none()
         elif request.user.role in ('SUPER_ADMIN', 'ADMIN'):

@@ -67,25 +67,39 @@ class PendingActionsReminderView(APIView):
                     "pending_items": [],
                     "summary": {},
                 })
-            # Manager's direct & indirect reports
-            team_ids = list(emp.direct_reports.values_list('id', flat=True))
-            # Also include team members under their team leaders
-            tl_ids = list(emp.direct_reports.filter(user__role='TEAM_LEADER').values_list('id', flat=True))
-            if tl_ids:
-                team_ids += list(Employee.objects.filter(team_leader_id__in=tl_ids).values_list('id', flat=True))
-            team_ids = list(set(team_ids))
+            is_global = (role == 'REPORTING_MANAGER' and emp.branch is None and user.company_id is None)
+            if is_global:
+                leaves_qs = LeaveRequest.objects.all()
+                permissions_qs = PermissionRequest.objects.all()
+                wfh_qs = WFHRequest.objects.all()
+                attendance_qs = Attendance.objects.all()
+                tasks_qs = Task.objects.all()
+            elif user.company_id:
+                leaves_qs = LeaveRequest.objects.filter(employee__branch__company_id=user.company_id)
+                permissions_qs = PermissionRequest.objects.filter(employee__branch__company_id=user.company_id)
+                wfh_qs = WFHRequest.objects.filter(employee__branch__company_id=user.company_id)
+                attendance_qs = Attendance.objects.filter(employee__branch__company_id=user.company_id)
+                tasks_qs = Task.objects.filter(company_id=user.company_id)
+            else:
+                # Manager's direct & indirect reports
+                team_ids = list(emp.direct_reports.values_list('id', flat=True))
+                # Also include team members under their team leaders
+                tl_ids = list(emp.direct_reports.filter(user__role='TEAM_LEADER').values_list('id', flat=True))
+                if tl_ids:
+                    team_ids += list(Employee.objects.filter(team_leader_id__in=tl_ids).values_list('id', flat=True))
+                team_ids = list(set(team_ids))
 
-            leaves_qs = LeaveRequest.objects.filter(employee_id__in=team_ids)
-            permissions_qs = PermissionRequest.objects.filter(employee_id__in=team_ids)
-            wfh_qs = WFHRequest.objects.filter(employee_id__in=team_ids)
-            attendance_qs = Attendance.objects.filter(employee_id__in=team_ids)
-            tasks_qs = Task.objects.filter(
-                Q(company_id=user.company_id) & (
-                    Q(reporting_manager=emp) |
-                    Q(assigned_by=user) |
-                    Q(assigned_employees__id__in=team_ids)
-                )
-            ).distinct()
+                leaves_qs = LeaveRequest.objects.filter(employee_id__in=team_ids)
+                permissions_qs = PermissionRequest.objects.filter(employee_id__in=team_ids)
+                wfh_qs = WFHRequest.objects.filter(employee_id__in=team_ids)
+                attendance_qs = Attendance.objects.filter(employee_id__in=team_ids)
+                tasks_qs = Task.objects.filter(
+                    Q(company_id=user.company_id) & (
+                        Q(reporting_manager=emp) |
+                        Q(assigned_by=user) |
+                        Q(assigned_employees__id__in=team_ids)
+                    )
+                ).distinct()
 
         # 2. Filter Pending Approvals
         pending_leaves = leaves_qs.filter(status='PENDING').select_related('employee').order_by('-created_at')

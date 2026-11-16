@@ -42,11 +42,16 @@ def get_viewable_employees(request):
         emp = getattr(user, "employee_profile", None)
         if not emp:
             return Employee.objects.none()
+        is_global = (user.role == 'REPORTING_MANAGER' and emp.branch is None and user.company_id is None)
+        if is_global:
+            return Employee.objects.filter(status=True)
         comp_id = user.company_id or (emp.branch.company_id if emp.branch else None)
-        return Employee.objects.filter(
-            branch__company_id=comp_id,
-            status=True,
-        )
+        if comp_id:
+            return Employee.objects.filter(
+                branch__company_id=comp_id,
+                status=True,
+            )
+        return Employee.objects.filter(reporting_manager=emp, status=True)
 
     raise PermissionDenied(
         "You are not allowed to view employee locations."
