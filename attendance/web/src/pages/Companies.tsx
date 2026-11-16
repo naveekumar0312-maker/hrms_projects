@@ -2,6 +2,7 @@
 import { Plus, Trash2, CheckCircle, XCircle, Building2, Search, Eye, Pencil, MoreVertical, X } from 'lucide-react';
 import api from '../services/api';
 import { CustomSelect } from '../components/CustomSelect';
+import { resolveMediaUrl } from '../utils/imageUtils';
 
 export interface Company {
   id: number;
@@ -9,6 +10,7 @@ export interface Company {
   code: string;
   address: string;
   status: boolean;
+  logo?: string | null;
   branch_count?: number;
   employee_count?: number;
   created_at?: string;
@@ -222,8 +224,16 @@ const Companies = () => {
                 <tr key={company.id}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <div className="avatar" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)' }}>
-                        <Building2 size={18} />
+                      <div className="avatar" style={{ backgroundColor: company.logo ? '#FFFFFF' : 'var(--primary-light)', color: 'var(--primary)', overflow: 'hidden' }}>
+                        {company.logo ? (
+                          <img
+                            src={resolveMediaUrl(company.logo)!}
+                            alt={company.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                          />
+                        ) : (
+                          <Building2 size={18} />
+                        )}
                       </div>
                       <div>
                         <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{company.name}</div>
@@ -322,8 +332,16 @@ const Companies = () => {
             {companies.map(company => (
               <div key={company.id} className="admin-mobile-card">
                 <div className="admin-mobile-card-header">
-                  <div className="avatar" style={{ backgroundColor: 'var(--primary-light)', color: 'var(--primary)' }}>
-                    <Building2 size={18} />
+                  <div className="avatar" style={{ backgroundColor: company.logo ? '#FFFFFF' : 'var(--primary-light)', color: 'var(--primary)', overflow: 'hidden' }}>
+                    {company.logo ? (
+                      <img
+                        src={resolveMediaUrl(company.logo)!}
+                        alt={company.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
+                    ) : (
+                      <Building2 size={18} />
+                    )}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: '1rem' }}>{company.name}</div>

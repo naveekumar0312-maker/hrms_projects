@@ -12,6 +12,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -34,6 +35,7 @@ import {
   undoLeave,
   LeaveRequestItem,
 } from '../../services/adminHRService';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 
 export const AdminLeavesScreen = ({ navigation }: any) => {
   const { user } = useContext(AuthContext);
@@ -52,7 +54,12 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
     setLoading(true);
     try {
       const data = await fetchLeaves(companyId, activeTab);
-      setLeaves(data);
+      const sorted = (Array.isArray(data) ? [...data] : []).sort((a, b) => {
+        const dateA = new Date(a.start_date || a.applied_at).getTime();
+        const dateB = new Date(b.start_date || b.applied_at).getTime();
+        return dateB - dateA;
+      });
+      setLeaves(sorted);
     } catch (error) {
       console.error('Failed fetching leaves:', error);
     } finally {
@@ -161,6 +168,7 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
           renderItem={({ item }) => {
             const badge = getStatusBadge(item.status);
             const BadgeIcon = badge.icon;
+            const photoUri = resolveMediaUrl(item.profile_photo);
             return (
               <TouchableOpacity
                 style={styles.card}
@@ -171,6 +179,23 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
                 activeOpacity={0.7}
               >
                 <View style={styles.cardTop}>
+                  <View style={styles.avatarCircle}>
+                    {photoUri ? (
+                      <Image
+                        source={{ uri: photoUri }}
+                        style={styles.avatarImg}
+                      />
+                    ) : (
+                      <Text style={styles.avatarText}>
+                        {item.employee_name
+                          ?.split(' ')
+                          .map((n: string) => n[0])
+                          .join('')
+                          .substring(0, 2)
+                          .toUpperCase() || 'EM'}
+                      </Text>
+                    )}
+                  </View>
                   <View style={styles.empInfo}>
                     <Text style={styles.empName}>{item.employee_name || 'Employee'}</Text>
                     <Text style={styles.empSub}>ID: {item.employee_id_display || item.employee}</Text>
@@ -391,6 +416,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  avatarCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 86, 179, 0.08)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    overflow: 'hidden',
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarText: {
+    fontSize: 13,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#22C55E',
   },
   empInfo: {
     flex: 1,

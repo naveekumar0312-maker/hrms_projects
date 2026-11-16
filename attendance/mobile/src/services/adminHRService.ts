@@ -76,6 +76,7 @@ export interface LeaveRequestItem {
   employee: number;
   employee_name: string;
   employee_id_display: string;
+  profile_photo?: string | null;
   company: number;
   company_name?: string;
   branch_name?: string;
@@ -94,6 +95,7 @@ export interface PermissionRequestItem {
   employee: number;
   employee_name: string;
   employee_id_display: string;
+  profile_photo?: string | null;
   company: number;
   company_name?: string;
   branch_name?: string;
@@ -113,6 +115,7 @@ export interface WFHRequestItem {
   employee: number;
   employee_name: string;
   employee_id_display: string;
+  profile_photo?: string | null;
   company: number;
   company_name?: string;
   branch_name?: string;

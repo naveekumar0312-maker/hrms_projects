@@ -13,6 +13,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -35,6 +36,7 @@ import {
   deleteCompany,
   CompanySummary,
 } from '../../services/adminHRService';
+import { resolveMediaUrl } from '../../utils/imageUtils';
 
 export const AdminCompaniesScreen = ({ navigation }: any) => {
   const { user } = useContext(AuthContext);
@@ -217,15 +219,33 @@ export const AdminCompaniesScreen = ({ navigation }: any) => {
                 activeOpacity={0.7}
                 onPress={() => openViewModal(item)}
               >
-                <View style={[styles.avatarBox, { backgroundColor: item.primary_color || '#22C55E' }]}>
-                  <Text style={styles.avatarText}>
-                    {item.name
-                      ?.split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .substring(0, 2)
-                      .toUpperCase() || 'CO'}
-                  </Text>
+                <View
+                  style={[
+                    styles.avatarBox,
+                    {
+                      backgroundColor: item.logo ? '#FFFFFF' : item.primary_color || '#22C55E',
+                      overflow: 'hidden',
+                      borderWidth: item.logo ? 1 : 0,
+                      borderColor: '#E2E8F0',
+                    },
+                  ]}
+                >
+                  {resolveMediaUrl(item.logo) ? (
+                    <Image
+                      source={{ uri: resolveMediaUrl(item.logo)! }}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="contain"
+                    />
+                  ) : (
+                    <Text style={styles.avatarText}>
+                      {item.name
+                        ?.split(' ')
+                        .map((n) => n[0])
+                        .join('')
+                        .substring(0, 2)
+                        .toUpperCase() || 'CO'}
+                    </Text>
+                  )}
                 </View>
 
                 <View style={styles.companyInfo}>
