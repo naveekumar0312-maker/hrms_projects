@@ -295,9 +295,18 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             if is_global:
                 # Global Access Manager: access attendance of all employees across all companies
                 queryset = queryset.filter(employee__status=True)
+                company_id = self.request.query_params.get('company')
+                branch_id = self.request.query_params.get('branch')
+                if company_id:
+                    queryset = queryset.filter(employee__branch__company_id=company_id)
+                if branch_id:
+                    queryset = queryset.filter(employee__branch_id=branch_id)
             elif user.company_id:
                 # Company-level Manager
                 queryset = queryset.filter(employee__branch__company_id=user.company_id, employee__status=True)
+                branch_id = self.request.query_params.get('branch')
+                if branch_id:
+                    queryset = queryset.filter(employee__branch_id=branch_id)
             elif emp.branch_id:
                 # Branch-level Manager: all employees in this branch or direct reports
                 queryset = queryset.filter(employee__branch_id=emp.branch_id, employee__status=True)

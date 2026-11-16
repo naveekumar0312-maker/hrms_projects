@@ -528,6 +528,30 @@ const Attendance = () => {
       );
     }
 
+    if (selectedCompany) {
+      result = result.filter((record) => {
+        const empComp = record.employee?.company as any;
+        const empBranch = record.employee?.branch as any;
+        const compId = String(empComp?.id ?? empBranch?.company?.id ?? empBranch?.company ?? '');
+        const compName = getCompanyName(record).toLowerCase();
+        const selectedCompObj = companies.find((c) => String(c.id) === String(selectedCompany));
+        const targetName = (selectedCompObj?.name || '').toLowerCase();
+        return (compId && String(compId) === String(selectedCompany)) || (targetName && compName.includes(targetName));
+      });
+    }
+
+    if (selectedBranch) {
+      result = result.filter((record) => {
+        const empBranch = record.employee?.branch as any;
+        const recBranch = record.branch as any;
+        const branchId = String(empBranch?.id ?? (record.employee as any)?.branch_id ?? recBranch?.id ?? '');
+        const branchName = getBranchName(record).toLowerCase();
+        const selectedBranchObj = branches.find((b) => String(b.id) === String(selectedBranch));
+        const targetName = (selectedBranchObj?.branch_name || '').toLowerCase();
+        return (branchId && String(branchId) === String(selectedBranch)) || (targetName && branchName.includes(targetName));
+      });
+    }
+
     const search = searchEmployee.trim().toLowerCase();
 
     if (search) {
@@ -555,7 +579,7 @@ const Attendance = () => {
     return Array.from(
       new Map(result.map((record) => [record.id, record])).values()
     );
-  }, [records, selectedDate, searchEmployee]);
+  }, [records, selectedDate, selectedCompany, selectedBranch, searchEmployee, companies, branches]);
 
   const pendingRecords = useMemo(
     () => visibleRecords.filter((record) => record.status === 'PENDING'),
