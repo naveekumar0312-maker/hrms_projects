@@ -94,11 +94,43 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
 
   // Speech-to-text voice recognition for Title & Description
   const [voiceTarget, setVoiceTarget] = useState<'title' | 'description' | null>(null);
+  const [isTranscribingVoice, setIsTranscribingVoice] = useState(false);
   const [titleVoiceAudioUrl, setTitleVoiceAudioUrl] = useState<string | null>(null);
   const [descVoiceAudioUrl, setDescVoiceAudioUrl] = useState<string | null>(null);
   const speechRecognizerRef = useRef<any>(null);
   const fieldMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const fieldAudioChunksRef = useRef<Blob[]>([]);
+  const targetForSpeechRef = useRef<'title' | 'description' | null>(null);
+  const speechTextAccumulatedRef = useRef<string>('');
+
+  // Transcribe recorded audio with the backend Google Speech API fallback
+  const transcribeBlob = async (blob: Blob, target: 'title' | 'description') => {
+    try {
+      setIsTranscribingVoice(true);
+      const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+      const file = new File([blob], `voice_input.${ext}`, { type: blob.type || 'audio/webm' });
+      const formData = new FormData();
+      formData.append('audio', file);
+
+      const res = await api.post('/tasks-module/tasks/transcribe-audio/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const serverText = res.data?.text;
+      if (serverText && serverText.trim()) {
+        const textToAppend = serverText.trim();
+        if (target === 'title') {
+          setTitle((prev) => (prev ? prev.trim() + ' ' + textToAppend : textToAppend));
+        } else {
+          setDescription((prev) => (prev ? prev.trim() + ' ' + textToAppend : textToAppend));
+        }
+      }
+    } catch (err) {
+      console.warn('Backend transcription error:', err);
+    } finally {
+      setIsTranscribingVoice(false);
+    }
+  };
 
   const startVoiceInput = async (target: 'title' | 'description') => {
     if (voiceTarget === target) {
@@ -108,8 +140,10 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
 
     // Stop any existing session
     stopVoiceInput();
+    targetForSpeechRef.current = target;
+    speechTextAccumulatedRef.current = '';
 
-    // 1. Start audio recording via MediaRecorder for playback box
+    // 1. Start audio recording via MediaRecorder for playback box & server transcription fallback
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -129,7 +163,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
           }
         };
 
-        recorder.onstop = () => {
+        recorder.onstop = async () => {
           const blob = new Blob(fieldAudioChunksRef.current, { type: mimeType || 'audio/webm' });
           const url = URL.createObjectURL(blob);
           if (target === 'title') {
@@ -138,6 +172,11 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
             setDescVoiceAudioUrl(url);
           }
           stream.getTracks().forEach((track) => track.stop());
+
+          // If web browser SpeechRecognition didn't produce text, transcribe via server
+          if (!speechTextAccumulatedRef.current.trim() && blob.size > 1000) {
+            await transcribeBlob(blob, target);
+          }
         };
 
         recorder.start(100);
@@ -146,7 +185,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
       console.warn('Audio recorder stream could not be started:', micErr);
     }
 
-    // 2. Start SpeechRecognition for converting voice to text
+    // 2. Start SpeechRecognition for real-time speech typing
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
       try {
@@ -166,6 +205,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
           for (let i = 0; i < event.results.length; i++) {
             transcript += event.results[i][0].transcript;
           }
+          speechTextAccumulatedRef.current = transcript;
           if (target === 'title') {
             setTitle((initialText ? initialText + ' ' : '') + transcript);
           } else {
@@ -174,19 +214,23 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
         };
 
         recognition.onerror = (event: any) => {
-          console.warn('Speech recognition error:', event.error);
-          setVoiceTarget(null);
+          console.warn('Speech recognition warning/error:', event.error);
+          // Don't kill voiceTarget immediately if network error; MediaRecorder will fallback on stop
+          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+            setVoiceTarget(null);
+          }
         };
 
         recognition.onend = () => {
-          setVoiceTarget(null);
+          // If stopped externally or completed
         };
 
         speechRecognizerRef.current = recognition;
         recognition.start();
+        setVoiceTarget(target);
       } catch (err: any) {
         console.error('Failed to start speech recognition:', err);
-        setVoiceTarget(null);
+        setVoiceTarget(target);
       }
     } else {
       setVoiceTarget(target);
@@ -706,9 +750,15 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                         type="button"
                         className={`task-voice-btn ${voiceTarget === 'title' ? 'recording' : ''}`}
                         onClick={() => startVoiceInput('title')}
+                        disabled={isTranscribingVoice}
                         title="Voice typing for Title"
                       >
-                        {voiceTarget === 'title' ? (
+                        {isTranscribingVoice && targetForSpeechRef.current === 'title' ? (
+                          <>
+                            <Loader2 size={12} className="spin" />
+                            <span>Transcribing...</span>
+                          </>
+                        ) : voiceTarget === 'title' ? (
                           <>
                             <span className="task-voice-dot" />
                             <span>Listening...</span>
@@ -752,9 +802,15 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                         type="button"
                         className={`task-voice-btn ${voiceTarget === 'description' ? 'recording' : ''}`}
                         onClick={() => startVoiceInput('description')}
+                        disabled={isTranscribingVoice}
                         title="Voice typing for Description"
                       >
-                        {voiceTarget === 'description' ? (
+                        {isTranscribingVoice && targetForSpeechRef.current === 'description' ? (
+                          <>
+                            <Loader2 size={12} className="spin" />
+                            <span>Transcribing...</span>
+                          </>
+                        ) : voiceTarget === 'description' ? (
                           <>
                             <span className="task-voice-dot" />
                             <span>Listening...</span>
