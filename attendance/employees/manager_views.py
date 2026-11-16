@@ -517,8 +517,10 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
                 "rejection_reason": att.rejection_reason if att else None,
                 "check_in_approval_status": att.check_in_approval_status if att and att.check_in else None,
                 "check_in_rejection_reason": att.check_in_rejection_reason if att else None,
+                "check_in_location_name": (att.check_in_location_name or (emp.branch.branch_name if emp.branch else None)) if att else None,
                 "check_out_approval_status": att.check_out_approval_status if att and att.check_out else None,
                 "check_out_rejection_reason": att.check_out_rejection_reason if att else None,
+                "check_out_location_name": (att.check_out_location_name or (emp.branch.branch_name if emp.branch else None)) if att else None,
             })
 
         return Response({

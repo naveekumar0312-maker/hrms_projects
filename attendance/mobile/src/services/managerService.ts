@@ -47,6 +47,8 @@ export interface ManagerAttendanceRow {
   status_reason: string;
   check_in: string | null;
   check_out: string | null;
+  check_in_location_name?: string | null;
+  check_out_location_name?: string | null;
   late_minutes: number;
   attendance_id: number | null;
   approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED';

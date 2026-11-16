@@ -72,7 +72,7 @@ const FORM_TABS: { key: TabKey; label: string }[] = [
   { key: 'account', label: 'Security' },
 ];
 
-export const AdminEmployeesScreen = ({ navigation }: any) => {
+export const AdminEmployeesScreen = ({ navigation, route }: any) => {
   const { user } = useContext(AuthContext);
   const insets = useSafeAreaInsets();
   const isHR = user?.role === 'HR';
@@ -85,8 +85,14 @@ export const AdminEmployeesScreen = ({ navigation }: any) => {
   const [managers, setManagers] = useState<EmployeeItem[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(route?.params?.search || '');
   const [selectedBranch, setSelectedBranch] = useState<number | 'ALL'>('ALL');
+
+  useEffect(() => {
+    if (route?.params?.search !== undefined) {
+      setSearch(route.params.search);
+    }
+  }, [route?.params?.search]);
 
   // Detail Modal
   const [detailModalVisible, setDetailModalVisible] = useState(false);

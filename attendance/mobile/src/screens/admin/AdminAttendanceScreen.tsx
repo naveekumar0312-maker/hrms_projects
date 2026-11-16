@@ -35,6 +35,7 @@ import {
   LogIn,
   LogOut as LogOutIcon,
   RotateCcw,
+  MapPin,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
@@ -504,6 +505,15 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                         ) : null}
                       </View>
 
+                      {Boolean(item.check_in_location_name || item.check_in_location?.location_name) && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
+                          <MapPin size={11} color="#E56108" />
+                          <Text style={{ fontSize: 11, color: '#475569', fontFamily: 'Comfortaa_500Medium', flex: 1 }} numberOfLines={1}>
+                            {item.check_in_location_name || item.check_in_location?.location_name}
+                          </Text>
+                        </View>
+                      )}
+
                       {item.late_reason ? (
                         <View style={{ backgroundColor: '#FEF2F2', borderColor: '#FECACA', borderWidth: 1, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4, marginTop: 4 }}>
                           <Text style={{ fontSize: 11, color: '#DC2626', fontFamily: 'Comfortaa_600SemiBold' }}>
@@ -629,6 +639,15 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                           </View>
                         ) : null}
                       </View>
+
+                      {Boolean(item.check_out_location_name || item.check_out_location?.location_name) && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
+                          <MapPin size={11} color="#0369A1" />
+                          <Text style={{ fontSize: 11, color: '#475569', fontFamily: 'Comfortaa_500Medium', flex: 1 }} numberOfLines={1}>
+                            {item.check_out_location_name || item.check_out_location?.location_name}
+                          </Text>
+                        </View>
+                      )}
 
                       {item.check_out_rejection_reason ? (
                         <Text style={{ fontSize: 11, color: '#DC2626', fontStyle: 'italic', marginTop: 4 }}>
@@ -799,6 +818,17 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                       : 'Not punched'}
                   </Text>
                 </View>
+                {Boolean(selectedRecord.check_in_location_name || selectedRecord.check_in_location?.location_name) && (
+                  <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
+                    <Text style={styles.detailLabel}>In Location</Text>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 4 }}>
+                      <MapPin size={12} color="#E56108" style={{ marginTop: 2 }} />
+                      <Text style={[styles.detailValue, { flexShrink: 1, textAlign: 'right', color: '#475569' }]}>
+                        {selectedRecord.check_in_location_name || selectedRecord.check_in_location?.location_name}
+                      </Text>
+                    </View>
+                  </View>
+                )}
                 {selectedRecord.late_reason ? (
                   <View style={[styles.detailRow, { backgroundColor: '#FEF2F2', padding: 8, borderRadius: 8, marginTop: 4, marginBottom: 4 }]}>
                     <Text style={[styles.detailLabel, { color: '#DC2626' }]}>Late Reason</Text>
@@ -815,6 +845,17 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
                       : 'Not punched'}
                   </Text>
                 </View>
+                {Boolean(selectedRecord.check_out_location_name || selectedRecord.check_out_location?.location_name) && (
+                  <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
+                    <Text style={styles.detailLabel}>Out Location</Text>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 4 }}>
+                      <MapPin size={12} color="#0369A1" style={{ marginTop: 2 }} />
+                      <Text style={[styles.detailValue, { flexShrink: 1, textAlign: 'right', color: '#475569' }]}>
+                        {selectedRecord.check_out_location_name || selectedRecord.check_out_location?.location_name}
+                      </Text>
+                    </View>
+                  </View>
+                )}
                 <View style={styles.detailRow}>
                   <Text style={styles.detailLabel}>Working Hours</Text>
                   <Text style={styles.detailValue}>{selectedRecord.working_hours || '00:00'}</Text>

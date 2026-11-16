@@ -40,7 +40,7 @@ export const AdminHRHeader: React.FC<AdminHRHeaderProps> = ({
       <StatusBar style="dark" hidden={false} />
 
       {/* Top Banner for HR or Super Admin */}
-      {isHR && (companyName || logoUri) ? (
+      {(companyName || logoUri) ? (
         <View style={styles.companyBanner}>
           {logoUri ? (
             <Image
@@ -49,7 +49,7 @@ export const AdminHRHeader: React.FC<AdminHRHeaderProps> = ({
               resizeMode="contain"
             />
           ) : (
-            <Building2 size={13} color={colors.primary} strokeWidth={2} />
+            <Building2 size={16} color={colors.primary} strokeWidth={2} />
           )}
           {companyName ? (
             <Text style={styles.companyBannerText} numberOfLines={1}>
@@ -57,12 +57,12 @@ export const AdminHRHeader: React.FC<AdminHRHeaderProps> = ({
             </Text>
           ) : null}
           <View style={styles.companyBadge}>
-            <Text style={styles.companyBadgeText}>HR</Text>
+            <Text style={styles.companyBadgeText}>{isHR ? 'HR' : role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN'}</Text>
           </View>
         </View>
       ) : role === 'SUPER_ADMIN' ? (
         <View style={styles.adminBanner}>
-          <Shield size={13} color={colors.primary} strokeWidth={2} />
+          <Shield size={15} color={colors.primary} strokeWidth={2} />
           <Text style={styles.adminBannerText}>SUPER ADMIN</Text>
         </View>
       ) : null}
@@ -119,35 +119,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: colors.surfaceSecondary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
-    marginBottom: 8,
-    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 10,
+    gap: 8,
     borderWidth: 1,
-    borderColor: 'rgba(70, 89, 199, 0.08)',
-    maxWidth: '90%',
+    borderColor: '#E2E8F0',
+    maxWidth: '92%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   companyLogoImg: {
-    width: 18,
-    height: 18,
-    borderRadius: 4,
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    backgroundColor: '#F8FAFC',
   },
   companyBannerText: {
-    fontSize: 11,
-    fontFamily: 'Comfortaa_600SemiBold',
+    fontSize: 13,
+    fontFamily: 'Comfortaa_700Bold',
     color: colors.textPrimary,
   },
   companyBadge: {
     backgroundColor: colors.primary,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
     borderRadius: 6,
   },
   companyBadgeText: {
     color: '#FFFFFF',
-    fontSize: 9,
+    fontSize: 10,
     fontFamily: 'Comfortaa_700Bold',
   },
   adminBanner: {

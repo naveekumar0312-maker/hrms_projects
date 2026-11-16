@@ -4336,8 +4336,8 @@ body {
 }
 
 .sidebar-company-logo {
-  max-height: 38px;
-  max-width: 120px;
+  max-height: 48px;
+  max-width: 140px;
   object-fit: contain;
   border-radius: 6px;
   background: transparent;

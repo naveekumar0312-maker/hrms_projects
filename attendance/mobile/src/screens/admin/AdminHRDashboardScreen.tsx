@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
@@ -23,6 +24,10 @@ import {
   MapPin,
   ChevronRight,
   TrendingUp,
+  X,
+  SlidersHorizontal,
+  Check,
+  Search,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
@@ -58,6 +63,7 @@ export const AdminHRDashboardScreen = ({ navigation }: any) => {
   );
 
   const [reminderModalVisible, setReminderModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [reminderData, setReminderData] = useState<{
     totalCount: number;
     summary: MobilePendingActionsSummary;
@@ -67,6 +73,102 @@ export const AdminHRDashboardScreen = ({ navigation }: any) => {
     summary: {},
     items: [],
   });
+
+  // Master list of dashboard modules for search
+  const dashboardModules = useMemo(() => [
+    {
+      id: 'staff',
+      name: 'Staff Roster',
+      desc: 'Employee profiles, details & active status',
+      keywords: ['staff', 'employee', 'roster', 'user', 'people', 'team'],
+      screen: 'AdminEmployees',
+      icon: Users,
+    },
+    {
+      id: 'branches',
+      name: 'Branch Geofences',
+      desc: 'GPS coordinates, radius & active sites',
+      keywords: ['branch', 'geofence', 'gps', 'location', 'site', 'office'],
+      screen: 'AdminBranches',
+      icon: GitBranch,
+    },
+    {
+      id: 'shifts',
+      name: 'Work Shifts',
+      desc: 'Timing schedules & grace periods',
+      keywords: ['shift', 'time', 'timing', 'schedule', 'work'],
+      screen: 'AdminShifts',
+      icon: Clock,
+    },
+    {
+      id: 'holidays',
+      name: 'Company Holidays',
+      desc: 'Annual calendar & holiday schedules',
+      keywords: ['holiday', 'calendar', 'annual', 'festival'],
+      screen: 'AdminHolidays',
+      icon: CalendarDays,
+    },
+    {
+      id: 'managers',
+      name: 'Reporting Managers',
+      desc: 'Manage manager assignments & team structures',
+      keywords: ['manager', 'reporting', 'team', 'lead'],
+      screen: 'AdminReportingManagers',
+      icon: UserCheck,
+    },
+    {
+      id: 'live_tracking',
+      name: 'Field Live Tracking',
+      desc: 'Real-time GPS positions & battery status',
+      keywords: ['tracking', 'live', 'gps', 'field', 'route', 'map'],
+      screen: 'AdminLiveLocations',
+      icon: MapPin,
+    },
+    {
+      id: 'attendance',
+      name: 'Attendance Log',
+      desc: 'Daily check-in, check-out & punch review',
+      keywords: ['attendance', 'present', 'absent', 'punch', 'check-in', 'checkout', 'late'],
+      screen: 'AdminAttendance',
+      icon: Clock,
+    },
+    {
+      id: 'leaves',
+      name: 'Leave Requests',
+      desc: 'Review and approve staff leaves',
+      keywords: ['leave', 'vacation', 'sick', 'casual', 'permission'],
+      screen: 'AdminLeaves',
+      icon: Plane,
+    },
+    ...(isSuperAdmin ? [
+      {
+        id: 'companies',
+        name: 'Organizations & Companies',
+        desc: 'Create and configure multi-tenant enterprises',
+        keywords: ['company', 'organization', 'enterprise', 'tenant'],
+        screen: 'AdminCompanies',
+        icon: Building2,
+      },
+      {
+        id: 'hr_accounts',
+        name: 'HR Account Provisioning',
+        desc: 'Manage HR login credentials by company',
+        keywords: ['hr', 'provisioning', 'credentials', 'account'],
+        screen: 'AdminHRAccounts',
+        icon: ShieldAlert,
+      },
+    ] : []),
+  ], [isSuperAdmin]);
+
+  const filteredModules = useMemo(() => {
+    const q = adminSearch.trim().toLowerCase();
+    if (!q) return [];
+    return dashboardModules.filter((m) =>
+      m.name.toLowerCase().includes(q) ||
+      m.desc.toLowerCase().includes(q) ||
+      m.keywords.some((k) => k.includes(q))
+    );
+  }, [adminSearch, dashboardModules]);
 
   // Check hourly / initial pending reminder for Admin & HR
   useEffect(() => {
@@ -164,15 +266,87 @@ export const AdminHRDashboardScreen = ({ navigation }: any) => {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
-        {/* Search Bar matching reference image */}
+        {/* Search Bar with working Live Search & Filter Modal */}
         <View style={{ marginBottom: 16 }}>
           <AppSearchBar
             value={adminSearch}
             onChangeText={setAdminSearch}
             placeholder="Search staff, leaves, branches..."
             onClear={() => setAdminSearch('')}
-            onFilterPress={() => navigation.navigate('AdminEmployees')}
+            onFilterPress={() => setFilterModalVisible(true)}
           />
+
+          {/* Live Search Quick Results Dropdown */}
+          {adminSearch.trim().length > 0 && (
+            <View style={styles.searchResultsBox}>
+              <View style={styles.searchHeaderRow}>
+                <Text style={styles.searchHeaderTitle}>
+                  Results for "{adminSearch.trim()}"
+                </Text>
+                <TouchableOpacity onPress={() => setAdminSearch('')}>
+                  <X size={15} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Quick direct search in Staff Roster */}
+              <TouchableOpacity
+                style={styles.searchQuickAction}
+                activeOpacity={0.7}
+                onPress={() => {
+                  const q = adminSearch.trim();
+                  setAdminSearch('');
+                  navigation.navigate('AdminEmployees', { search: q });
+                }}
+              >
+                <Search size={15} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.searchQuickActionText}>
+                  Search staff named "<Text style={{ color: colors.primary, fontFamily: 'Comfortaa_700Bold' }}>{adminSearch.trim()}</Text>"
+                </Text>
+                <ChevronRight size={14} color={colors.textMuted} />
+              </TouchableOpacity>
+
+              {/* Matched modules list */}
+              {filteredModules.map((item) => {
+                const IconComponent = item.icon;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    style={styles.searchResultItem}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setAdminSearch('');
+                      navigation.navigate(item.screen);
+                    }}
+                  >
+                    <View style={styles.searchResultIconBox}>
+                      <IconComponent size={16} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.searchResultName}>{item.name}</Text>
+                      <Text style={styles.searchResultDesc} numberOfLines={1}>{item.desc}</Text>
+                    </View>
+                    <ChevronRight size={15} color={colors.textMuted} />
+                  </TouchableOpacity>
+                );
+              })}
+
+              {filteredModules.length === 0 && (
+                <View style={styles.noSearchMatches}>
+                  <Text style={styles.noSearchMatchesText}>No specific modules found.</Text>
+                  <TouchableOpacity
+                    style={styles.searchStaffDirectBtn}
+                    onPress={() => {
+                      const q = adminSearch.trim();
+                      setAdminSearch('');
+                      navigation.navigate('AdminEmployees', { search: q });
+                    }}
+                  >
+                    <Text style={styles.searchStaffDirectBtnText}>Open Staff Roster with this search</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          )}
         </View>
         {/* Company Selector for Super Admin */}
         {isSuperAdmin && companies.length > 0 && (
@@ -498,6 +672,114 @@ export const AdminHRDashboardScreen = ({ navigation }: any) => {
           }
         }}
       />
+
+      {/* Filter Bottom Sheet Modal */}
+      <Modal
+        visible={filterModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setFilterModalVisible(false)}
+        >
+          <TouchableOpacity
+            style={styles.modalContainer}
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <SlidersHorizontal size={18} color={colors.primary} style={{ marginRight: 8 }} />
+                <Text style={styles.modalTitle}>Dashboard Filters</Text>
+              </View>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <X size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 380 }}>
+              {/* Organization filter (for super admin) */}
+              {isSuperAdmin && companies.length > 0 && (
+                <View style={{ marginBottom: 18 }}>
+                  <Text style={styles.filterGroupTitle}>Select Organization</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.filterOptionItem,
+                      selectedCompanyId === undefined && styles.filterOptionItemActive,
+                    ]}
+                    onPress={() => {
+                      setSelectedCompanyId(undefined);
+                      setFilterModalVisible(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterOptionText,
+                        selectedCompanyId === undefined && styles.filterOptionTextActive,
+                      ]}
+                    >
+                      All Organizations
+                    </Text>
+                    {selectedCompanyId === undefined && <Check size={16} color={colors.primary} />}
+                  </TouchableOpacity>
+
+                  {companies.map((comp) => (
+                    <TouchableOpacity
+                      key={comp.id}
+                      style={[
+                        styles.filterOptionItem,
+                        selectedCompanyId === comp.id && styles.filterOptionItemActive,
+                      ]}
+                      onPress={() => {
+                        setSelectedCompanyId(comp.id);
+                        setFilterModalVisible(false);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.filterOptionText,
+                          selectedCompanyId === comp.id && styles.filterOptionTextActive,
+                        ]}
+                      >
+                        {comp.name}
+                      </Text>
+                      {selectedCompanyId === comp.id && <Check size={16} color={colors.primary} />}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* Quick Jump Portals */}
+              <View style={{ marginBottom: 12 }}>
+                <Text style={styles.filterGroupTitle}>Quick Jump To Module</Text>
+                {dashboardModules.slice(0, 6).map((m) => (
+                  <TouchableOpacity
+                    key={m.id}
+                    style={styles.filterOptionItem}
+                    onPress={() => {
+                      setFilterModalVisible(false);
+                      navigation.navigate(m.screen);
+                    }}
+                  >
+                    <Text style={styles.filterOptionText}>{m.name}</Text>
+                    <ChevronRight size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setFilterModalVisible(false)}
+            >
+              <Text style={styles.modalCloseBtnText}>Done</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -712,5 +994,165 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.textSecondary,
     marginTop: 1,
+  },
+  // Search Results Box Styles
+  searchResultsBox: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  searchHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+    marginBottom: 8,
+  },
+  searchHeaderTitle: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+    color: colors.textSecondary,
+  },
+  searchQuickAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+  },
+  searchQuickActionText: {
+    flex: 1,
+    fontSize: 12,
+    fontFamily: 'Comfortaa_500Medium',
+    color: colors.textPrimary,
+  },
+  searchResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+  },
+  searchResultIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  searchResultName: {
+    fontSize: 13,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: colors.textPrimary,
+  },
+  searchResultDesc: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  noSearchMatches: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  noSearchMatchesText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginBottom: 8,
+  },
+  searchStaffDirectBtn: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  searchStaffDirectBtnText: {
+    color: colors.white,
+    fontSize: 12,
+    fontFamily: 'Comfortaa_600SemiBold',
+  },
+  // Filter Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: '75%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+    marginBottom: 14,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontFamily: 'Comfortaa_700Bold',
+    color: colors.textPrimary,
+  },
+  filterGroupTitle: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  filterOptionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginBottom: 4,
+  },
+  filterOptionItemActive: {
+    backgroundColor: colors.primary + '12',
+  },
+  filterOptionText: {
+    fontSize: 13,
+    fontFamily: 'Comfortaa_500Medium',
+    color: colors.textPrimary,
+  },
+  filterOptionTextActive: {
+    color: colors.primary,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  modalCloseBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  modalCloseBtnText: {
+    color: colors.white,
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
   },
 });
