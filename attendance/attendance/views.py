@@ -399,6 +399,29 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 )
                 if company_id and company_id != str(user.company_id):
                     approved_leaves = approved_leaves.none()
+        elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
+            mgr_emp = getattr(user, 'employee_profile', None)
+            if mgr_emp:
+                is_global = (user.role == 'REPORTING_MANAGER' and mgr_emp.branch is None and user.company_id is None)
+                if is_global:
+                    if company_id:
+                        approved_leaves = approved_leaves.filter(
+                            employee__branch__company_id=company_id
+                        )
+                elif user.company_id:
+                    approved_leaves = approved_leaves.filter(
+                        employee__branch__company_id=user.company_id
+                    )
+                elif mgr_emp.branch_id:
+                    approved_leaves = approved_leaves.filter(
+                        employee__branch_id=mgr_emp.branch_id
+                    )
+                else:
+                    approved_leaves = approved_leaves.filter(
+                        employee__reporting_manager=mgr_emp
+                    )
+            else:
+                approved_leaves = approved_leaves.none()
         elif user.role in ('SUPER_ADMIN', 'ADMIN'):
             if company_id:
                 approved_leaves = approved_leaves.filter(
@@ -608,7 +631,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             if mgr_emp:
                 is_global = (request.user.role == 'REPORTING_MANAGER' and mgr_emp.branch is None and request.user.company_id is None)
                 if is_global:
-                    employee_qs = employee_qs.filter(status=True)
+                    if company_id:
+                        employee_qs = employee_qs.filter(branch__company_id=company_id)
                 elif request.user.company_id:
                     employee_qs = employee_qs.filter(branch__company_id=request.user.company_id, status=True)
                 elif mgr_emp.branch_id:
