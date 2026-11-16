@@ -146,10 +146,12 @@ export const EmployeeMonthlyAttendanceModal = ({
     }
   };
 
-  // Build complete 7-column calendar matrix
+  // Build complete 7-column calendar matrix following attendance cycle:
+  // 26th of previous month through 25th of selected month (matching web app)
   const calendarCells = useMemo(() => {
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const cycleStart = new Date(currentYear, currentMonth - 1, 26);
+    const cycleEnd = new Date(currentYear, currentMonth, 25);
+    const firstDay = cycleStart.getDay();
 
     const cells: (AttendanceDay | null)[] = [];
 
@@ -158,16 +160,25 @@ export const EmployeeMonthlyAttendanceModal = ({
       cells.push(null);
     }
 
-    const dayMap = new Map<number, AttendanceDay>();
+    const dayMap = new Map<string, AttendanceDay>();
     days.forEach((d) => {
-      const dayNum = Number(d.date?.split('-')[2]);
-      if (dayNum) dayMap.set(dayNum, d);
+      if (d.date) {
+        dayMap.set(d.date, d);
+      }
     });
 
-    // Actual month days
-    for (let d = 1; d <= daysInMonth; d++) {
-      const matched = dayMap.get(d) || {
-        date: `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`,
+    for (
+      const cursor = new Date(cycleStart);
+      cursor <= cycleEnd;
+      cursor.setDate(cursor.getDate() + 1)
+    ) {
+      const y = cursor.getFullYear();
+      const m = cursor.getMonth() + 1;
+      const d = cursor.getDate();
+      const dateKey = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+      const matched = dayMap.get(dateKey) || {
+        date: dateKey,
         day: d,
         status: 'UPCOMING',
       };
@@ -402,25 +413,29 @@ export const EmployeeMonthlyAttendanceModal = ({
                     <View style={styles.dayDetailItem}>
                       <Text style={styles.dayItemLabel}>Check In</Text>
                       <Text style={styles.dayItemVal}>
-                        {selectedDay.check_in_time
-                          ? new Date(selectedDay.check_in_time).toLocaleTimeString('en-US', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true,
-                            })
-                          : '--'}
+                        {(() => {
+                          const val = selectedDay.check_in || selectedDay.check_in_time;
+                          if (!val) return '--';
+                          return new Date(val).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                          });
+                        })()}
                       </Text>
                     </View>
                     <View style={styles.dayDetailItem}>
                       <Text style={styles.dayItemLabel}>Check Out</Text>
                       <Text style={styles.dayItemVal}>
-                        {selectedDay.check_out_time
-                          ? new Date(selectedDay.check_out_time).toLocaleTimeString('en-US', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true,
-                            })
-                          : '--'}
+                        {(() => {
+                          const val = selectedDay.check_out || selectedDay.check_out_time;
+                          if (!val) return '--';
+                          return new Date(val).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true,
+                          });
+                        })()}
                       </Text>
                     </View>
                     <View style={styles.dayDetailItem}>

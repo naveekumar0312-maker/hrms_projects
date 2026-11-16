@@ -52,6 +52,7 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
   const [selectedPointIndex, setSelectedPointIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [zoomLevel, setZoomLevel] = useState<number>(15);
+  const [selectedDate, setSelectedDate] = useState<string>('ALL');
 
   const playTimerRef = useRef<any>(null);
 
@@ -68,7 +69,7 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
       if (sorted.length > 0) {
         setSelectedPointIndex(sorted.length - 1);
       } else {
-        setError('No GPS records found for this employee today.');
+        setError('No GPS records found for this employee.');
       }
     } catch (err: any) {
       console.warn('Failed to load tracking history:', err?.message);
@@ -82,16 +83,47 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
     loadHistoryData();
   }, [employeeId]);
 
-  // Valid GPS coordinates
+  // Extract distinct dates from history
+  const distinctDates = useMemo(() => {
+    const dates = new Set<string>();
+    history.forEach((item) => {
+      if (item.recorded_at) {
+        const dStr = new Date(item.recorded_at).toISOString().split('T')[0];
+        dates.add(dStr);
+      }
+    });
+    return Array.from(dates).sort().reverse();
+  }, [history]);
+
+  // Filter history by selected date
+  const filteredHistory = useMemo(() => {
+    if (selectedDate === 'ALL') return history;
+    return history.filter((item) => {
+      if (!item.recorded_at) return false;
+      const dStr = new Date(item.recorded_at).toISOString().split('T')[0];
+      return dStr === selectedDate;
+    });
+  }, [history, selectedDate]);
+
+  // Valid GPS coordinates for filtered history
   const gpsPoints = useMemo(() => {
-    return history.filter(
+    return filteredHistory.filter(
       (item) =>
         typeof item.latitude === 'number' &&
         !isNaN(item.latitude) &&
         typeof item.longitude === 'number' &&
         !isNaN(item.longitude)
     );
-  }, [history]);
+  }, [filteredHistory]);
+
+  useEffect(() => {
+    if (gpsPoints.length > 0) {
+      setSelectedPointIndex(gpsPoints.length - 1);
+    } else {
+      setSelectedPointIndex(0);
+    }
+    setIsPlaying(false);
+  }, [selectedDate, gpsPoints.length]);
 
   // Selected or latest point for centering map
   const activePoint = gpsPoints[selectedPointIndex] || gpsPoints[gpsPoints.length - 1] || null;
@@ -206,6 +238,67 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
         </View>
       ) : (
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          {/* DATE FILTER PILLS */}
+          {distinctDates.length > 0 && (
+            <View style={styles.dateFilterContainer}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.dateFilterScroll}
+              >
+                <TouchableOpacity
+                  style={[
+                    styles.datePill,
+                    selectedDate === 'ALL' && styles.datePillActive,
+                  ]}
+                  onPress={() => setSelectedDate('ALL')}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.datePillText,
+                      selectedDate === 'ALL' && styles.datePillTextActive,
+                    ]}
+                  >
+                    All Dates ({history.length})
+                  </Text>
+                </TouchableOpacity>
+
+                {distinctDates.map((dateStr) => {
+                  const isSelected = selectedDate === dateStr;
+                  const count = history.filter(
+                    (h) => h.recorded_at && h.recorded_at.startsWith(dateStr)
+                  ).length;
+                  const formatted = new Date(`${dateStr}T12:00:00`).toLocaleDateString(
+                    'en-US',
+                    { month: 'short', day: 'numeric' }
+                  );
+
+                  return (
+                    <TouchableOpacity
+                      key={dateStr}
+                      style={[
+                        styles.datePill,
+                        isSelected && styles.datePillActive,
+                      ]}
+                      onPress={() => setSelectedDate(dateStr)}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.datePillText,
+                          isSelected && styles.datePillTextActive,
+                        ]}
+                      >
+                        {formatted} ({count})
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+
           {/* MAP CARD */}
           <View style={styles.mapCard}>
             <View style={styles.mapHeader}>
@@ -308,22 +401,48 @@ export const AdminEmployeeRouteMapScreen = ({ route, navigation }: any) => {
                     if (isStart) color = '#F59E0B';
                     if (isEnd) color = '#DC2626';
 
-                    return (
-                      <G key={p.id || idx}>
-                        {isSelected && (
+                    if (isSelected) {
+                      return (
+                        <G key={p.id || idx}>
+                          {/* Pulsing halo */}
                           <Circle
                             cx={x}
                             cy={y}
                             r="18"
-                            fill="#3B82F6"
+                            fill="#E56108"
                             opacity={0.35}
                           />
-                        )}
+                          {/* Bike background circle */}
+                          <Circle
+                            cx={x}
+                            cy={y}
+                            r="14"
+                            fill="#FFFFFF"
+                            stroke="#E56108"
+                            strokeWidth="2.5"
+                          />
+                          {/* Bike SVG Icon centered at (x, y) */}
+                          <G transform={`translate(${x - 10}, ${y - 10}) scale(0.31)`}>
+                            <Circle cx="14" cy="46" r="9" fill="#111827" />
+                            <Circle cx="14" cy="46" r="4" fill="#FFFFFF" />
+                            <Circle cx="49" cy="46" r="9" fill="#111827" />
+                            <Circle cx="49" cy="46" r="4" fill="#FFFFFF" />
+                            <Path
+                              d="M12 39h10l8-13h12l8 13h5l4 7h-5l-5-5H34l-7 5H12zM29 26l-5-8h9l5 8zM41 25h8l5 5h-7l-6-5zM31 32h13l5 7H27z"
+                              fill="#111827"
+                            />
+                          </G>
+                        </G>
+                      );
+                    }
+
+                    return (
+                      <G key={p.id || idx}>
                         <Circle
                           cx={x}
                           cy={y}
-                          r={isSelected ? '9' : isStart || isEnd ? '7' : '4.5'}
-                          fill={isSelected ? '#2563EB' : color}
+                          r={isStart || isEnd ? '7' : '4.5'}
+                          fill={color}
                           stroke="#FFFFFF"
                           strokeWidth="2.5"
                         />
@@ -522,6 +641,33 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     paddingBottom: 40,
+  },
+  dateFilterContainer: {
+    marginBottom: 12,
+  },
+  dateFilterScroll: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  datePill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  datePillActive: {
+    backgroundColor: '#EA580C',
+    borderColor: '#EA580C',
+  },
+  datePillText: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#64748B',
+  },
+  datePillTextActive: {
+    color: '#FFFFFF',
   },
   centerLoading: {
     flex: 1,

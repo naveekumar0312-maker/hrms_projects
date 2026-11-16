@@ -1904,7 +1904,8 @@ class CheckInView(views.APIView):
 
         # For FIELD / Marketing employees, do not reject check-in on low GPS accuracy
         max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
-        if employee.work_type != 'FIELD' and acc > max_accuracy:
+        is_field = employee.work_type in ('FIELD', 'MARKETING')
+        if not is_field and acc > max_accuracy:
             return Response({
                 "code": "GPS_ACCURACY_TOO_LOW",
                 "error": "GPS accuracy is too low.",
@@ -1913,11 +1914,11 @@ class CheckInView(views.APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         branch = employee.branch
-        if not branch:
+        if not branch and not is_field:
             return Response({"error": "No branch assigned to your profile."}, status=status.HTTP_400_BAD_REQUEST)
 
-        policy = getattr(branch, 'attendance_policy', None)
-        allowed_radius = policy.allowed_radius if policy else (branch.allowed_radius or 100)
+        policy = getattr(branch, 'attendance_policy', None) if branch else None
+        allowed_radius = policy.allowed_radius if policy else ((branch.allowed_radius if branch else 100) or 100)
 
         approved_wfh = WFHRequest.objects.filter(
             employee=employee,
@@ -1925,7 +1926,9 @@ class CheckInView(views.APIView):
             status='APPROVED',
         ).exists()
 
-        if employee.work_type == 'OFFICE' and not approved_wfh:
+        if employee.work_type == 'OFFICE' and not approved_wfh and not is_field:
+            if not branch:
+                return Response({"error": "No branch assigned to your profile."}, status=status.HTTP_400_BAD_REQUEST)
             branch_lat = branch.latitude
             branch_lon = branch.longitude
             if branch_lat is None or branch_lon is None:
@@ -2122,7 +2125,8 @@ class CheckOutView(views.APIView):
         
         # For FIELD / Marketing employees, do not reject check-in on low GPS accuracy
         max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
-        if employee.work_type != 'FIELD' and acc > max_accuracy:
+        is_field = employee.work_type in ('FIELD', 'MARKETING')
+        if not is_field and acc > max_accuracy:
             return Response({
                 "code": "GPS_ACCURACY_TOO_LOW",
                 "error": "GPS accuracy is too low.",
@@ -2131,13 +2135,15 @@ class CheckOutView(views.APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         branch = employee.branch
-        if not branch:
+        if not branch and not is_field:
             return Response({"error": "No branch assigned to your profile."}, status=status.HTTP_400_BAD_REQUEST)
 
-        policy = getattr(branch, 'attendance_policy', None)
-        allowed_radius = policy.allowed_radius if policy else (branch.allowed_radius or 100)
+        policy = getattr(branch, 'attendance_policy', None) if branch else None
+        allowed_radius = policy.allowed_radius if policy else ((branch.allowed_radius if branch else 100) or 100)
 
-        if employee.work_type == 'OFFICE' and attendance.attendance_mode != 'WFH':
+        if employee.work_type == 'OFFICE' and attendance.attendance_mode != 'WFH' and not is_field:
+            if not branch:
+                return Response({"error": "No branch assigned to your profile."}, status=status.HTTP_400_BAD_REQUEST)
             branch_lat = branch.latitude
             branch_lon = branch.longitude
             if branch_lat is None or branch_lon is None:

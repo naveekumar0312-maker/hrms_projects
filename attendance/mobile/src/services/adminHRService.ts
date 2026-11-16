@@ -371,6 +371,19 @@ export const createHRAccount = async (data: { username: string; phone_number?: s
   return response.data;
 };
 
+export interface LiveLocationsResponse {
+  locations: LiveLocationItem[];
+  turnedOffEmployees: Array<{
+    id: number;
+    employee_id: string;
+    full_name: string;
+    department?: string;
+    designation?: string;
+    branch?: string;
+    disabled_at?: string;
+  }>;
+}
+
 export const fetchLiveLocations = async (companyId?: number): Promise<LiveLocationItem[]> => {
   const params = companyId ? { company: companyId } : {};
   const response = await api.get('/tracking/live/', { params });
@@ -378,6 +391,15 @@ export const fetchLiveLocations = async (companyId?: number): Promise<LiveLocati
   if (Array.isArray(data)) return data;
   if (data && Array.isArray(data.results)) return data.results;
   return [];
+};
+
+export const fetchLiveLocationsData = async (companyId?: number): Promise<LiveLocationsResponse> => {
+  const params = companyId ? { company: companyId } : {};
+  const response = await api.get('/tracking/live/', { params });
+  const data = response.data;
+  const locations = Array.isArray(data) ? data : (data && Array.isArray(data.results) ? data.results : []);
+  const turnedOffEmployees = data && Array.isArray(data.turned_off_employees) ? data.turned_off_employees : [];
+  return { locations, turnedOffEmployees };
 };
 
 export interface TrackingHistoryItem {

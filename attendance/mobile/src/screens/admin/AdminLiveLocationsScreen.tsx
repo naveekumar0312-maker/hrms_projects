@@ -27,7 +27,7 @@ import { AuthContext, api } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
 import { formatAttendanceTime } from '../../utils/dateUtils';
 import {
-  fetchLiveLocations,
+  fetchLiveLocationsData,
   fetchEmployees,
   LiveLocationItem,
   EmployeeItem,
@@ -39,6 +39,7 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
   const companyId = isHR ? user?.company_id : undefined;
 
   const [locations, setLocations] = useState<LiveLocationItem[]>([]);
+  const [turnedOffList, setTurnedOffList] = useState<any[]>([]);
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,11 +48,12 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
   const loadData = async (isManual = false) => {
     if (isManual) setRefreshing(true);
     try {
-      const [locData, empData] = await Promise.all([
-        fetchLiveLocations(companyId),
+      const [liveData, empData] = await Promise.all([
+        fetchLiveLocationsData(companyId),
         fetchEmployees(companyId),
       ]);
-      setLocations(locData);
+      setLocations(liveData.locations);
+      setTurnedOffList(liveData.turnedOffEmployees);
       setEmployees(empData);
     } catch (error) {
       console.error('Failed fetching live locations or employees:', error);
@@ -75,14 +77,17 @@ export const AdminLiveLocationsScreen = ({ navigation }: any) => {
     });
   }, [employees]);
 
-  // Employees who are NOT currently sharing location
+  // Only employees who explicitly TURNED OFF their location
   const notSharingEmployees = useMemo(() => {
-    const sharingEmpIds = new Set(locations.map((loc) => loc.employee_id));
-    const sharingCodes = new Set(locations.map((loc) => loc.employee_code));
-    return fieldEmployees.filter(
-      (emp) => !sharingEmpIds.has(emp.id) && !sharingCodes.has(emp.employee_id)
-    );
-  }, [fieldEmployees, locations]);
+    if (turnedOffList.length > 0) {
+      const turnedOffIds = new Set(turnedOffList.map((t) => t.id));
+      const turnedOffCodes = new Set(turnedOffList.map((t) => t.employee_id));
+      return fieldEmployees.filter(
+        (emp) => turnedOffIds.has(emp.id) || turnedOffCodes.has(emp.employee_id)
+      );
+    }
+    return [];
+  }, [fieldEmployees, turnedOffList]);
 
   const openInMaps = (lat: number, lng: number, label: string) => {
     const scheme = Platform.select({ ios: 'maps:0,0?q=', android: 'geo:0,0?q=' });

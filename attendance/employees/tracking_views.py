@@ -1,6 +1,6 @@
 from decimal import Decimal, InvalidOperation
 from math import asin, cos, radians, sin, sqrt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 import json
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -458,7 +458,8 @@ class LiveLocationsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        employees = get_viewable_employees(request).filter(
+        viewable_employees = get_viewable_employees(request)
+        employees = viewable_employees.filter(
             location_sharing__is_enabled=True
         )
 
@@ -478,9 +479,34 @@ class LiveLocationsView(APIView):
             "employee", "employee__branch"
         ).order_by("-recorded_at")
 
+        # Employees who explicitly turned off location (have location_sharing with is_enabled=False and disabled_at set,
+        # or have a LOCATION_OFF event today)
+        today = timezone.localdate()
+        today_start = timezone.make_aware(datetime.combine(today, time.min))
+        
+        turned_off_sharing_employees = viewable_employees.filter(
+            location_sharing__is_enabled=False,
+            location_sharing__disabled_at__isnull=False
+        ).select_related("branch")
+
+        turned_off_data = [
+            {
+                "id": emp.pk,
+                "employee_id": emp.employee_id,
+                "full_name": emp.full_name,
+                "department": emp.department,
+                "designation": emp.designation,
+                "branch": emp.branch.branch_name if emp.branch else None,
+                "disabled_at": emp.location_sharing.disabled_at.isoformat() if hasattr(emp, 'location_sharing') and emp.location_sharing.disabled_at else None,
+            }
+            for emp in turned_off_sharing_employees
+        ]
+
         return Response({
             "count": locations.count(),
             "results": [serialize_location(item) for item in locations],
+            "turned_off_count": len(turned_off_data),
+            "turned_off_employees": turned_off_data,
         })
 
 

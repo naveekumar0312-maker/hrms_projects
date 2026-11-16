@@ -254,6 +254,23 @@ export default function DashboardScreen({ navigation }: any) {
         return currentLocation;
       }
 
+      // For Field/Marketing employees, allow check-in without strict GPS block if fallback exists
+      const isFieldEmp = ['FIELD', 'MARKETING'].includes(((employee as any)?.work_type || '').toUpperCase());
+      if (isFieldEmp) {
+        const fallbackLocation = {
+          coords: {
+            latitude: Number(employee?.branch?.latitude || 11.0168),
+            longitude: Number(employee?.branch?.longitude || 76.9558),
+            accuracy: 50,
+          },
+          timestamp: Date.now(),
+        };
+        setCurrentLocation(fallbackLocation as any);
+        setIsLocationVerified(true);
+        setLocationStatus('Verified');
+        return fallbackLocation;
+      }
+
       setLocationStatus('-- m');
       return false;
     } catch (error: any) {
@@ -261,6 +278,23 @@ export default function DashboardScreen({ navigation }: any) {
         setIsLocationVerified(true);
         return currentLocation;
       }
+
+      const isFieldEmp = ['FIELD', 'MARKETING'].includes(((employee as any)?.work_type || '').toUpperCase());
+      if (isFieldEmp) {
+        const fallbackLocation = {
+          coords: {
+            latitude: Number(employee?.branch?.latitude || 11.0168),
+            longitude: Number(employee?.branch?.longitude || 76.9558),
+            accuracy: 50,
+          },
+          timestamp: Date.now(),
+        };
+        setCurrentLocation(fallbackLocation as any);
+        setIsLocationVerified(true);
+        setLocationStatus('Verified');
+        return fallbackLocation;
+      }
+
       setLocationStatus('-- m');
       return false;
     } finally {

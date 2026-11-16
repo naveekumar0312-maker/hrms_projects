@@ -70,10 +70,13 @@ export async function cancelPersonalAlarmNotifications() {
   try {
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     for (const item of scheduled) {
+      // Cancel any personal alarm or shift alarm notifications
       if (
         item.content.data?.kind === ALARM_KIND ||
         item.identifier.startsWith('personal-alarm-') ||
-        item.identifier.startsWith('personal-daily-alarm-')
+        item.identifier.startsWith('personal-daily-alarm-') ||
+        item.identifier.startsWith('shift-reminder-') ||
+        item.identifier.startsWith('shift-alarm-')
       ) {
         await Notifications.cancelScheduledNotificationAsync(item.identifier);
       }
