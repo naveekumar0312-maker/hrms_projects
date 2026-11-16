@@ -394,6 +394,12 @@ const Attendance = () => {
   }, [viewRecord, approveRecord, rejectRecord, previewImage]);
 
   useEffect(() => {
+    if (isManager) {
+      setCompanies([]);
+      setBranches([]);
+      return;
+    }
+
     Promise.all([
       api.get('/companies/'),
       api.get('/branches/'),
@@ -410,7 +416,7 @@ const Attendance = () => {
       .catch((error) => {
         console.error('Failed to load companies/branches:', error);
       });
-  }, []);
+  }, [isManager]);
 
   const fetchAttendance = async () => {
     setLoading(true);

@@ -16,6 +16,9 @@ class BranchAccessPermission(permissions.BasePermission):
         if user.role == "HR" and user.company_id:
             return True
 
+        if user.role in ("REPORTING_MANAGER", "TEAM_LEADER"):
+            return request.method in ("GET", "HEAD", "OPTIONS")
+
         return False
 
 
@@ -30,6 +33,13 @@ class BranchViewSet(viewsets.ModelViewSet):
 
         if user.role == "HR":
             queryset = queryset.filter(company_id=user.company_id)
+        elif user.role in ("REPORTING_MANAGER", "TEAM_LEADER"):
+            emp = getattr(user, 'employee_profile', None)
+            comp_id = user.company_id or (emp.branch.company_id if emp and emp.branch else None)
+            if comp_id:
+                queryset = queryset.filter(company_id=comp_id)
+            else:
+                queryset = queryset.filter(status=True)
         elif user.role not in ("SUPER_ADMIN", "ADMIN"):
             return queryset.none()
 
