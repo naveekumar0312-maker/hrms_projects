@@ -353,8 +353,23 @@ class PermissionRequestSerializer(serializers.ModelSerializer):
         source='employee.employee_id',
         read_only=True
     )
+    profile_photo = serializers.SerializerMethodField()
     approved_by_name = serializers.SerializerMethodField()
     duration_minutes = serializers.IntegerField(required=False)
+
+    def get_profile_photo(self, obj):
+        if obj.employee and getattr(obj.employee, 'profile_photo', None):
+            try:
+                url = obj.employee.profile_photo.url
+                request = self.context.get('request')
+                if request:
+                    url = request.build_absolute_uri(url)
+                    if url.startswith('http://hrms.yaazh360digitech.in'):
+                        url = url.replace('http://', 'https://', 1)
+                return url
+            except Exception:
+                return None
+        return None
 
     class Meta:
         model = PermissionRequest
@@ -484,7 +499,22 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
         source='employee.employee_id',
         read_only=True
     )
+    profile_photo = serializers.SerializerMethodField()
     approved_by_name = serializers.SerializerMethodField()
+
+    def get_profile_photo(self, obj):
+        if obj.employee and getattr(obj.employee, 'profile_photo', None):
+            try:
+                url = obj.employee.profile_photo.url
+                request = self.context.get('request')
+                if request:
+                    url = request.build_absolute_uri(url)
+                    if url.startswith('http://hrms.yaazh360digitech.in'):
+                        url = url.replace('http://', 'https://', 1)
+                return url
+            except Exception:
+                return None
+        return None
 
     class Meta:
         model = LeaveRequest
@@ -561,7 +591,22 @@ class WFHRequestSerializer(serializers.ModelSerializer):
         source='employee.employee_id',
         read_only=True
     )
+    profile_photo = serializers.SerializerMethodField()
     approved_by_name = serializers.SerializerMethodField()
+
+    def get_profile_photo(self, obj):
+        if obj.employee and getattr(obj.employee, 'profile_photo', None):
+            try:
+                url = obj.employee.profile_photo.url
+                request = self.context.get('request')
+                if request:
+                    url = request.build_absolute_uri(url)
+                    if url.startswith('http://hrms.yaazh360digitech.in'):
+                        url = url.replace('http://', 'https://', 1)
+                return url
+            except Exception:
+                return None
+        return None
 
     class Meta:
         model = WFHRequest

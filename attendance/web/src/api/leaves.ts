@@ -5,6 +5,7 @@ export interface LeaveRequest {
   employee?: number;
   employee_name?: string;
   employee_id?: string;
+  profile_photo?: string | null;
   leave_type: string;
   start_date: string;
   end_date: string;

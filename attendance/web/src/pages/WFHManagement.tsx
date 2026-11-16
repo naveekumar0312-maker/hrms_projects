@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from '../utils/imageUtils';
 ﻿import React, { useEffect, useState } from 'react';
 import './WFHManagement.css';
 import {
@@ -155,7 +156,34 @@ const WFHManagement: React.FC = () => {
                 {requests.map((request) => (
                   <tr key={request.id}>
                     <td>
-                      <strong>{request.employee_name || '--'}</strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#eff6ff',
+                            color: '#22C55E',
+                            fontWeight: 800,
+                            flexShrink: 0,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {resolveMediaUrl(request.profile_photo) ? (
+                            <img
+                              src={resolveMediaUrl(request.profile_photo)!}
+                              alt={request.employee_name || 'Employee'}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            (request.employee_name || 'E').charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <strong>{request.employee_name || '--'}</strong>
+                      </div>
                     </td>
                     <td>{request.employee_id || '--'}</td>
                     <td>{formatDate(request.date)}</td>

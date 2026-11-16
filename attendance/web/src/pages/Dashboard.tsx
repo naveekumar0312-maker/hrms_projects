@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from '../utils/imageUtils';
 ﻿import { useEffect, useRef, useState } from "react";
 import { getLeaves, approveLeave, rejectLeave } from '../api/leaves';
 import { getPermissions, approvePermission, rejectPermission } from '../api/permissions';
@@ -21,6 +22,7 @@ interface DashboardLeave {
   id: number;
   employee_name?: string;
   employee_id?: string;
+  profile_photo?: string | null;
   leave_type: string;
   start_date: string;
   end_date: string;
@@ -32,6 +34,7 @@ interface DashboardPermission {
   id: number;
   employee_name?: string;
   employee_id?: string;
+  profile_photo?: string | null;
   date: string;
   duration_minutes: number;
   reason: string;
@@ -302,7 +305,17 @@ const getAttendanceBranchName = (attendance: any) => {
             return (
               <div className="request-item" key={`leave-${leave.id}`}>
                 <div className="request-employee">
-                  <div className="avatar">{leave.employee_name?.[0]?.toUpperCase() || "E"}</div>
+                  <div className="avatar" style={{ overflow: 'hidden' }}>
+                    {resolveMediaUrl(leave.profile_photo) ? (
+                      <img
+                        src={resolveMediaUrl(leave.profile_photo)!}
+                        alt={leave.employee_name || 'Employee'}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      leave.employee_name?.[0]?.toUpperCase() || 'E'
+                    )}
+                  </div>
                   <div className="request-info">
                     <div className="request-name">{leave.employee_name || "Employee"}</div>
                     <div className="request-meta">{leave.employee_id || "--"}  {leave.leave_type}</div>
@@ -337,7 +350,17 @@ const getAttendanceBranchName = (attendance: any) => {
             return (
               <div className="request-item" key={`permission-${permission.id}`}>
                 <div className="request-employee">
-                  <div className="avatar">{permission.employee_name?.[0]?.toUpperCase() || "E"}</div>
+                  <div className="avatar" style={{ overflow: 'hidden' }}>
+                    {resolveMediaUrl(permission.profile_photo) ? (
+                      <img
+                        src={resolveMediaUrl(permission.profile_photo)!}
+                        alt={permission.employee_name || 'Employee'}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      permission.employee_name?.[0]?.toUpperCase() || 'E'
+                    )}
+                  </div>
                   <div className="request-info">
                     <div className="request-name">{permission.employee_name || "Employee"}</div>
                     <div className="request-meta">{permission.employee_id || "--"}  {permission.duration_minutes} min</div>

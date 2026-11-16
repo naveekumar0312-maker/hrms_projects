@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from '../utils/imageUtils';
 ﻿import React, { useEffect, useState } from 'react';
 import {
   getLeaves,
@@ -235,9 +236,36 @@ const Leaves: React.FC = () => {
                 {leaves.map(leave => (
                   <tr key={leave.id}>
                     <td>
-                      <strong>
-                        {leave.employee_name || '--'}
-                      </strong>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div
+                          style={{
+                            width: '34px',
+                            height: '34px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#eff6ff',
+                            color: '#22C55E',
+                            fontWeight: 800,
+                            flexShrink: 0,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {resolveMediaUrl(leave.profile_photo) ? (
+                            <img
+                              src={resolveMediaUrl(leave.profile_photo)!}
+                              alt={leave.employee_name || 'Employee'}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            (leave.employee_name || 'E').charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        <strong>
+                          {leave.employee_name || '--'}
+                        </strong>
+                      </div>
                     </td>
 
                     <td>

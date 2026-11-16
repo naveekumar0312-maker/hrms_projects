@@ -1,3 +1,4 @@
+import { resolveMediaUrl } from '../utils/imageUtils';
 ﻿import React, { useEffect, useState } from 'react';
 import {
   getPermissions,
@@ -247,10 +248,16 @@ const Permissions: React.FC = () => {
                   <tr key={permission.id}>
                     <td>
                       <div className="employee-cell">
-                        <div className="employee-avatar">
-                          {(permission.employee_name || 'E')
-                            .charAt(0)
-                            .toUpperCase()}
+                        <div className="employee-avatar" style={{ overflow: 'hidden' }}>
+                          {resolveMediaUrl(permission.profile_photo) ? (
+                            <img
+                              src={resolveMediaUrl(permission.profile_photo)!}
+                              alt={permission.employee_name || 'Employee'}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            (permission.employee_name || 'E').charAt(0).toUpperCase()
+                          )}
                         </div>
 
                         <div>

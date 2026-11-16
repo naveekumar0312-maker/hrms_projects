@@ -5,6 +5,7 @@ export interface PermissionRequest {
   employee?: number;
   employee_name?: string;
   employee_id?: string;
+  profile_photo?: string | null;
   date: string;
   start_time?: string | null;
   end_time?: string | null;

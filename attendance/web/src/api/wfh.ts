@@ -7,6 +7,7 @@ export interface WFHRequest {
   employee?: number;
   employee_name?: string;
   employee_id?: string;
+  profile_photo?: string | null;
   date: string;
   reason: string;
   status: WFHStatus;
