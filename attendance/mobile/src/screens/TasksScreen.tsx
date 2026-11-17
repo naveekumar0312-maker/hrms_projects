@@ -43,6 +43,8 @@ import {
   CheckCircle2,
   AlertCircle,
   PlusCircle,
+  Pencil,
+  Trash2,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -56,6 +58,8 @@ import {
   getTaskComments,
   getAssignableMembers,
   createTask,
+  updateTask,
+  deleteTask,
   transcribeAudio,
   getTaskDetail,
   logTaskTime,
@@ -133,6 +137,19 @@ export const TasksScreen: React.FC = () => {
   const [createAttachedFile, setCreateAttachedFile] = useState<{ uri: string; name: string; type?: string; size?: string } | null>(null);
   const [createCommentType, setCreateCommentType] = useState<'TEXT' | 'IMAGE' | 'AUDIO' | 'LINK' | 'FILE'>('TEXT');
   const [createLinkInput, setCreateLinkInput] = useState('');
+  const [createEstimatedHours, setCreateEstimatedHours] = useState('0');
+
+  // Edit Task State
+  const [editingTask, setEditingTask] = useState<MobileTask | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPriority, setEditPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM');
+  const [editStatus, setEditStatus] = useState<string>('PENDING');
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editDueDate, setEditDueDate] = useState('');
+  const [editEstimatedHours, setEditEstimatedHours] = useState('0');
+  const [editAssignedIds, setEditAssignedIds] = useState<number[]>([]);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const loadTasks = useCallback(async () => {
     try {
@@ -514,6 +531,7 @@ export const TasksScreen: React.FC = () => {
         status: isDraft ? 'DRAFT' : statusVal,
         start_date: startDate || undefined,
         due_date: dueDate || undefined,
+        estimated_hours: Number(createEstimatedHours) || 0,
         assigned_employee_ids: assignedEmployeeIds,
         additional_instructions: instructionComment.trim() || undefined,
       };
@@ -547,6 +565,83 @@ export const TasksScreen: React.FC = () => {
     } finally {
       setCreating(false);
     }
+  };
+
+  const openEditModal = (task: MobileTask) => {
+    setEditingTask(task);
+    setEditTitle(task.title || '');
+    setEditDescription(task.description || '');
+    const ids = task.assigned_employees?.map((e: any) => e.id) || ((task as any).assigned_to ? [(task as any).assigned_to] : []);
+    setEditAssignedIds(ids);
+    setEditStartDate(task.start_date || '');
+    setEditDueDate(task.due_date || '');
+    setEditPriority(task.priority || 'MEDIUM');
+    setEditStatus(task.status || 'PENDING');
+    setEditEstimatedHours(String(task.estimated_hours || 0));
+  };
+
+  const handleSaveEditTask = async () => {
+    if (!editingTask) return;
+    if (!editTitle.trim()) {
+      Alert.alert('Required', 'Task title cannot be empty.');
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      const payload: any = {
+        title: editTitle.trim(),
+        description: editDescription.trim(),
+        priority: editPriority,
+        status: editStatus,
+        estimated_hours: Number(editEstimatedHours) || 0,
+        assigned_employee_ids: editAssignedIds,
+      };
+      if (editStartDate) payload.start_date = editStartDate;
+      if (editDueDate) payload.due_date = editDueDate;
+
+      const updated = await updateTask(editingTask.id, payload);
+      Alert.alert('Success', `Task "${updated.title}" updated successfully!`);
+      setEditingTask(null);
+      if (selectedTask?.id === editingTask.id) {
+        const full = await getTaskDetail(editingTask.id);
+        setSelectedTask(full);
+      }
+      loadTasks();
+    } catch (err: any) {
+      console.error('Failed to update task:', err);
+      const detail = err.response?.data?.detail || err.response?.data?.message || 'Failed to update task.';
+      Alert.alert('Error', detail);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteTask = (taskId: number, taskTitle: string) => {
+    Alert.alert(
+      'Delete Task',
+      `Are you sure you want to delete "${taskTitle}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteTask(taskId);
+              Alert.alert('Success', 'Task deleted successfully.');
+              if (selectedTask?.id === taskId) {
+                setSelectedTask(null);
+              }
+              loadTasks();
+            } catch (err: any) {
+              console.error('Failed to delete task:', err);
+              const detail = err.response?.data?.detail || err.response?.data?.message || 'Failed to delete task.';
+              Alert.alert('Error', detail);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const [detailTab, setDetailTab] = useState<'comment' | 'attachment' | 'activity' | 'timelog'>('comment');
@@ -905,9 +1000,25 @@ export const TasksScreen: React.FC = () => {
                     )}
                   </View>
 
-                  <TouchableOpacity style={styles.openBtn} onPress={() => handleOpenTask(item)}>
-                    <Text style={styles.openBtnText}>Open Task</Text>
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <TouchableOpacity
+                      style={[styles.actionIconBtn, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]}
+                      onPress={() => openEditModal(item)}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Pencil size={14} color="#22C55E" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionIconBtn, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}
+                      onPress={() => handleDeleteTask(item.id, item.title)}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Trash2 size={14} color="#EF4444" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.openBtn} onPress={() => handleOpenTask(item)}>
+                      <Text style={styles.openBtnText}>Open Task</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             );
@@ -1138,109 +1249,242 @@ export const TasksScreen: React.FC = () => {
                 </View>
               </View>
 
-              {/* Rich Discussion / Media Composer in Create Task */}
+              {/* Rich Tabs: Discussion, Files, Time Log, Activity */}
               <View style={styles.webTabContainer}>
                 <View style={styles.webTabHeader}>
                   <TouchableOpacity
                     style={[styles.webTabItem, createModalTab === 'comment' && styles.webTabItemActive]}
                     onPress={() => setCreateModalTab('comment')}
                   >
-                    <MessageSquare size={14} color={createModalTab === 'comment' ? '#22C55E' : '#666666'} />
+                    <MessageSquare size={13} color={createModalTab === 'comment' ? '#22C55E' : '#666666'} />
                     <Text style={[styles.webTabText, createModalTab === 'comment' && styles.webTabTextActive]}>
-                      Discussion & Media
+                      Discussion
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.webTabItem, createModalTab === 'attachment' && styles.webTabItemActive]}
+                    onPress={() => setCreateModalTab('attachment')}
+                  >
+                    <Paperclip size={13} color={createModalTab === 'attachment' ? '#22C55E' : '#666666'} />
+                    <Text style={[styles.webTabText, createModalTab === 'attachment' && styles.webTabTextActive]}>
+                      Files
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.webTabItem, createModalTab === 'timelog' && styles.webTabItemActive]}
+                    onPress={() => setCreateModalTab('timelog')}
+                  >
+                    <Clock size={13} color={createModalTab === 'timelog' ? '#22C55E' : '#666666'} />
+                    <Text style={[styles.webTabText, createModalTab === 'timelog' && styles.webTabTextActive]}>
+                      Time Log
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.webTabItem, createModalTab === 'activity' && styles.webTabItemActive]}
+                    onPress={() => setCreateModalTab('activity')}
+                  >
+                    <Activity size={13} color={createModalTab === 'activity' ? '#22C55E' : '#666666'} />
+                    <Text style={[styles.webTabText, createModalTab === 'activity' && styles.webTabTextActive]}>
+                      Activity Log
                     </Text>
                   </TouchableOpacity>
                 </View>
 
                 <View style={styles.webTabBody}>
-                  {/* Selected attachment pill */}
-                  {createAttachedFile && (
-                    <View style={styles.attachmentPill}>
-                      {createCommentType === 'AUDIO' ? (
-                        <Mic size={14} color="#22C55E" />
-                      ) : createCommentType === 'IMAGE' ? (
-                        <ImageIcon size={14} color="#22C55E" />
-                      ) : (
-                        <FileText size={14} color="#22C55E" />
-                      )}
-                      <Text style={styles.attachmentPillText} numberOfLines={1}>
-                        {createAttachedFile.name} ({createAttachedFile.size})
-                      </Text>
-                      <TouchableOpacity onPress={() => setCreateAttachedFile(null)}>
-                        <X size={14} color="#EF4444" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  {createCommentType === 'LINK' && (
-                    <View style={styles.linkInputRow}>
-                      <Link2 size={15} color="#22C55E" />
-                      <TextInput
-                        style={styles.linkInput}
-                        placeholder="Paste link URL (e.g. https://...)"
-                        placeholderTextColor="#999"
-                        value={createLinkInput}
-                        onChangeText={setCreateLinkInput}
-                        autoCapitalize="none"
-                      />
-                      <TouchableOpacity onPress={() => { setCreateLinkInput(''); setCreateCommentType('TEXT'); }}>
-                        <X size={14} color="#888" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  <TextInput
-                    style={styles.commentInputBox}
-                    placeholder="Type a message, instruction, or update..."
-                    placeholderTextColor="#999999"
-                    value={instructionComment}
-                    onChangeText={setInstructionComment}
-                    multiline
-                  />
-
-                  {/* Attachment Actions Toolbar: Image, Doc, Voice, Link */}
-                  <View style={styles.composerToolbar}>
-                    <View style={styles.composerIcons}>
-                      <TouchableOpacity
-                        style={styles.toolIconBtn}
-                        onPress={() => pickImage(true)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <ImageIcon size={18} color="#22C55E" />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.toolIconBtn}
-                        onPress={() => pickDocument(true)}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Paperclip size={18} color="#22C55E" />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.toolIconBtn, isRecording && styles.toolIconBtnActive]}
-                        onPress={() => (isRecording ? stopLiveRecording(true) : startLiveRecording(true))}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        {isRecording ? <Square size={16} color="#EF4444" /> : <Mic size={18} color="#22C55E" />}
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.toolIconBtn}
-                        onPress={() => setCreateCommentType('LINK')}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Link2 size={18} color="#22C55E" />
-                      </TouchableOpacity>
-
-                      {isRecording && (
-                        <View style={styles.recordingLiveIndicator}>
-                          <View style={styles.redDot} />
-                          <Text style={styles.recordingDurationText}>{recordingDuration}s</Text>
+                  {createModalTab === 'comment' && (
+                    <View>
+                      {/* Selected attachment pill */}
+                      {createAttachedFile && (
+                        <View style={styles.attachmentPill}>
+                          {createCommentType === 'AUDIO' ? (
+                            <Mic size={14} color="#22C55E" />
+                          ) : createCommentType === 'IMAGE' ? (
+                            <ImageIcon size={14} color="#22C55E" />
+                          ) : (
+                            <FileText size={14} color="#22C55E" />
+                          )}
+                          <Text style={styles.attachmentPillText} numberOfLines={1}>
+                            {createAttachedFile.name} ({createAttachedFile.size})
+                          </Text>
+                          <TouchableOpacity onPress={() => setCreateAttachedFile(null)}>
+                            <X size={14} color="#EF4444" />
+                          </TouchableOpacity>
                         </View>
                       )}
+
+                      {createCommentType === 'LINK' && (
+                        <View style={styles.linkInputRow}>
+                          <Link2 size={15} color="#22C55E" />
+                          <TextInput
+                            style={styles.linkInput}
+                            placeholder="Paste link URL (e.g. https://...)"
+                            placeholderTextColor="#999"
+                            value={createLinkInput}
+                            onChangeText={setCreateLinkInput}
+                            autoCapitalize="none"
+                          />
+                          <TouchableOpacity onPress={() => { setCreateLinkInput(''); setCreateCommentType('TEXT'); }}>
+                            <X size={14} color="#888" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
+                      <TextInput
+                        style={styles.commentInputBox}
+                        placeholder="Type a message, instruction, or update..."
+                        placeholderTextColor="#999999"
+                        value={instructionComment}
+                        onChangeText={setInstructionComment}
+                        multiline
+                      />
+
+                      {/* Attachment Actions Toolbar: Image, Doc, Voice, Link */}
+                      <View style={styles.composerToolbar}>
+                        <View style={styles.composerIcons}>
+                          <TouchableOpacity
+                            style={styles.toolIconBtn}
+                            onPress={() => pickImage(true)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <ImageIcon size={18} color="#22C55E" />
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.toolIconBtn}
+                            onPress={() => pickDocument(true)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <Paperclip size={18} color="#22C55E" />
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={[styles.toolIconBtn, isRecording && styles.toolIconBtnActive]}
+                            onPress={() => (isRecording ? stopLiveRecording(true) : startLiveRecording(true))}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            {isRecording ? <Square size={16} color="#EF4444" /> : <Mic size={18} color="#22C55E" />}
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.toolIconBtn}
+                            onPress={() => setCreateCommentType('LINK')}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          >
+                            <Link2 size={18} color="#22C55E" />
+                          </TouchableOpacity>
+
+                          {isRecording && (
+                            <View style={styles.recordingLiveIndicator}>
+                              <View style={styles.redDot} />
+                              <Text style={styles.recordingDurationText}>{recordingDuration}s</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
                     </View>
-                  </View>
+                  )}
+
+                  {createModalTab === 'attachment' && (
+                    <View style={{ padding: 12 }}>
+                      <Text style={{ fontSize: 13, fontFamily: 'Comfortaa_700Bold', color: '#1E293B', marginBottom: 8 }}>
+                        Task Files & Attachments
+                      </Text>
+                      {createAttachedFile ? (
+                        <View style={[styles.attachmentPill, { marginBottom: 12 }]}>
+                          <FileText size={16} color="#22C55E" />
+                          <Text style={styles.attachmentPillText} numberOfLines={1}>
+                            {createAttachedFile.name} ({createAttachedFile.size || 'Attached'})
+                          </Text>
+                          <TouchableOpacity onPress={() => setCreateAttachedFile(null)}>
+                            <X size={16} color="#EF4444" />
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <Text style={{ fontSize: 12, color: '#64748B', fontStyle: 'italic', marginBottom: 12 }}>
+                          No files attached yet. You can attach reference files or images below.
+                        </Text>
+                      )}
+
+                      <View style={{ flexDirection: 'row', gap: 10 }}>
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#F0FDF4',
+                            borderWidth: 1,
+                            borderColor: '#BBF7D0',
+                            borderRadius: 8,
+                            paddingVertical: 10,
+                            gap: 6,
+                          }}
+                          onPress={() => pickImage(true)}
+                        >
+                          <ImageIcon size={16} color="#22C55E" />
+                          <Text style={{ fontSize: 12, fontFamily: 'Comfortaa_700Bold', color: '#22C55E' }}>Upload Photo</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={{
+                            flex: 1,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: '#EFF6FF',
+                            borderWidth: 1,
+                            borderColor: '#BFDBFE',
+                            borderRadius: 8,
+                            paddingVertical: 10,
+                            gap: 6,
+                          }}
+                          onPress={() => pickDocument(true)}
+                        >
+                          <Paperclip size={16} color="#0284C7" />
+                          <Text style={{ fontSize: 12, fontFamily: 'Comfortaa_700Bold', color: '#0284C7' }}>Upload Document</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  )}
+
+                  {createModalTab === 'timelog' && (
+                    <View style={{ padding: 12 }}>
+                      <Text style={{ fontSize: 13, fontFamily: 'Comfortaa_700Bold', color: '#1E293B', marginBottom: 4 }}>
+                        Estimated Working Hours
+                      </Text>
+                      <Text style={{ fontSize: 11, color: '#64748B', marginBottom: 10 }}>
+                        Estimated time allocated to finish this task (in hours).
+                      </Text>
+                      <TextInput
+                        style={[styles.formInput, { minHeight: 44 }]}
+                        placeholder="e.g. 4.5"
+                        placeholderTextColor="#999"
+                        keyboardType="numeric"
+                        value={createEstimatedHours}
+                        onChangeText={setCreateEstimatedHours}
+                      />
+                      <View style={{ backgroundColor: '#F8FAFC', borderRadius: 8, padding: 10, marginTop: 10, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                        <Text style={{ fontSize: 11, color: '#475569', fontStyle: 'italic' }}>
+                          Assignees will log real working hours against this task in their Time Log workspace.
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {createModalTab === 'activity' && (
+                    <View style={{ padding: 16, alignItems: 'center', justifyContent: 'center' }}>
+                      <Activity size={32} color="#94A3B8" style={{ marginBottom: 8 }} />
+                      <Text style={{ fontSize: 13, fontFamily: 'Comfortaa_700Bold', color: '#334155', textAlign: 'center', marginBottom: 4 }}>
+                        Activity Trail Ready
+                      </Text>
+                      <Text style={{ fontSize: 11, color: '#64748B', textAlign: 'center', lineHeight: 16 }}>
+                        Task creation, employee assignment, status updates, file uploads, and logged hours will be automatically recorded here.
+                      </Text>
+                    </View>
+                  )}
                 </View>
               </View>
 
@@ -1281,6 +1525,156 @@ export const TasksScreen: React.FC = () => {
         </KeyboardAvoidingView>
       </Modal>
 
+      {/* EDIT TASK MODAL */}
+      <Modal visible={!!editingTask} animationType="slide" transparent={false} presentationStyle="fullScreen">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderLeft}>
+                <Text style={styles.modalTitle}>Edit Task</Text>
+                <View style={[styles.newTaskBadge, { backgroundColor: '#EFF6FF' }]}>
+                  <Text style={[styles.newTaskBadgeText, { color: '#1D4ED8' }]}>EDIT</Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setEditingTask(null)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <X size={22} color="#444444" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.modalBody}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              <Text style={styles.formLabel}>Task Title *</Text>
+              <TextInput
+                style={styles.formInput}
+                placeholder="Enter task title..."
+                placeholderTextColor="#999999"
+                value={editTitle}
+                onChangeText={setEditTitle}
+              />
+
+              <Text style={[styles.formLabel, { marginTop: 10 }]}>Description</Text>
+              <TextInput
+                style={[styles.formInput, { minHeight: 70, textAlignVertical: 'top' }]}
+                placeholder="Task description and deliverables..."
+                placeholderTextColor="#999999"
+                value={editDescription}
+                onChangeText={setEditDescription}
+                multiline
+                numberOfLines={3}
+              />
+
+              <View style={{ marginTop: 10, marginBottom: 8 }}>
+                <MobileEmployeeMultiSelect
+                  members={assignableMembers}
+                  selectedIds={editAssignedIds}
+                  onChange={setEditAssignedIds}
+                  label="Assign Employees"
+                />
+              </View>
+
+              <View style={styles.dateBlockContainer}>
+                <View style={{ flex: 1, marginRight: 6 }}>
+                  <DatePicker
+                    label="Started Date"
+                    value={editStartDate}
+                    onChange={setEditStartDate}
+                    placeholder="Select start date"
+                  />
+                </View>
+                <View style={{ flex: 1, marginLeft: 6 }}>
+                  <DatePicker
+                    label="Ended Date"
+                    value={editDueDate}
+                    onChange={setEditDueDate}
+                    placeholder="Select end date"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.twoColRow}>
+                <View style={{ flex: 1, marginRight: 6 }}>
+                  <Text style={styles.formLabel}>Status</Text>
+                  <View style={styles.pickerSelector}>
+                    {['PENDING', 'IN_PROGRESS', 'COMPLETED', 'ON_HOLD'].map((st) => (
+                      <TouchableOpacity
+                        key={st}
+                        style={[
+                          styles.selectorPill,
+                          editStatus === st && styles.selectorPillActive,
+                        ]}
+                        onPress={() => setEditStatus(st)}
+                      >
+                        <Text style={[styles.selectorPillText, editStatus === st && styles.selectorPillTextActive]}>
+                          {st === 'PENDING' ? 'To Do' : st === 'IN_PROGRESS' ? 'Progress' : st.replace('_', ' ')}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <View style={{ flex: 1, marginLeft: 6 }}>
+                  <Text style={styles.formLabel}>Priority</Text>
+                  <View style={styles.pickerSelector}>
+                    {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((pr) => (
+                      <TouchableOpacity
+                        key={pr}
+                        style={[
+                          styles.selectorPill,
+                          editPriority === pr && styles.selectorPillActive,
+                        ]}
+                        onPress={() => setEditPriority(pr)}
+                      >
+                        <Text style={[styles.selectorPillText, editPriority === pr && styles.selectorPillTextActive]}>
+                          {pr.charAt(0) + pr.slice(1).toLowerCase()}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              </View>
+
+              <Text style={[styles.formLabel, { marginTop: 10 }]}>Estimated Hours</Text>
+              <TextInput
+                style={[styles.formInput, { minHeight: 44 }]}
+                placeholder="e.g. 5"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                value={editEstimatedHours}
+                onChangeText={setEditEstimatedHours}
+              />
+
+              <View style={[styles.createModalActions, { marginTop: 20 }]}>
+                <TouchableOpacity
+                  style={styles.closeBtn}
+                  onPress={() => setEditingTask(null)}
+                  disabled={savingEdit}
+                >
+                  <Text style={styles.closeBtnText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.submitTaskBtn, { flex: 1 }]}
+                  onPress={handleSaveEditTask}
+                  disabled={savingEdit}
+                >
+                  {savingEdit ? (
+                    <ActivityIndicator size="small" color="#FFFFFF" />
+                  ) : (
+                    <Text style={styles.submitTaskBtnText}>Save Changes</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* VIEW & UPDATE TASK WORKSPACE MODAL - WITH RICH COMMENTS & PLAYBACK */}
       <Modal visible={!!selectedTask} animationType="slide" transparent={false} presentationStyle="fullScreen">
         <KeyboardAvoidingView
@@ -1295,9 +1689,25 @@ export const TasksScreen: React.FC = () => {
                     <Text style={styles.modalTitle}>{selectedTask.title}</Text>
                     <Text style={styles.modalSubtitle}>{formatCreatedDate(selectedTask.created_at)}</Text>
                   </View>
-                  <TouchableOpacity onPress={() => setSelectedTask(null)}>
-                    <X size={22} color="#000000" />
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <TouchableOpacity
+                      onPress={() => openEditModal(selectedTask)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={{ padding: 6, backgroundColor: '#F0FDF4', borderRadius: 8, borderWidth: 1, borderColor: '#DCFCE7' }}
+                    >
+                      <Pencil size={18} color="#22C55E" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleDeleteTask(selectedTask.id, selectedTask.title)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={{ padding: 6, backgroundColor: '#FEF2F2', borderRadius: 8, borderWidth: 1, borderColor: '#FEE2E2' }}
+                    >
+                      <Trash2 size={18} color="#EF4444" />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => setSelectedTask(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <X size={22} color="#000000" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {/* Priority & Status Bar */}
@@ -2246,6 +2656,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8F9FC',
     borderWidth: 1,
     borderColor: '#ECEEF3',
+  },
+  actionIconBtn: {
+    padding: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   openBtnText: {
     fontSize: 11,

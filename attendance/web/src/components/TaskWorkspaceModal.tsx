@@ -16,6 +16,7 @@ import {
   Plus,
   Loader2,
   Building2,
+  Trash2,
 } from 'lucide-react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
@@ -422,6 +423,25 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
       setErrorMsg(Array.isArray(errMsg) ? errMsg[0] : (typeof errMsg === 'string' ? errMsg : JSON.stringify(errMsg)));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const [deletingTask, setDeletingTask] = useState(false);
+
+  const handleDeleteCurrentTask = async () => {
+    if (!taskId) return;
+    if (!window.confirm(`Are you sure you want to delete this task? This action cannot be undone.`)) {
+      return;
+    }
+    try {
+      setDeletingTask(true);
+      await api.delete(`/tasks-module/tasks/${taskId}/`);
+      onSaved();
+    } catch (err: any) {
+      console.error('Failed to delete task:', err);
+      alert(err.response?.data?.detail || 'Failed to delete task.');
+    } finally {
+      setDeletingTask(false);
     }
   };
 
@@ -991,6 +1011,19 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                 </button>
 
                 <div style={{ display: 'flex', gap: '10px' }}>
+                  {taskId && !isEmployee && (
+                    <button
+                      type="button"
+                      className="rm-btn rm-btn-secondary"
+                      style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}
+                      onClick={handleDeleteCurrentTask}
+                      disabled={deletingTask || submitting}
+                      title="Delete this task"
+                    >
+                      <Trash2 size={13} color="#dc2626" />
+                      <span>{deletingTask ? 'Deleting...' : 'Delete'}</span>
+                    </button>
+                  )}
                   {!isEmployee && (
                     <button
                       type="button"

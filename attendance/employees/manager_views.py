@@ -505,6 +505,16 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
             else:
                 counts["pending"] += 1
 
+            check_in_local = timezone.localtime(att.check_in) if att and att.check_in else None
+            check_out_local = timezone.localtime(att.check_out) if att and att.check_out else None
+
+            # Calculate working hours if both in and out present
+            working_hours_calc = None
+            if check_in_local and check_out_local:
+                diff = check_out_local - check_in_local
+                ts = int(diff.total_seconds())
+                working_hours_calc = f"{ts // 3600:02d}:{(ts % 3600) // 60:02d}"
+
             team_rows.append({
                 "employee_id": emp.id,
                 "employee_code": emp.employee_id,
@@ -518,8 +528,14 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
                 "profile_photo": emp.profile_photo.url if emp.profile_photo else None,
                 "calculated_status": calculated_status,
                 "status_reason": reason,
-                "check_in": att.check_in.strftime('%H:%M:%S') if att and att.check_in else None,
-                "check_out": att.check_out.strftime('%H:%M:%S') if att and att.check_out else None,
+                "check_in": check_in_local.strftime('%H:%M:%S') if check_in_local else None,
+                "check_out": check_out_local.strftime('%H:%M:%S') if check_out_local else None,
+                "check_in_time": check_in_local.isoformat() if check_in_local else None,
+                "check_out_time": check_out_local.isoformat() if check_out_local else None,
+                "check_in_photo": att.check_in_photo.url if att and att.check_in_photo else None,
+                "check_out_photo": att.check_out_photo.url if att and att.check_out_photo else None,
+                "late_reason": getattr(att, 'late_reason', None) if att else None,
+                "working_hours": working_hours_calc or (getattr(att, 'working_hours', None) if att else None),
                 "late_minutes": att.late_minutes if att else 0,
                 "attendance_id": att.id if att else None,
                 "approval_status": att.approval_status if att else None,

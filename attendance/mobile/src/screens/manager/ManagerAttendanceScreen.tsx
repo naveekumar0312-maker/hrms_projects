@@ -26,6 +26,7 @@ import {
   Clock,
   ArrowLeft,
   X,
+  Eye,
   LogIn,
   LogOut as LogOutIcon,
   RotateCcw,
@@ -64,6 +65,9 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
   const [rejectingItem, setRejectingItem] = useState<{ item: ManagerAttendanceRow; type: 'check_in' | 'check_out' } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+
+  // View Details Modal State
+  const [selectedRecord, setSelectedRecord] = useState<ManagerAttendanceRow | null>(null);
 
   const formatLateDuration = (minutes: number) => {
     if (!minutes || minutes <= 0) return '';
@@ -326,10 +330,20 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
             ) : null}
           </View>
 
-          <View style={[styles.statusBadge, { backgroundColor: statusBg, borderColor: statusColor }]}>
-            <Text style={[styles.statusBadgeText, { color: statusColor }]}>
-              {item.calculated_status.replace('_', ' ')}
-            </Text>
+          <View style={{ alignItems: 'flex-end', gap: 6 }}>
+            <View style={[styles.statusBadge, { backgroundColor: statusBg, borderColor: statusColor }]}>
+              <Text style={[styles.statusBadgeText, { color: statusColor }]}>
+                {item.calculated_status.replace('_', ' ')}
+              </Text>
+            </View>
+            <TouchableOpacity
+              style={styles.viewDetailsBtn}
+              onPress={() => setSelectedRecord(item)}
+              activeOpacity={0.7}
+            >
+              <Eye size={12} color="#0284C7" />
+              <Text style={styles.viewDetailsBtnText}>View Details</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -340,7 +354,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
               <LogIn size={15} color="#22C55E" />
               <Text style={styles.punchTypeTitle}>Check In</Text>
               <Text style={styles.punchTimeText}>
-                {formatAttendanceTime(item.check_in)}
+                {formatAttendanceTime(item.check_in_time || item.check_in)}
               </Text>
               {item.late_minutes > 0 ? (
                 <View style={styles.lateTag}>
@@ -420,7 +434,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
               <LogOutIcon size={15} color="#0369A1" />
               <Text style={styles.punchTypeTitle}>Check Out</Text>
               <Text style={styles.punchTimeText}>
-                {formatAttendanceTime(item.check_out)}
+                {formatAttendanceTime(item.check_out_time || item.check_out)}
               </Text>
             </View>
             {item.check_out ? renderApprovalBadge(item.check_out_approval_status) : null}
@@ -755,6 +769,251 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
                 )}
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Attendance Details View Modal (Matches HR screen) */}
+      <Modal statusBarTranslucent visible={!!selectedRecord} animationType="fade" transparent onRequestClose={() => setSelectedRecord(null)}>
+        <StatusBar style="dark" hidden={false} />
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Attendance Details</Text>
+              <TouchableOpacity onPress={() => setSelectedRecord(null)}>
+                <X size={22} color="#444444" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedRecord && (
+              <ScrollView style={{ maxHeight: 520 }} showsVerticalScrollIndicator={false}>
+                <View style={styles.modalEmpRow}>
+                  <View style={styles.avatarCircle}>
+                    {selectedRecord.profile_photo ? (
+                      <Image source={{ uri: resolveMediaUrl(selectedRecord.profile_photo)! }} style={styles.avatarCircleImg} />
+                    ) : (
+                      <Text style={styles.avatarText}>
+                        {selectedRecord.full_name?.substring(0, 2).toUpperCase() || 'EM'}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={{ marginLeft: 12, flex: 1 }}>
+                    <Text style={styles.empName}>{selectedRecord.full_name}</Text>
+                    <Text style={styles.empCode}>
+                      {selectedRecord.employee_code} • {selectedRecord.designation || selectedRecord.department || 'Staff'}
+                    </Text>
+                    {selectedRecord.company_name ? (
+                      <Text style={{ fontSize: 11, color: '#0284C7', fontFamily: 'Comfortaa_600SemiBold', marginTop: 2 }}>
+                        {selectedRecord.company_name} {selectedRecord.branch_name ? `• ${selectedRecord.branch_name}` : ''}
+                      </Text>
+                    ) : null}
+                  </View>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Date</Text>
+                  <Text style={styles.detailValue}>{selectedDate}</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Status</Text>
+                  <Text style={[styles.detailValue, { fontFamily: 'Comfortaa_700Bold', color: getStatusColor(selectedRecord.calculated_status) }]}>
+                    {selectedRecord.calculated_status.replace('_', ' ')}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Check In</Text>
+                  <Text style={styles.detailValue}>
+                    {formatAttendanceTime(selectedRecord.check_in_time || selectedRecord.check_in)}
+                  </Text>
+                </View>
+
+                {Boolean(selectedRecord.check_in_location_name) && (
+                  <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
+                    <Text style={styles.detailLabel}>In Location</Text>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 4 }}>
+                      <MapPin size={12} color="#22C55E" style={{ marginTop: 2 }} />
+                      <Text style={[styles.detailValue, { flexShrink: 1, textAlign: 'right', color: '#475569' }]}>
+                        {selectedRecord.check_in_location_name}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {selectedRecord.late_minutes > 0 && (
+                  <View style={[styles.detailRow, { backgroundColor: '#FEF2F2', padding: 8, borderRadius: 8, marginTop: 4, marginBottom: 4 }]}>
+                    <Text style={[styles.detailLabel, { color: '#DC2626' }]}>Late</Text>
+                    <Text style={[styles.detailValue, { color: '#DC2626', fontFamily: 'Comfortaa_700Bold', flex: 1, textAlign: 'right' }]}>
+                      {formatLateDuration(selectedRecord.late_minutes)} {selectedRecord.late_reason ? `(${selectedRecord.late_reason})` : ''}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Check Out</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedRecord.check_out_time || selectedRecord.check_out
+                      ? formatAttendanceTime(selectedRecord.check_out_time || selectedRecord.check_out)
+                      : 'Not punched yet'}
+                  </Text>
+                </View>
+
+                {Boolean(selectedRecord.check_out_location_name) && (
+                  <View style={[styles.detailRow, { alignItems: 'flex-start' }]}>
+                    <Text style={styles.detailLabel}>Out Location</Text>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'flex-end', gap: 4 }}>
+                      <MapPin size={12} color="#0369A1" style={{ marginTop: 2 }} />
+                      <Text style={[styles.detailValue, { flexShrink: 1, textAlign: 'right', color: '#475569' }]}>
+                        {selectedRecord.check_out_location_name}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Working Hours</Text>
+                  <Text style={styles.detailValue}>{selectedRecord.working_hours || '--'}</Text>
+                </View>
+
+                {/* Punch Photos */}
+                <View style={{ marginTop: 12 }}>
+                  <Text style={[styles.detailLabel, { marginBottom: 6 }]}>Punch Photos</Text>
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={{ flex: 1, backgroundColor: '#F8F9FC', borderRadius: 10, padding: 6, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#444', marginBottom: 4 }}>Check In</Text>
+                      {selectedRecord.check_in_photo ? (
+                        <Image
+                          source={{ uri: resolveMediaUrl(selectedRecord.check_in_photo)! }}
+                          style={{ width: '100%', height: 90, borderRadius: 6, backgroundColor: '#E2E8F0' }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{ width: '100%', height: 90, borderRadius: 6, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={{ fontSize: 9, color: '#94A3B8' }}>No Photo</Text>
+                        </View>
+                      )}
+                    </View>
+
+                    <View style={{ flex: 1, backgroundColor: '#F8F9FC', borderRadius: 10, padding: 6, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' }}>
+                      <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#444', marginBottom: 4 }}>Check Out</Text>
+                      {selectedRecord.check_out_photo ? (
+                        <Image
+                          source={{ uri: resolveMediaUrl(selectedRecord.check_out_photo)! }}
+                          style={{ width: '100%', height: 90, borderRadius: 6, backgroundColor: '#E2E8F0' }}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={{ width: '100%', height: 90, borderRadius: 6, backgroundColor: '#F1F5F9', justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={{ fontSize: 9, color: '#94A3B8' }}>No Photo</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </View>
+
+                {/* Punch In / Out Actions in Modal */}
+                {selectedRecord.attendance_id && (
+                  <View style={{ marginTop: 14, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9', gap: 10 }}>
+                    {/* Check In Action Row */}
+                    {selectedRecord.check_in && (
+                      <View>
+                        <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#1E293B', marginBottom: 6 }}>
+                          Check In ({selectedRecord.check_in_approval_status || 'PENDING'})
+                        </Text>
+                        {selectedRecord.check_in_approval_status !== 'APPROVED' && selectedRecord.check_in_approval_status !== 'REJECTED' ? (
+                          <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <TouchableOpacity
+                              style={[styles.miniActionBtn, styles.miniApproveBtn, { flex: 1, paddingVertical: 8 }]}
+                              onPress={() => {
+                                handleApprovePunch(selectedRecord, 'check_in');
+                                setSelectedRecord(null);
+                              }}
+                              disabled={actionLoading}
+                            >
+                              <CheckCircle size={13} color="#FFFFFF" strokeWidth={2.2} />
+                              <Text style={styles.miniApproveBtnText}>Approve In</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.miniActionBtn, styles.miniRejectBtn, { flex: 1, paddingVertical: 8 }]}
+                              onPress={() => {
+                                const cur = selectedRecord;
+                                setSelectedRecord(null);
+                                handleOpenReject(cur, 'check_in');
+                              }}
+                              disabled={actionLoading}
+                            >
+                              <XCircle size={13} color="#DC2626" strokeWidth={2.2} />
+                              <Text style={styles.miniRejectBtnText}>Reject In</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={[styles.miniActionBtn, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#CBD5E1', paddingVertical: 8, justifyContent: 'center' }]}
+                            onPress={() => {
+                              handleUndoPunch(selectedRecord, 'check_in');
+                              setSelectedRecord(null);
+                            }}
+                            disabled={actionLoading}
+                          >
+                            <RotateCcw size={12} color="#475569" strokeWidth={2.2} />
+                            <Text style={{ color: '#334155', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Undo In Approval</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+
+                    {/* Check Out Action Row */}
+                    {selectedRecord.check_out && (
+                      <View>
+                        <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#1E293B', marginBottom: 6 }}>
+                          Check Out ({selectedRecord.check_out_approval_status || 'PENDING'})
+                        </Text>
+                        {selectedRecord.check_out_approval_status !== 'APPROVED' && selectedRecord.check_out_approval_status !== 'REJECTED' ? (
+                          <View style={{ flexDirection: 'row', gap: 8 }}>
+                            <TouchableOpacity
+                              style={[styles.miniActionBtn, styles.miniApproveBtn, { flex: 1, paddingVertical: 8 }]}
+                              onPress={() => {
+                                handleApprovePunch(selectedRecord, 'check_out');
+                                setSelectedRecord(null);
+                              }}
+                              disabled={actionLoading}
+                            >
+                              <CheckCircle size={13} color="#FFFFFF" strokeWidth={2.2} />
+                              <Text style={styles.miniApproveBtnText}>Approve Out</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={[styles.miniActionBtn, styles.miniRejectBtn, { flex: 1, paddingVertical: 8 }]}
+                              onPress={() => {
+                                const cur = selectedRecord;
+                                setSelectedRecord(null);
+                                handleOpenReject(cur, 'check_out');
+                              }}
+                              disabled={actionLoading}
+                            >
+                              <XCircle size={13} color="#DC2626" strokeWidth={2.2} />
+                              <Text style={styles.miniRejectBtnText}>Reject Out</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={[styles.miniActionBtn, { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#CBD5E1', paddingVertical: 8, justifyContent: 'center' }]}
+                            onPress={() => {
+                              handleUndoPunch(selectedRecord, 'check_out');
+                              setSelectedRecord(null);
+                            }}
+                            disabled={actionLoading}
+                          >
+                            <RotateCcw size={12} color="#475569" strokeWidth={2.2} />
+                            <Text style={{ color: '#334155', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>Undo Out Approval</Text>
+                          </TouchableOpacity>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                )}
+              </ScrollView>
+            )}
           </View>
         </View>
       </Modal>
@@ -1259,5 +1518,61 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Comfortaa_600SemiBold',
     color: '#FFFFFF',
+  },
+  viewDetailsBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    backgroundColor: '#F0F9FF',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
+  },
+  viewDetailsBtnText: {
+    fontSize: 10,
+    color: '#0284C7',
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  modalEmpRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    marginBottom: 10,
+  },
+  avatarCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  avatarCircleImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 22,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F8FAFC',
+  },
+  detailLabel: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#64748B',
+  },
+  detailValue: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#1E293B',
   },
 });

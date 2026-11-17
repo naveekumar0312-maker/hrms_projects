@@ -59,6 +59,12 @@ export interface ManagerAttendanceRow {
   check_in_rejection_reason?: string | null;
   check_out_approval_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | null;
   check_out_rejection_reason?: string | null;
+  check_in_time?: string | null;
+  check_out_time?: string | null;
+  check_in_photo?: string | null;
+  check_out_photo?: string | null;
+  late_reason?: string | null;
+  working_hours?: string | null;
 }
 
 export interface ManagerAttendanceResponse {

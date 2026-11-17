@@ -5,6 +5,9 @@ import {
   Search,
   Calendar,
   Clock,
+  Eye,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import api from '../../api';
 import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
@@ -84,6 +87,24 @@ const TaskManager: React.FC = () => {
   const handleOpenEdit = (taskId: number) => {
     setSelectedTaskId(taskId);
     setShowWorkspace(true);
+  };
+
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const handleDeleteTask = async (taskId: number, taskTitle: string) => {
+    if (!window.confirm(`Are you sure you want to delete task "${taskTitle}"? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      setDeletingId(taskId);
+      await api.delete(`/tasks-module/tasks/${taskId}/`);
+      loadTasks();
+    } catch (err: any) {
+      console.error('Failed to delete task:', err);
+      alert(err.response?.data?.detail || 'Failed to delete task.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   // Status badge styling
@@ -384,14 +405,41 @@ const TaskManager: React.FC = () => {
                   </td>
                   <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{renderStatusBadge(t.status, t.is_draft)}</td>
                   <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className="rm-btn rm-btn-secondary"
-                      style={{ padding: '6px 12px', fontSize: '12px' }}
-                      onClick={() => handleOpenEdit(t.id)}
-                    >
-                      Workspace
-                    </button>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <button
+                        type="button"
+                        className="rm-btn rm-btn-secondary"
+                        style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        onClick={() => handleOpenEdit(t.id)}
+                        title="View Workspace"
+                      >
+                        <Eye size={13} color="#0284c7" />
+                        <span>View</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="rm-btn rm-btn-secondary"
+                        style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                        onClick={() => handleOpenEdit(t.id)}
+                        title="Edit Task"
+                      >
+                        <Edit3 size={13} color="#16a34a" />
+                        <span>Edit</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="rm-btn rm-btn-secondary"
+                        style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', borderColor: '#fca5a5', color: '#dc2626' }}
+                        onClick={() => handleDeleteTask(t.id, t.title)}
+                        disabled={deletingId === t.id}
+                        title="Delete Task"
+                      >
+                        <Trash2 size={13} color="#dc2626" />
+                        <span>{deletingId === t.id ? 'Deleting...' : 'Delete'}</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

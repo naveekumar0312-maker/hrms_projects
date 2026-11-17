@@ -351,13 +351,16 @@ export default function DashboardScreen({ navigation }: any) {
           }
         } catch (error: any) {
           await loadSharingStatus();
-          showError(
-            'Location Sharing',
+          const rawMsg =
             error?.response?.data?.detail ||
-              error?.response?.data?.error ||
-              error?.message ||
-              'Unable to update location sharing.'
-          );
+            error?.response?.data?.error ||
+            error?.message ||
+            'Unable to update location sharing.';
+          const friendlyMsg =
+            typeof rawMsg === 'string' && (rawMsg.includes('token') || rawMsg.includes('credentials'))
+              ? 'Session refreshed. Please try again.'
+              : rawMsg;
+          showError('Location Sharing', friendlyMsg);
         } finally {
           setSharingLoading(false);
         }

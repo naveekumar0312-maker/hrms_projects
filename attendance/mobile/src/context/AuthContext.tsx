@@ -23,13 +23,80 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: any) => void }> = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token!);
+    }
+  });
+  failedQueue = [];
+};
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
     if (__DEV__) {
-      const fullUrl = `${error.config?.baseURL || ''}${error.config?.url || ''}`;
-      console.warn(`[API ERR] ${error.config?.method?.toUpperCase()} ${fullUrl}:`, error.message, error.response?.status || 'No Response');
+      const fullUrl = `${originalRequest?.baseURL || ''}${originalRequest?.url || ''}`;
+      console.warn(`[API ERR] ${originalRequest?.method?.toUpperCase()} ${fullUrl}:`, error.message, error.response?.status || 'No Response');
     }
+
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      // Don't loop on login or refresh requests
+      if (originalRequest.url?.includes('/auth/login/') || originalRequest.url?.includes('/auth/token/refresh/')) {
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return api(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshToken = await SecureStore.getItemAsync('refresh_token');
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
+
+        const refreshRes = await axios.post(`${API_URL}/auth/token/refresh/`, {
+          refresh: refreshToken,
+        });
+
+        const newAccessToken = refreshRes.data?.access;
+        if (!newAccessToken) {
+          throw new Error('No access token in refresh response');
+        }
+
+        await SecureStore.setItemAsync('access_token', newAccessToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+        originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+
+        processQueue(null, newAccessToken);
+        return api(originalRequest);
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        await SecureStore.deleteItemAsync('access_token');
+        await SecureStore.deleteItemAsync('refresh_token');
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     return Promise.reject(error);
   }
 );

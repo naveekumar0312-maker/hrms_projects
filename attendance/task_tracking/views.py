@@ -1,3 +1,6 @@
+import time
+import logging
+
 from rest_framework import viewsets, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -5,6 +8,8 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.db.models import Q
 from django.utils import timezone
+
+logger = logging.getLogger(__name__)
 
 from .models import Task, TaskComment, TaskAttachment, TaskActivity, TaskTimeLog
 from .serializers import (
@@ -299,14 +304,17 @@ class TaskViewSet(viewsets.ModelViewSet):
             try:
                 from notifications.models import Notification
                 from notifications.fcm import send_web_push
+                today_date = timezone.localdate()
                 for emp_item in assigned_emps:
                     if emp_item.user:
                         Notification.objects.create(
                             recipient=emp_item.user,
+                            employee=emp_item,
+                            event="TASK_ASSIGNED",
+                            shift_date=today_date,
+                            request_key=f"task_{task.id}_{emp_item.id}_{int(time.time())}",
                             title="New Task Assigned",
                             message=f"You have been assigned: {task.title}",
-                            notification_type="TASK_ASSIGNED",
-                            data={"task_id": task.id}
                         )
                         send_web_push(
                             user=emp_item.user,
@@ -315,8 +323,8 @@ class TaskViewSet(viewsets.ModelViewSet):
                             url="https://hrms.yaazh360digitech.in/tasks",
                             event="TASK_ASSIGNED"
                         )
-            except Exception:
-                pass
+            except Exception as notif_err:
+                logger.error(f"Error creating/sending task assignment notification: {notif_err}")
 
     def perform_update(self, serializer):
         user = self.request.user
@@ -343,6 +351,7 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         updated_task = serializer.save()
 
+        new_emps = []
         if assigned_employee_ids is not None:
             new_emps = list(Employee.objects.filter(id__in=assigned_employee_ids))
             updated_task.assigned_employees.set(new_emps)
@@ -366,14 +375,17 @@ class TaskViewSet(viewsets.ModelViewSet):
                 from notifications.models import Notification
                 from notifications.fcm import send_web_push
                 assigned_list = list(updated_task.assigned_employees.all())
+                today_date = timezone.localdate()
                 for emp_item in assigned_list:
                     if emp_item.user:
                         Notification.objects.create(
                             recipient=emp_item.user,
+                            employee=emp_item,
+                            event="TASK_ASSIGNED",
+                            shift_date=today_date,
+                            request_key=f"task_{updated_task.id}_{emp_item.id}_{int(time.time())}",
                             title="New Task Assigned",
                             message=f"You have been assigned: {updated_task.title}",
-                            notification_type="TASK_ASSIGNED",
-                            data={"task_id": updated_task.id}
                         )
                         send_web_push(
                             user=emp_item.user,
@@ -382,8 +394,34 @@ class TaskViewSet(viewsets.ModelViewSet):
                             url="https://hrms.yaazh360digitech.in/tasks",
                             event="TASK_ASSIGNED"
                         )
-            except Exception:
-                pass
+            except Exception as notif_err:
+                logger.error(f"Error sending publish task notification: {notif_err}")
+        elif not updated_task.is_draft and assigned_employee_ids is not None and new_emps:
+            # If assigned employees changed on an already active task
+            try:
+                from notifications.models import Notification
+                from notifications.fcm import send_web_push
+                today_date = timezone.localdate()
+                for emp_item in new_emps:
+                    if emp_item.user:
+                        Notification.objects.create(
+                            recipient=emp_item.user,
+                            employee=emp_item,
+                            event="TASK_ASSIGNED",
+                            shift_date=today_date,
+                            request_key=f"task_{updated_task.id}_{emp_item.id}_{int(time.time())}",
+                            title="Task Assigned / Updated",
+                            message=f"You have been assigned to task: {updated_task.title}",
+                        )
+                        send_web_push(
+                            user=emp_item.user,
+                            title="Task Assigned / Updated",
+                            body=f"You have been assigned to task: {updated_task.title}",
+                            url="https://hrms.yaazh360digitech.in/tasks",
+                            event="TASK_ASSIGNED"
+                        )
+            except Exception as notif_err:
+                logger.error(f"Error sending task update assign notification: {notif_err}")
         elif old_status != updated_task.status:
             TaskActivity.objects.create(
                 task=updated_task,

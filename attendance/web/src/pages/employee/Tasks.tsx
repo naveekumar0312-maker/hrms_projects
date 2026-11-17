@@ -4,6 +4,9 @@ import {
   Calendar,
   Clock,
   Plus,
+  Eye,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 import api from '../../api';
 import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
@@ -38,6 +41,23 @@ const EmployeeTasks: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const handleDeleteTask = async (taskId: number, taskTitle: string) => {
+    if (!window.confirm(`Are you sure you want to delete task "${taskTitle}"? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      setDeletingId(taskId);
+      await api.delete(`/tasks-module/tasks/${taskId}/`);
+      loadTasks();
+    } catch (err: any) {
+      console.error('Failed to delete task:', err);
+      alert(err.response?.data?.detail || 'Failed to delete task.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const loadTasks = useCallback(async () => {
     try {
@@ -179,15 +199,51 @@ const EmployeeTasks: React.FC = () => {
                     </div>
                   </td>
                   <td>{renderStatusBadge(t.status)}</td>
-                  <td style={{ textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      className="rm-btn rm-btn-secondary"
-                      style={{ padding: '6px 12px', fontSize: '12px' }}
-                      onClick={() => setSelectedTaskId(t.id)}
-                    >
-                      Open Workspace
-                    </button>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                    {isTeamLeaderOrManager ? (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          type="button"
+                          className="rm-btn rm-btn-secondary"
+                          style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => setSelectedTaskId(t.id)}
+                          title="View Workspace"
+                        >
+                          <Eye size={13} color="#0284c7" />
+                          <span>View</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="rm-btn rm-btn-secondary"
+                          style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          onClick={() => setSelectedTaskId(t.id)}
+                          title="Edit Task"
+                        >
+                          <Edit3 size={13} color="#16a34a" />
+                          <span>Edit</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="rm-btn rm-btn-secondary"
+                          style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', borderColor: '#fca5a5', color: '#dc2626' }}
+                          onClick={() => handleDeleteTask(t.id, t.title)}
+                          disabled={deletingId === t.id}
+                          title="Delete Task"
+                        >
+                          <Trash2 size={13} color="#dc2626" />
+                          <span>{deletingId === t.id ? 'Deleting...' : 'Delete'}</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="rm-btn rm-btn-secondary"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                        onClick={() => setSelectedTaskId(t.id)}
+                      >
+                        Open Workspace
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}

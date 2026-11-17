@@ -21,6 +21,7 @@ export interface TaskItem {
   category?: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
   status: 'PENDING' | 'IN_PROGRESS' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+  assigned_to?: number | null;
   assigned_to_name?: string;
   assigned_to_code?: string;
   assigned_to_role?: string;
