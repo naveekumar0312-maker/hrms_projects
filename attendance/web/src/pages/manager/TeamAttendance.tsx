@@ -125,7 +125,20 @@ const ManagerTeamAttendance: React.FC = () => {
     );
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, row?: TeamAttendanceRow) => {
+    // If row is passed, verify punch approvals
+    if (row && (row.check_in || row.check_out || row.attendance_id)) {
+      const isCheckInApproved = row.check_in_approval_status === 'APPROVED';
+      const isCheckOutApproved = row.check_out_approval_status === 'APPROVED';
+      const isRejected = row.check_in_approval_status === 'REJECTED' || row.check_out_approval_status === 'REJECTED';
+      if (isRejected) {
+        return <span className="rm-badge rm-badge-inactive">Rejected</span>;
+      }
+      if (!isCheckInApproved || !isCheckOutApproved) {
+        return <span className="rm-badge" style={{ background: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' }}>Pending</span>;
+      }
+    }
+
     switch (status) {
       case 'PRESENT':
         return <span className="rm-badge rm-badge-active">Present</span>;
@@ -399,8 +412,8 @@ const ManagerTeamAttendance: React.FC = () => {
                   <td>{row.department || '--'}</td>
                   <td>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      {getStatusBadge(row.calculated_status)}
-                      {row.late_minutes > 0 && (
+                      {getStatusBadge(row.calculated_status, row)}
+                      {row.late_minutes > 0 && row.check_in_approval_status === 'APPROVED' && row.check_out_approval_status === 'APPROVED' && (
                         <span style={{ fontSize: '11px', color: '#b45309', fontWeight: 600 }}>{formatLateDuration(row.late_minutes)}</span>
                       )}
                     </div>

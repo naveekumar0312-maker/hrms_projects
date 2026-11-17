@@ -1835,13 +1835,20 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             attendance.check_out_approval_status = 'APPROVED'
             attendance.check_out_rejection_reason = None
         else:
-            attendance.approval_status = 'APPROVED'
-            attendance.rejection_reason = None
             attendance.check_in_approval_status = 'APPROVED'
             attendance.check_in_rejection_reason = None
             if attendance.check_out:
                 attendance.check_out_approval_status = 'APPROVED'
                 attendance.check_out_rejection_reason = None
+
+        # Overall approval_status is APPROVED only if both check_in and check_out are approved
+        if attendance.check_in_approval_status == 'APPROVED' and attendance.check_out_approval_status == 'APPROVED':
+            attendance.approval_status = 'APPROVED'
+            attendance.rejection_reason = None
+        elif attendance.check_in_approval_status == 'REJECTED' or attendance.check_out_approval_status == 'REJECTED':
+            attendance.approval_status = 'REJECTED'
+        else:
+            attendance.approval_status = 'PENDING'
 
         attendance.reviewed_by = request.user
         attendance.reviewed_at = now
@@ -1901,6 +1908,13 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             if attendance.check_out:
                 attendance.check_out_approval_status = 'PENDING'
                 attendance.check_out_rejection_reason = None
+
+        if attendance.check_in_approval_status == 'APPROVED' and attendance.check_out_approval_status == 'APPROVED':
+            attendance.approval_status = 'APPROVED'
+        elif attendance.check_in_approval_status == 'REJECTED' or attendance.check_out_approval_status == 'REJECTED':
+            attendance.approval_status = 'REJECTED'
+        else:
+            attendance.approval_status = 'PENDING'
 
         attendance.save()
         serializer = self.get_serializer(attendance, context={'request': request})

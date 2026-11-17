@@ -219,10 +219,30 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
   };
 
   const isPresentRecord = (r: any) => {
-    return ['PRESENT', 'COMPLETED', 'ON_TIME', 'WORKING'].includes(r.status);
+    const checkInApproved = r.check_in_approval_status === 'APPROVED';
+    const checkOutApproved = r.check_out_approval_status === 'APPROVED';
+    const bothApproved = checkInApproved && checkOutApproved;
+    return bothApproved && ['PRESENT', 'COMPLETED', 'ON_TIME', 'WORKING'].includes(r.status);
+  };
+
+  const isLateRecord = (r: any) => {
+    const checkInApproved = r.check_in_approval_status === 'APPROVED';
+    const checkOutApproved = r.check_out_approval_status === 'APPROVED';
+    const bothApproved = checkInApproved && checkOutApproved;
+    return bothApproved && (r.status === 'LATE' || (r.late_minutes && r.late_minutes > 0));
   };
 
   const isPendingRecord = (r: any) => {
+    if (r.check_in_approval_status === 'REJECTED' || r.check_out_approval_status === 'REJECTED') {
+      return false;
+    }
+    if (r.check_in_time || r.check_in || r.check_out_time || r.check_out || typeof r.id === 'number') {
+      const checkInApproved = r.check_in_approval_status === 'APPROVED';
+      const checkOutApproved = r.check_out_approval_status === 'APPROVED';
+      if (!checkInApproved || !checkOutApproved) {
+        return true;
+      }
+    }
     return r.approval_status === 'PENDING' || r.status === 'PENDING';
   };
 
@@ -249,14 +269,29 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
 
     if (statusFilter === 'ALL') return true;
     if (statusFilter === 'PRESENT') return isPresentRecord(r);
-    if (statusFilter === 'LATE') return r.status === 'LATE';
+    if (statusFilter === 'LATE') return isLateRecord(r);
     if (statusFilter === 'ABSENT') return r.status === 'ABSENT';
     if (statusFilter === 'PENDING') return isPendingRecord(r);
 
     return r.status === statusFilter;
   });
 
-  const getStatusBadge = (status: string, approvalStatus?: string) => {
+  const getStatusBadge = (status: string, approvalStatus?: string, checkInStatus?: string, checkOutStatus?: string) => {
+    if (checkInStatus === 'REJECTED' || checkOutStatus === 'REJECTED') {
+      return { bg: '#FFEBEE', text: '#C62828', label: 'Rejected' };
+    }
+
+    const checkInApproved = checkInStatus === 'APPROVED';
+    const checkOutApproved = checkOutStatus === 'APPROVED';
+    const bothApproved = checkInApproved && checkOutApproved;
+
+    // If both are not approved yet, attendance must show Pending
+    if (!bothApproved) {
+      if (['PRESENT', 'COMPLETED', 'ON_TIME', 'WORKING', 'LATE', 'PENDING'].includes(status) || approvalStatus === 'PENDING') {
+        return { bg: '#FFFBEB', text: '#D97706', label: 'Pending' };
+      }
+    }
+
     if (['PRESENT', 'COMPLETED', 'ON_TIME', 'WORKING'].includes(status)) {
       return { bg: '#E8F5E9', text: '#2E7D32', label: 'Present' };
     }
@@ -283,7 +318,7 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
 
   const totalCount = dateFilteredRecords.length;
   const presentCount = dateFilteredRecords.filter(isPresentRecord).length;
-  const lateCount = dateFilteredRecords.filter((r) => r.status === 'LATE').length;
+  const lateCount = dateFilteredRecords.filter(isLateRecord).length;
   const absentCount = dateFilteredRecords.filter((r) => r.status === 'ABSENT').length;
   const pendingCount = dateFilteredRecords.filter(isPendingRecord).length;
 
@@ -407,7 +442,12 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
           }
           renderItem={({ item }) => {
             const emp = item.employee || {};
-            const badge = getStatusBadge(item.status, item.approval_status);
+            const badge = getStatusBadge(
+              item.status,
+              item.approval_status,
+              item.check_in_approval_status,
+              item.check_out_approval_status
+            );
             return (
               <View style={styles.card}>
                 <TouchableOpacity

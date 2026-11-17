@@ -5,13 +5,24 @@
     if (recStatus === 'ON_LEAVE' || recStatus === 'ON LEAVE') return 'ON LEAVE';
     if (recStatus === 'HALF DAY' || recStatus === 'HALF_DAY') return 'HALF DAY';
     if (recStatus === 'ABSENT') return 'ABSENT';
-    if (recStatus === 'LATE' || (record.late_minutes && record.late_minutes > 0)) return 'LATE';
-    if (recStatus === 'PRESENT' || recStatus === 'ON_TIME' || recStatus === 'COMPLETED' || recStatus === 'WORKING') return 'PRESENT';
+
+    // Must have BOTH check-in and check-out approved to be PRESENT or LATE
+    const inApproved = record.check_in_approval_status === 'APPROVED';
+    const outApproved = record.check_out_approval_status === 'APPROVED';
     if (record.check_in_time || record.check_out_time) {
-      if (record.check_in_approval_status === 'PENDING' || record.check_out_approval_status === 'PENDING') return 'PENDING APPROVAL';
-      return 'PRESENT';
+      if (inApproved && outApproved) {
+        if (recStatus === 'LATE' || (record.late_minutes && record.late_minutes > 0)) return 'LATE';
+        return 'PRESENT';
+      }
+      return 'PENDING';
     }
-    return recStatus || 'PENDING';
+
+    if (inApproved && outApproved) {
+      if (recStatus === 'LATE' || (record.late_minutes && record.late_minutes > 0)) return 'LATE';
+      if (recStatus === 'PRESENT' || recStatus === 'ON_TIME' || recStatus === 'COMPLETED' || recStatus === 'WORKING') return 'PRESENT';
+    }
+
+    return 'PENDING';
   };
 
   const getAttendanceStatusBadgeClass = (statusText: string): string => {
