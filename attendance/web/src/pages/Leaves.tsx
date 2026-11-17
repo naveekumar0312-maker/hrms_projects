@@ -1,5 +1,7 @@
 import { resolveMediaUrl } from '../utils/imageUtils';
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Search, RotateCcw, X } from 'lucide-react';
+import { CustomDatePicker } from '../components/CustomDatePicker';
 import {
   getLeaves,
   approveLeave,
@@ -15,13 +17,21 @@ const Leaves: React.FC = () => {
   const [viewLeave, setViewLeave] = useState<LeaveRequest | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const loadLeaves = async () => {
+  const loadLeaves = async (dateParam?: string, searchParam?: string) => {
     try {
       setLoading(true);
       setError('');
 
-      const data = await getLeaves();
+      const activeDate = dateParam !== undefined ? dateParam : selectedDate;
+      const activeSearch = searchParam !== undefined ? searchParam : searchQuery;
+
+      const data = await getLeaves({
+        date: activeDate || undefined,
+        search: activeSearch || undefined,
+      });
 
       setLeaves(
         Array.isArray(data)
@@ -41,7 +51,32 @@ const Leaves: React.FC = () => {
 
   useEffect(() => {
     loadLeaves();
-  }, []);
+  }, [selectedDate]);
+
+  const filteredLeaves = useMemo(() => {
+    return leaves.filter((leave) => {
+      if (selectedDate) {
+        const start = leave.start_date;
+        const end = leave.end_date || leave.start_date;
+        if (start && end) {
+          if (selectedDate < start || selectedDate > end) return false;
+        } else if (start && start !== selectedDate) {
+          return false;
+        }
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const empName = (leave.employee_name || '').toLowerCase();
+        const empId = (leave.employee_id || '').toLowerCase();
+        const lType = (leave.leave_type || '').toLowerCase();
+        const reason = (leave.reason || '').toLowerCase();
+        if (!empName.includes(q) && !empId.includes(q) && !lType.includes(q) && !reason.includes(q)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [leaves, selectedDate, searchQuery]);
 
   const handleApprove = async (id: number) => {
     try {
@@ -201,20 +236,137 @@ const Leaves: React.FC = () => {
 
           <button
             className="refresh"
-            onClick={loadLeaves}
+            onClick={() => loadLeaves()}
             disabled={loading}
           >
              Refresh
           </button>
         </div>
 
+        {/* Date, Search & Quick Filter Toolbar */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+          <div style={{ minWidth: '220px' }}>
+            <CustomDatePicker
+              value={selectedDate}
+              onChange={(val: string) => setSelectedDate(val)}
+              placeholder="All Dates"
+            />
+          </div>
+
+          <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+            <Search
+              size={16}
+              color="#94a3b8"
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Search by employee name, code, leave type, reason..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 36px 8px 36px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.85rem',
+                outline: 'none',
+                background: '#fff',
+              }}
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                }}
+              >
+                <X size={14} />
+              </button>
+            ) : null}
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+              style={{
+                padding: '7px 12px',
+                borderRadius: '6px',
+                border: selectedDate === new Date().toISOString().split('T')[0] ? '1px solid #22c55e' : '1px solid #e2e8f0',
+                background: selectedDate === new Date().toISOString().split('T')[0] ? '#f0fdf4' : '#fff',
+                color: selectedDate === new Date().toISOString().split('T')[0] ? '#16a34a' : '#475569',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Today
+            </button>
+            {selectedDate ? (
+              <button
+                type="button"
+                onClick={() => setSelectedDate('')}
+                style={{
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                  background: '#fff',
+                  color: '#64748b',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                All Dates
+              </button>
+            ) : null}
+            {(selectedDate || searchQuery) ? (
+              <button
+                type="button"
+                onClick={() => { setSelectedDate(''); setSearchQuery(''); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                  background: '#fff',
+                  color: '#ef4444',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <RotateCcw size={13} /> Reset
+              </button>
+            ) : null}
+          </div>
+        </div>
+
         {loading ? (
           <div className="state">
             Loading leave requests...
           </div>
-        ) : leaves.length === 0 ? (
+        ) : filteredLeaves.length === 0 ? (
           <div className="state">
-            No leave requests found.
+            {selectedDate
+              ? `No leave requests found for ${selectedDate}${searchQuery ? ` matching "${searchQuery}"` : ''}.`
+              : 'No leave requests match your search criteria.'}
           </div>
         ) : (
           <div className="table-wrap">
@@ -233,7 +385,7 @@ const Leaves: React.FC = () => {
               </thead>
 
               <tbody>
-                {leaves.map(leave => (
+                {filteredLeaves.map(leave => (
                   <tr key={leave.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

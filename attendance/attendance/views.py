@@ -26,7 +26,7 @@ from .serializers import (
     EmployeePersonalAlarmSerializer,
 )
 from .services import calculate_distance, reverse_geocode
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from notifications.services import (
@@ -2568,6 +2568,20 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
             if user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager or (user.role == 'REPORTING_MANAGER' and emp and str(emp.branch_id) == str(branch_param)):
                 queryset = queryset.filter(employee__branch_id=branch_param)
 
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            queryset = queryset.filter(date=date_param)
+
+        search_param = self.request.query_params.get('search')
+        if search_param:
+            search_param = search_param.strip()
+            queryset = queryset.filter(
+                Q(employee__full_name__icontains=search_param) |
+                Q(employee__employee_id__icontains=search_param) |
+                Q(employee__department__icontains=search_param) |
+                Q(reason__icontains=search_param)
+            )
+
         return queryset
 
     def perform_create(self, serializer):
@@ -2891,6 +2905,21 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             if user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager or (user.role == 'REPORTING_MANAGER' and emp and str(emp.branch_id) == str(branch_param)):
                 queryset = queryset.filter(employee__branch_id=branch_param)
 
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            queryset = queryset.filter(start_date__lte=date_param, end_date__gte=date_param)
+
+        search_param = self.request.query_params.get('search')
+        if search_param:
+            search_param = search_param.strip()
+            queryset = queryset.filter(
+                Q(employee__full_name__icontains=search_param) |
+                Q(employee__employee_id__icontains=search_param) |
+                Q(employee__department__icontains=search_param) |
+                Q(leave_type__icontains=search_param) |
+                Q(reason__icontains=search_param)
+            )
+
         return queryset
 
     def perform_create(self, serializer):
@@ -3096,6 +3125,20 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
         if branch_param:
             if user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager or (user.role == 'REPORTING_MANAGER' and emp and str(emp.branch_id) == str(branch_param)):
                 queryset = queryset.filter(employee__branch_id=branch_param)
+
+        date_param = self.request.query_params.get('date')
+        if date_param:
+            queryset = queryset.filter(date=date_param)
+
+        search_param = self.request.query_params.get('search')
+        if search_param:
+            search_param = search_param.strip()
+            queryset = queryset.filter(
+                Q(employee__full_name__icontains=search_param) |
+                Q(employee__employee_id__icontains=search_param) |
+                Q(employee__department__icontains=search_param) |
+                Q(reason__icontains=search_param)
+            )
 
         return queryset
 

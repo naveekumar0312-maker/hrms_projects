@@ -1,4 +1,4 @@
-﻿import api from './index';
+import api from './index';
 
 export type WFHStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
@@ -24,8 +24,8 @@ export interface CreateWFHRequest {
   reason: string;
 }
 
-export const getWFHRequests = async () => {
-  const response = await api.get('/attendance/wfh/');
+export const getWFHRequests = async (params?: { date?: string; search?: string; status?: string }) => {
+  const response = await api.get('/attendance/wfh/', { params });
   return response.data;
 };
 

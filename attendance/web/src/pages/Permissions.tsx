@@ -1,5 +1,7 @@
 import { resolveMediaUrl } from '../utils/imageUtils';
-﻿import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Search, RotateCcw, X } from 'lucide-react';
+import { CustomDatePicker } from '../components/CustomDatePicker';
 import {
   getPermissions,
   approvePermission,
@@ -32,13 +34,21 @@ const Permissions: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [rejectPermissionItem, setRejectPermissionItem] = useState<PermissionRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const loadPermissions = async () => {
+  const loadPermissions = async (dateParam?: string, searchParam?: string) => {
     try {
       setLoading(true);
       setError('');
 
-      const data = await getPermissions();
+      const activeDate = dateParam !== undefined ? dateParam : selectedDate;
+      const activeSearch = searchParam !== undefined ? searchParam : searchQuery;
+
+      const data = await getPermissions({
+        date: activeDate || undefined,
+        search: activeSearch || undefined,
+      });
 
       setPermissions(
         Array.isArray(data)
@@ -58,7 +68,25 @@ const Permissions: React.FC = () => {
 
   useEffect(() => {
     loadPermissions();
-  }, []);
+  }, [selectedDate]);
+
+  const filteredPermissions = useMemo(() => {
+    return permissions.filter((p) => {
+      if (selectedDate && p.date !== selectedDate) {
+        return false;
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const empName = (p.employee_name || '').toLowerCase();
+        const empId = (p.employee_id || '').toLowerCase();
+        const reason = (p.reason || '').toLowerCase();
+        if (!empName.includes(q) && !empId.includes(q) && !reason.includes(q)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [permissions, selectedDate, searchQuery]);
 
   const handleApprove = async (id: number) => {
     try {
@@ -206,11 +234,126 @@ const Permissions: React.FC = () => {
           <button
             type="button"
             className="refresh-button"
-            onClick={loadPermissions}
+            onClick={() => loadPermissions()}
             disabled={loading}
           >
              Refresh
           </button>
+        </div>
+
+        {/* Date, Search & Quick Filter Toolbar */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', padding: '14px 20px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+          <div style={{ minWidth: '220px' }}>
+            <CustomDatePicker
+              value={selectedDate}
+              onChange={(val: string) => setSelectedDate(val)}
+              placeholder="All Dates"
+            />
+          </div>
+
+          <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+            <Search
+              size={16}
+              color="#94a3b8"
+              style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+              }}
+            />
+            <input
+              type="text"
+              placeholder="Search by employee name, ID, reason..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 36px 8px 36px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.85rem',
+                outline: 'none',
+                background: '#fff',
+              }}
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                }}
+              >
+                <X size={14} />
+              </button>
+            ) : null}
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])}
+              style={{
+                padding: '7px 12px',
+                borderRadius: '6px',
+                border: selectedDate === new Date().toISOString().split('T')[0] ? '1px solid #22c55e' : '1px solid #e2e8f0',
+                background: selectedDate === new Date().toISOString().split('T')[0] ? '#f0fdf4' : '#fff',
+                color: selectedDate === new Date().toISOString().split('T')[0] ? '#16a34a' : '#475569',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Today
+            </button>
+            {selectedDate ? (
+              <button
+                type="button"
+                onClick={() => setSelectedDate('')}
+                style={{
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                  background: '#fff',
+                  color: '#64748b',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                All Dates
+              </button>
+            ) : null}
+            {(selectedDate || searchQuery) ? (
+              <button
+                type="button"
+                onClick={() => { setSelectedDate(''); setSearchQuery(''); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '7px 12px',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                  background: '#fff',
+                  color: '#ef4444',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                <RotateCcw size={13} /> Reset
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {loading ? (
@@ -218,12 +361,14 @@ const Permissions: React.FC = () => {
             <div className="loader" />
             <p>Loading permission requests...</p>
           </div>
-        ) : permissions.length === 0 ? (
+        ) : filteredPermissions.length === 0 ? (
           <div className="permissions-state empty">
             <div className="empty-icon"></div>
             <h3>No Permission Requests</h3>
             <p>
-              There are no permission requests available.
+              {selectedDate
+                ? `No permission requests found for ${selectedDate}${searchQuery ? ` matching "${searchQuery}"` : ''}.`
+                : 'There are no permission requests matching your search criteria.'}
             </p>
           </div>
         ) : (
@@ -244,7 +389,7 @@ const Permissions: React.FC = () => {
               </thead>
 
               <tbody>
-                {permissions.map(permission => (
+                {filteredPermissions.map(permission => (
                   <tr key={permission.id}>
                     <td>
                       <div className="employee-cell">

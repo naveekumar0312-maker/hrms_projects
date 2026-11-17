@@ -1,5 +1,5 @@
 import { colors } from '../../theme/colors';
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,7 +22,9 @@ import {
   XCircle,
   AlertCircle,
   User,
+  ChevronLeft,
   ChevronRight,
+  Search,
   X,
   FileText,
   RotateCcw,
@@ -50,10 +52,23 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Date and Search Filter State
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [isDateFilterActive, setIsDateFilterActive] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const changeDate = (days: number) => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + days);
+    setSelectedDate(d.toISOString().split('T')[0]);
+    setIsDateFilterActive(true);
+  };
+
   const loadLeaves = async () => {
     setLoading(true);
     try {
-      const data = await fetchLeaves(companyId, activeTab);
+      const activeDate = isDateFilterActive ? selectedDate : undefined;
+      const data = await fetchLeaves(companyId, activeTab, activeDate, searchQuery.trim() || undefined);
       const sorted = (Array.isArray(data) ? [...data] : []).sort((a, b) => {
         const dateA = new Date(a.start_date || a.applied_at).getTime();
         const dateB = new Date(b.start_date || b.applied_at).getTime();
@@ -69,7 +84,32 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
 
   useEffect(() => {
     loadLeaves();
-  }, [activeTab]);
+  }, [activeTab, selectedDate, isDateFilterActive]);
+
+  const filteredLeaves = useMemo(() => {
+    return leaves.filter((leave) => {
+      if (isDateFilterActive && selectedDate) {
+        const start = leave.start_date;
+        const end = leave.end_date || leave.start_date;
+        if (start && end) {
+          if (selectedDate < start || selectedDate > end) return false;
+        } else if (start && start !== selectedDate) {
+          return false;
+        }
+      }
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const empName = (leave.employee_name || '').toLowerCase();
+        const empId = (leave.employee_id_display || '').toLowerCase();
+        const lType = (leave.leave_type || '').toLowerCase();
+        const reason = (leave.reason || '').toLowerCase();
+        if (!empName.includes(q) && !empId.includes(q) && !lType.includes(q) && !reason.includes(q)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [leaves, isDateFilterActive, selectedDate, searchQuery]);
 
   const handleAction = async (status: 'APPROVED' | 'REJECTED') => {
     if (!selectedLeave) return;
@@ -142,6 +182,69 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
         onBack={() => navigation.goBack()}
       />
 
+      {/* Date Switcher */}
+      <View style={styles.datePickerContainer}>
+        <View style={styles.dateNavigator}>
+          <TouchableOpacity style={styles.dateArrowBtn} onPress={() => changeDate(-1)}>
+            <ChevronLeft size={18} color="#475569" strokeWidth={2.2} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.dateDisplay}
+            onPress={() => setIsDateFilterActive(!isDateFilterActive)}
+            activeOpacity={0.7}
+          >
+            <Calendar size={14} color={isDateFilterActive ? colors.primary : '#94A3B8'} />
+            <Text style={[styles.dateDisplayText, !isDateFilterActive && styles.dateTextMuted]}>
+              {isDateFilterActive ? selectedDate : 'All Dates'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.dateArrowBtn} onPress={() => changeDate(1)}>
+            <ChevronRight size={18} color="#475569" strokeWidth={2.2} />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.dateActionsRow}>
+          <TouchableOpacity
+            style={[styles.dateQuickBtn, isDateFilterActive && selectedDate === new Date().toISOString().split('T')[0] && styles.dateQuickBtnActive]}
+            onPress={() => {
+              setSelectedDate(new Date().toISOString().split('T')[0]);
+              setIsDateFilterActive(true);
+            }}
+          >
+            <Text style={[styles.dateQuickBtnText, isDateFilterActive && selectedDate === new Date().toISOString().split('T')[0] && styles.dateQuickBtnTextActive]}>
+              Today
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.dateQuickBtn, !isDateFilterActive && styles.dateQuickBtnActive]}
+            onPress={() => setIsDateFilterActive(!isDateFilterActive)}
+          >
+            <Text style={[styles.dateQuickBtnText, !isDateFilterActive && styles.dateQuickBtnTextActive]}>
+              {isDateFilterActive ? 'All Dates' : 'By Date'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Search Input Bar */}
+      <View style={styles.searchSection}>
+        <View style={styles.searchBar}>
+          <Search size={16} color="#94A3B8" />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search employee by name, ID or reason..."
+            placeholderTextColor="#94A3B8"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          {searchQuery ? (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <X size={16} color="#94A3B8" />
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      </View>
+
       {/* Status Filter Tabs */}
       <View style={styles.tabContainer}>
         {(['PENDING', 'APPROVED', 'REJECTED', 'ALL'] as const).map((tab) => (
@@ -164,9 +267,19 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
         </View>
       ) : (
         <FlatList
-          data={leaves}
+          data={filteredLeaves}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={[styles.centerContainer, { paddingVertical: 40 }]}>
+              <Calendar size={36} color="#CBD5E1" />
+              <Text style={[styles.loadingText, { marginTop: 10 }]}>
+                {isDateFilterActive
+                  ? `No leave requests on ${selectedDate}${searchQuery ? ` matching "${searchQuery}"` : ''}.`
+                  : 'No leave requests match your search criteria.'}
+              </Text>
+            </View>
+          }
           renderItem={({ item }) => {
             const badge = getStatusBadge(item.status);
             const BadgeIcon = badge.icon;
@@ -239,12 +352,6 @@ export const AdminLeavesScreen = ({ navigation }: any) => {
               </TouchableOpacity>
             );
           }}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyTitle}>No Leave Requests</Text>
-              <Text style={styles.emptyDesc}>There are currently no leaves in this category.</Text>
-            </View>
-          }
         />
       )}
 
@@ -358,6 +465,91 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  dateNavigator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  dateArrowBtn: {
+    padding: 6,
+  },
+  dateDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 8,
+  },
+  dateDisplayText: {
+    fontSize: 13,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#0F172A',
+  },
+  dateTextMuted: {
+    color: '#64748B',
+  },
+  dateActionsRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  dateQuickBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  dateQuickBtnActive: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#22C55E',
+  },
+  dateQuickBtnText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#475569',
+  },
+  dateQuickBtnTextActive: {
+    color: '#15803D',
+  },
+  searchSection: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 38,
+    gap: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: '#0F172A',
+    fontFamily: 'Comfortaa_500Medium',
+    padding: 0,
   },
   tabContainer: {
     flexDirection: 'row',

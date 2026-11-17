@@ -281,10 +281,12 @@ export const updateShift = async (id: number, data: any): Promise<any> => {
   return response.data;
 };
 
-export const fetchLeaves = async (companyId?: number, status?: string): Promise<LeaveRequestItem[]> => {
+export const fetchLeaves = async (companyId?: number, status?: string, date?: string, search?: string): Promise<LeaveRequestItem[]> => {
   const params: any = {};
   if (companyId) params.company = companyId;
   if (status && status !== 'ALL') params.status = status;
+  if (date) params.date = date;
+  if (search) params.search = search;
   const response = await api.get('/attendance/leaves/', { params });
   return Array.isArray(response.data) ? response.data : [];
 };
@@ -302,10 +304,12 @@ export const undoLeave = async (id: number): Promise<any> => {
   return response.data;
 };
 
-export const fetchPermissions = async (companyId?: number, status?: string): Promise<PermissionRequestItem[]> => {
+export const fetchPermissions = async (companyId?: number, status?: string, date?: string, search?: string): Promise<PermissionRequestItem[]> => {
   const params: any = {};
   if (companyId) params.company = companyId;
   if (status && status !== 'ALL') params.status = status;
+  if (date) params.date = date;
+  if (search) params.search = search;
   const response = await api.get('/attendance/permissions/', { params });
   return Array.isArray(response.data) ? response.data : [];
 };
@@ -323,10 +327,12 @@ export const undoPermission = async (id: number): Promise<any> => {
   return response.data;
 };
 
-export const fetchWFHRequests = async (companyId?: number, status?: string): Promise<WFHRequestItem[]> => {
+export const fetchWFHRequests = async (companyId?: number, status?: string, date?: string, search?: string): Promise<WFHRequestItem[]> => {
   const params: any = {};
   if (companyId) params.company = companyId;
   if (status && status !== 'ALL') params.status = status;
+  if (date) params.date = date;
+  if (search) params.search = search;
   const response = await api.get('/attendance/wfh/', { params });
   return Array.isArray(response.data) ? response.data : [];
 };

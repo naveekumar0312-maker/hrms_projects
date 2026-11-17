@@ -27,8 +27,8 @@ export interface CreatePermissionRequest {
   reason: string;
 }
 
-export const getPermissions = async () => {
-  const response = await api.get('/attendance/permissions/');
+export const getPermissions = async (params?: { date?: string; search?: string; status?: string }) => {
+  const response = await api.get('/attendance/permissions/', { params });
   return response.data;
 };
 

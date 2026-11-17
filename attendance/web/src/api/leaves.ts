@@ -1,4 +1,4 @@
-﻿import api from './index';
+import api from './index';
 
 export interface LeaveRequest {
   id: number;
@@ -26,8 +26,8 @@ export interface CreateLeaveRequest {
   reason: string;
 }
 
-export const getLeaves = async () => {
-  const response = await api.get('/attendance/leaves/');
+export const getLeaves = async (params?: { date?: string; search?: string; status?: string }) => {
+  const response = await api.get('/attendance/leaves/', { params });
   return response.data;
 };
 
