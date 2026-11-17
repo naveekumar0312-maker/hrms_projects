@@ -12,6 +12,7 @@ import {
 import api from '../../api';
 import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
 import { CustomSelect } from '../../components/CustomSelect';
+import { DeleteConfirmModal } from '../../components/DeleteConfirmModal';
 import './TaskManager.css';
 
 interface TaskItem {
@@ -90,14 +91,18 @@ const TaskManager: React.FC = () => {
   };
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string } | null>(null);
 
-  const handleDeleteTask = async (taskId: number, taskTitle: string) => {
-    if (!window.confirm(`Are you sure you want to delete task "${taskTitle}"? This cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteTask = (taskId: number, taskTitle: string) => {
+    setDeleteTarget({ id: taskId, title: taskTitle });
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!deleteTarget) return;
     try {
-      setDeletingId(taskId);
-      await api.delete(`/tasks-module/tasks/${taskId}/`);
+      setDeletingId(deleteTarget.id);
+      await api.delete(`/tasks-module/tasks/${deleteTarget.id}/`);
+      setDeleteTarget(null);
       loadTasks();
     } catch (err: any) {
       console.error('Failed to delete task:', err);
@@ -290,7 +295,7 @@ const TaskManager: React.FC = () => {
                 <th style={{ whiteSpace: 'nowrap' }}>Due Date</th>
                 <th style={{ whiteSpace: 'nowrap' }}>Logged / Est.</th>
                 <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Status</th>
-                <th style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                <th style={{ minWidth: '220px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -405,7 +410,7 @@ const TaskManager: React.FC = () => {
                     </div>
                   </td>
                   <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{renderStatusBadge(t.status, t.is_draft)}</td>
-                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                  <td style={{ minWidth: '220px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                       <button
                         type="button"
@@ -461,6 +466,17 @@ const TaskManager: React.FC = () => {
           }}
         />
       )}
+
+      {/* CUSTOM DELETE CONFIRMATION MODAL */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        title="Delete Task"
+        itemTitle={deleteTarget?.title}
+        message={deleteTarget ? `Are you sure you want to delete "${deleteTarget.title}"? This cannot be undone.` : undefined}
+        isDeleting={!!deleteTarget && deletingId === deleteTarget.id}
+        onConfirm={confirmDeleteTask}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };

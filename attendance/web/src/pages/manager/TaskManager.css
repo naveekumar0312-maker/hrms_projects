@@ -34,7 +34,7 @@
 }
 
 .task-manager-page .rm-table {
-  min-width: 1100px;
+  min-width: 1150px;
 }
 
 .task-manager-page .rm-table th,
@@ -44,15 +44,9 @@
 
 .task-manager-page .rm-table th:last-child,
 .task-manager-page .rm-table td:last-child {
-  position: sticky;
-  right: 0;
-  background: #ffffff;
-  z-index: 2;
-  box-shadow: -4px 0 8px rgba(0, 0, 0, 0.05);
-}
-
-.task-manager-page .rm-table th:last-child {
-  background: #f8fafc;
+  min-width: 210px;
+  white-space: nowrap;
+  text-align: right;
 }
 
 @media (max-width: 1024px) {

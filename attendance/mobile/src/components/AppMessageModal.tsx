@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   Info,
   HelpCircle,
+  Trash2,
 } from 'lucide-react-native';
 import { COLORS } from '../constants/theme';
 
@@ -57,15 +58,20 @@ export const AppMessageModal: React.FC<AppMessageModalProps> = ({
     cancelable = true,
   } = options;
 
+  const hasDestructive = buttons.some((b) => b.style === 'destructive');
+
   const getHeaderIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle2 size={36} color="#16A34A" strokeWidth={2.4} />;
+        return <CheckCircle2 size={38} color="#16A34A" strokeWidth={2.5} />;
       case 'error':
-        return <AlertCircle size={36} color="#DC2626" strokeWidth={2.4} />;
+        return <AlertCircle size={38} color="#DC2626" strokeWidth={2.4} />;
       case 'warning':
-        return <AlertTriangle size={36} color="#D97706" strokeWidth={2.4} />;
+        return <AlertTriangle size={38} color="#D97706" strokeWidth={2.4} />;
       case 'confirm':
+        if (hasDestructive) {
+          return <Trash2 size={32} color="#DC2626" strokeWidth={2.4} />;
+        }
         return <HelpCircle size={36} color="#2563EB" strokeWidth={2.4} />;
       case 'info':
       default:
@@ -82,10 +88,32 @@ export const AppMessageModal: React.FC<AppMessageModalProps> = ({
       case 'warning':
         return '#FEF3C7';
       case 'confirm':
+        if (hasDestructive) {
+          return '#FEE2E2';
+        }
         return '#DBEAFE';
       case 'info':
       default:
         return 'rgba(34, 197, 94, 0.14)';
+    }
+  };
+
+  const getIconBorder = () => {
+    switch (type) {
+      case 'success':
+        return '#BBF7D0';
+      case 'error':
+        return '#FECACA';
+      case 'warning':
+        return '#FDE68A';
+      case 'confirm':
+        if (hasDestructive) {
+          return '#FECACA';
+        }
+        return '#BFDBFE';
+      case 'info':
+      default:
+        return 'rgba(34, 197, 94, 0.28)';
     }
   };
 
@@ -106,7 +134,15 @@ export const AppMessageModal: React.FC<AppMessageModalProps> = ({
       <StatusBar style="dark" hidden={false} />
       <Pressable style={styles.backdrop} onPress={handleBackdropPress}>
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
-          <View style={[styles.iconWrapper, { backgroundColor: getIconBackground() }]}>
+          <View
+            style={[
+              styles.iconWrapper,
+              {
+                backgroundColor: getIconBackground(),
+                borderColor: getIconBorder(),
+              },
+            ]}
+          >
             {getHeaderIcon()}
           </View>
 
@@ -174,25 +210,26 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '100%',
-    maxWidth: 360,
+    maxWidth: 340,
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingTop: 26,
+    borderColor: '#F1F5F9',
+    paddingTop: 28,
     paddingBottom: 22,
     paddingHorizontal: 22,
     alignItems: 'center',
     shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.16,
+    shadowRadius: 32,
+    elevation: 16,
   },
   iconWrapper: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    borderWidth: 4,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -209,7 +246,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     color: '#475569',
     textAlign: 'center',
-    marginBottom: 22,
+    marginBottom: 24,
   },
   messageWithoutTitle: {
     marginTop: 4,
@@ -224,27 +261,33 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 48,
     backgroundColor: '#22C55E',
-    borderRadius: 12,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
     shadowColor: '#22C55E',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: 0.28,
     shadowRadius: 8,
-    elevation: 3,
+    elevation: 4,
   },
   multiButton: {
     minWidth: 100,
   },
   cancelButton: {
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     shadowOpacity: 0,
     elevation: 0,
   },
   destructiveButton: {
     backgroundColor: '#DC2626',
     shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.28,
+    shadowRadius: 8,
+    elevation: 4,
   },
   buttonText: {
     color: '#FFFFFF',
@@ -252,8 +295,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
   },
   cancelButtonText: {
-    color: '#64748B',
-    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#475569',
+    fontFamily: 'Comfortaa_700Bold',
   },
   destructiveButtonText: {
     color: '#FFFFFF',

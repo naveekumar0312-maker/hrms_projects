@@ -23,6 +23,7 @@ import { AuthContext } from '../context/AuthContext';
 import { CustomDatePicker } from './CustomDatePicker';
 import { CustomSelect } from './CustomSelect';
 import { EmployeeMultiSelect } from './EmployeeMultiSelect';
+import { DeleteConfirmModal } from './DeleteConfirmModal';
 import './TaskWorkspaceModal.css';
 
 interface TaskWorkspaceModalProps {
@@ -427,15 +428,19 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   };
 
   const [deletingTask, setDeletingTask] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleDeleteCurrentTask = async () => {
+  const handleDeleteCurrentTask = () => {
     if (!taskId) return;
-    if (!window.confirm(`Are you sure you want to delete this task? This action cannot be undone.`)) {
-      return;
-    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteCurrentTask = async () => {
+    if (!taskId) return;
     try {
       setDeletingTask(true);
       await api.delete(`/tasks-module/tasks/${taskId}/`);
+      setShowDeleteConfirm(false);
       onSaved();
     } catch (err: any) {
       console.error('Failed to delete task:', err);
@@ -1592,6 +1597,17 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* CUSTOM DELETE CONFIRMATION MODAL */}
+      <DeleteConfirmModal
+        isOpen={showDeleteConfirm}
+        title="Delete Task"
+        itemTitle={taskData?.title}
+        message={taskData?.title ? `Are you sure you want to delete "${taskData.title}"? This cannot be undone.` : undefined}
+        isDeleting={deletingTask}
+        onConfirm={confirmDeleteCurrentTask}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 };

@@ -40,12 +40,14 @@ import { fetchCompanies, fetchBranches } from '../../services/adminHRService';
 import { approveAttendanceRecord, rejectAttendanceRecord, undoAttendanceRecord } from '../../services/attendanceService';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { formatAttendanceTime } from '../../utils/dateUtils';
+import { useAppMessage } from '../../context/MessageContext';
 import { COLORS } from '../../constants/theme';
 import { colors } from '../../theme/colors';
 
 export default function ManagerAttendanceScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
   const { user, employee } = useContext(AuthContext);
+  const { showSuccess, showError, showWarning, showConfirm } = useAppMessage();
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
@@ -119,17 +121,17 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
 
   const handleApprovePunch = async (item: ManagerAttendanceRow, type: 'check_in' | 'check_out') => {
     if (!item.attendance_id) {
-      Alert.alert('Notice', 'No attendance punch record found to approve.');
+      showWarning('Notice', 'No attendance punch record found to approve.');
       return;
     }
     const label = type === 'check_in' ? 'Check In' : 'Check Out';
     try {
       setActionLoading(true);
       await approveAttendanceRecord(item.attendance_id, type);
-      Alert.alert('Success', `${label} for ${item.full_name} approved!`);
+      showSuccess('Success', `${label} for ${item.full_name} approved!`);
       loadAttendance(selectedDate);
     } catch (err: any) {
-      Alert.alert('Error', err?.message || `Failed to approve ${label.toLowerCase()}.`);
+      showError(err?.message || `Failed to approve ${label.toLowerCase()}.`);
     } finally {
       setActionLoading(false);
     }
@@ -137,7 +139,7 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
 
   const handleOpenReject = (item: ManagerAttendanceRow, type: 'check_in' | 'check_out') => {
     if (!item.attendance_id) {
-      Alert.alert('Notice', 'No attendance punch record found to reject.');
+      showWarning('Notice', 'No attendance punch record found to reject.');
       return;
     }
     setRejectingItem({ item, type });
@@ -151,19 +153,19 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
     if (!attendanceId) return;
 
     if (!rejectReason.trim()) {
-      Alert.alert('Validation Error', 'Please provide a reason for rejection.');
+      showWarning('Validation Error', 'Please provide a reason for rejection.');
       return;
     }
     const label = type === 'check_in' ? 'Check In' : 'Check Out';
     try {
       setActionLoading(true);
       await rejectAttendanceRecord(attendanceId, rejectReason.trim(), type);
-      Alert.alert('Success', `${label} for ${item.full_name} rejected.`);
+      showSuccess('Success', `${label} for ${item.full_name} rejected.`);
       setRejectingItem(null);
       setRejectReason('');
       loadAttendance(selectedDate);
     } catch (err: any) {
-      Alert.alert('Error', err?.message || `Failed to reject ${label.toLowerCase()}.`);
+      showError(err?.message || `Failed to reject ${label.toLowerCase()}.`);
     } finally {
       setActionLoading(false);
     }
@@ -173,29 +175,25 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
     if (!item.attendance_id) return;
     const attendanceId = item.attendance_id;
     const label = type === 'check_in' ? 'Check In' : 'Check Out';
-    Alert.alert(
-      'Undo Approval',
-      `Revert ${label} decision for ${item.full_name} back to Pending?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Undo',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setActionLoading(true);
-              await undoAttendanceRecord(attendanceId, type);
-              Alert.alert('Success', `${label} status reverted to pending.`);
-              loadAttendance(selectedDate);
-            } catch (err: any) {
-              Alert.alert('Error', err?.message || `Failed to undo ${label.toLowerCase()}.`);
-            } finally {
-              setActionLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    showConfirm({
+      title: 'Undo Approval',
+      message: `Revert ${label} decision for ${item.full_name} back to Pending?`,
+      confirmText: 'Undo',
+      cancelText: 'Cancel',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          setActionLoading(true);
+          await undoAttendanceRecord(attendanceId, type);
+          showSuccess('Success', `${label} status reverted to pending.`);
+          loadAttendance(selectedDate);
+        } catch (err: any) {
+          showError(err?.message || `Failed to undo ${label.toLowerCase()}.`);
+        } finally {
+          setActionLoading(false);
+        }
+      },
+    });
   };
 
   const filteredBranches = branches.filter((b) => {

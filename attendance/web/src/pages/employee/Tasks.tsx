@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '../../api';
 import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
+import { DeleteConfirmModal } from '../../components/DeleteConfirmModal';
 import { AuthContext } from '../../context/AuthContext';
 
 interface EmployeeTask {
@@ -42,14 +43,18 @@ const EmployeeTasks: React.FC = () => {
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string } | null>(null);
 
-  const handleDeleteTask = async (taskId: number, taskTitle: string) => {
-    if (!window.confirm(`Are you sure you want to delete task "${taskTitle}"? This cannot be undone.`)) {
-      return;
-    }
+  const handleDeleteTask = (taskId: number, taskTitle: string) => {
+    setDeleteTarget({ id: taskId, title: taskTitle });
+  };
+
+  const confirmDeleteTask = async () => {
+    if (!deleteTarget) return;
     try {
-      setDeletingId(taskId);
-      await api.delete(`/tasks-module/tasks/${taskId}/`);
+      setDeletingId(deleteTarget.id);
+      await api.delete(`/tasks-module/tasks/${deleteTarget.id}/`);
+      setDeleteTarget(null);
       loadTasks();
     } catch (err: any) {
       console.error('Failed to delete task:', err);
@@ -164,7 +169,7 @@ const EmployeeTasks: React.FC = () => {
                 <th>Due Date</th>
                 <th>Time Logged</th>
                 <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ minWidth: '200px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -200,7 +205,7 @@ const EmployeeTasks: React.FC = () => {
                     </div>
                   </td>
                   <td>{renderStatusBadge(t.status)}</td>
-                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                  <td style={{ minWidth: '200px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                     {isTeamLeaderOrManager ? (
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                         <button
@@ -277,6 +282,17 @@ const EmployeeTasks: React.FC = () => {
           }}
         />
       )}
+
+      {/* CUSTOM DELETE CONFIRMATION MODAL */}
+      <DeleteConfirmModal
+        isOpen={!!deleteTarget}
+        title="Delete Task"
+        itemTitle={deleteTarget?.title}
+        message={deleteTarget ? `Are you sure you want to delete "${deleteTarget.title}"? This cannot be undone.` : undefined}
+        isDeleting={!!deleteTarget && deletingId === deleteTarget.id}
+        onConfirm={confirmDeleteTask}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };

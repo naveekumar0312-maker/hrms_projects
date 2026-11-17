@@ -73,10 +73,12 @@ import { colors } from '../theme/colors';
 import { resolveMediaUrl } from '../utils/imageUtils';
 import { AppHeader } from '../components/AppHeader';
 import { AuthContext } from '../context/AuthContext';
+import { useAppMessage } from '../context/MessageContext';
 
 export const TasksScreen: React.FC = () => {
   const insets = useSafeAreaInsets();
   const { user } = useContext(AuthContext);
+  const { showSuccess, showError, showWarning, showConfirm } = useAppMessage();
   const isManagerOrAdmin = ['SUPER_ADMIN', 'ADMIN', 'HR', 'REPORTING_MANAGER', 'TEAM_LEADER'].includes(
     user?.role || ''
   );
@@ -204,7 +206,7 @@ export const TasksScreen: React.FC = () => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Denied', 'Camera roll permissions are required to select photos.');
+        showWarning('Permission Denied', 'Camera roll permissions are required to select photos.');
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -232,7 +234,7 @@ export const TasksScreen: React.FC = () => {
       }
     } catch (e) {
       console.log('Error picking image:', e);
-      Alert.alert('Error', 'Failed to pick image.');
+      showError('Failed to pick image.');
     }
   };
 
@@ -262,7 +264,7 @@ export const TasksScreen: React.FC = () => {
       }
     } catch (e) {
       console.log('Error picking document:', e);
-      Alert.alert('Error', 'Failed to select document.');
+      showError('Failed to select document.');
     }
   };
 
@@ -282,7 +284,7 @@ export const TasksScreen: React.FC = () => {
     try {
       const { granted } = await requestRecordingPermissionsAsync();
       if (!granted) {
-        Alert.alert('Microphone Permission', 'Please allow microphone access to speak and enter text.');
+        showWarning('Microphone Permission', 'Please allow microphone access to speak and enter text.');
         return;
       }
 
@@ -308,7 +310,7 @@ export const TasksScreen: React.FC = () => {
       }, 1000);
     } catch (e: any) {
       console.log('Error starting voice typing:', e);
-      Alert.alert('Error', 'Unable to access microphone for voice typing.');
+      showError('Unable to access microphone for voice typing.');
       setVoiceTypingTarget(null);
     }
   };
@@ -361,7 +363,7 @@ export const TasksScreen: React.FC = () => {
     try {
       const { granted } = await requestRecordingPermissionsAsync();
       if (!granted) {
-        Alert.alert('Microphone Permission', 'Please grant microphone access to record voice messages.');
+        showWarning('Microphone Permission', 'Please grant microphone access to record voice messages.');
         return;
       }
 
@@ -440,7 +442,7 @@ export const TasksScreen: React.FC = () => {
       }
     } catch (e) {
       console.log('Error selecting audio:', e);
-      Alert.alert('Error', 'Failed to pick audio file.');
+      showError('Failed to pick audio file.');
     }
   };
 
@@ -491,7 +493,7 @@ export const TasksScreen: React.FC = () => {
     } catch (e) {
       console.log('Error opening/playing audio in-app:', e);
       setPlayingAudioId(null);
-      Alert.alert('Audio Error', 'Unable to play voice message directly.');
+      showError('Unable to play voice message directly.');
     }
   };
 
@@ -514,11 +516,11 @@ export const TasksScreen: React.FC = () => {
 
   const handleCreateNewTask = async (isDraft: boolean = false) => {
     if (!title.trim()) {
-      Alert.alert('Required', 'Please enter a Task Title.');
+      showWarning('Required', 'Please enter a Task Title.');
       return;
     }
     if (assignedEmployeeIds.length === 0) {
-      Alert.alert('Required', 'Please assign at least one employee to this task.');
+      showWarning('Required', 'Please assign at least one employee to this task.');
       return;
     }
 
@@ -556,12 +558,12 @@ export const TasksScreen: React.FC = () => {
       }
 
       setCreateModalVisible(false);
-      Alert.alert('Success', `Task "${created.title}" created successfully!`);
+      showSuccess('Success', `Task "${created.title}" created successfully!`);
       loadTasks();
     } catch (err: any) {
       console.error('Failed to create task:', err);
       const detail = err.response?.data?.detail || err.response?.data?.message || 'Failed to create task.';
-      Alert.alert('Error', detail);
+      showError(detail);
     } finally {
       setCreating(false);
     }
@@ -583,7 +585,7 @@ export const TasksScreen: React.FC = () => {
   const handleSaveEditTask = async () => {
     if (!editingTask) return;
     if (!editTitle.trim()) {
-      Alert.alert('Required', 'Task title cannot be empty.');
+      showWarning('Required', 'Task title cannot be empty.');
       return;
     }
     setSavingEdit(true);
@@ -600,7 +602,7 @@ export const TasksScreen: React.FC = () => {
       if (editDueDate) payload.due_date = editDueDate;
 
       const updated = await updateTask(editingTask.id, payload);
-      Alert.alert('Success', `Task "${updated.title}" updated successfully!`);
+      showSuccess('Success', `Task "${updated.title}" updated successfully!`);
       setEditingTask(null);
       if (selectedTask?.id === editingTask.id) {
         const full = await getTaskDetail(editingTask.id);
@@ -610,38 +612,34 @@ export const TasksScreen: React.FC = () => {
     } catch (err: any) {
       console.error('Failed to update task:', err);
       const detail = err.response?.data?.detail || err.response?.data?.message || 'Failed to update task.';
-      Alert.alert('Error', detail);
+      showError(detail);
     } finally {
       setSavingEdit(false);
     }
   };
 
   const handleDeleteTask = (taskId: number, taskTitle: string) => {
-    Alert.alert(
-      'Delete Task',
-      `Are you sure you want to delete "${taskTitle}"? This action cannot be undone.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteTask(taskId);
-              Alert.alert('Success', 'Task deleted successfully.');
-              if (selectedTask?.id === taskId) {
-                setSelectedTask(null);
-              }
-              loadTasks();
-            } catch (err: any) {
-              console.error('Failed to delete task:', err);
-              const detail = err.response?.data?.detail || err.response?.data?.message || 'Failed to delete task.';
-              Alert.alert('Error', detail);
-            }
-          },
-        },
-      ]
-    );
+    showConfirm({
+      title: 'Delete Task',
+      message: `Are you sure you want to delete "${taskTitle}"? This cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      isDestructive: true,
+      onConfirm: async () => {
+        try {
+          await deleteTask(taskId);
+          showSuccess('Success', 'Task deleted successfully.');
+          if (selectedTask?.id === taskId) {
+            setSelectedTask(null);
+          }
+          loadTasks();
+        } catch (err: any) {
+          console.error('Failed to delete task:', err);
+          const detail = err.response?.data?.detail || err.response?.data?.message || 'Failed to delete task.';
+          showError(detail);
+        }
+      },
+    });
   };
 
   const [detailTab, setDetailTab] = useState<'comment' | 'attachment' | 'activity' | 'timelog'>('comment');
@@ -673,7 +671,7 @@ export const TasksScreen: React.FC = () => {
     if (!selectedTask) return;
     const h = parseFloat(logHours);
     if (isNaN(h) || h <= 0) {
-      Alert.alert('Required', 'Please enter valid hours (e.g. 1.5).');
+      showWarning('Required', 'Please enter valid hours (e.g. 1.5).');
       return;
     }
     try {
@@ -685,12 +683,12 @@ export const TasksScreen: React.FC = () => {
       });
       setLogHours('');
       setLogDescription('');
-      Alert.alert('Success', `${h} hours logged successfully!`);
+      showSuccess('Success', `${h} hours logged successfully!`);
       const updated = await getTaskDetail(selectedTask.id);
       if (updated) setSelectedTask(updated);
     } catch (err: any) {
       const msg = err.response?.data?.detail || err.response?.data?.message || 'Failed to log time.';
-      Alert.alert('Error', msg);
+      showError(msg);
     } finally {
       setLoggingTime(false);
     }
@@ -702,7 +700,7 @@ export const TasksScreen: React.FC = () => {
       if (type === 'image') {
         const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (status !== 'granted') {
-          Alert.alert('Permission Denied', 'Camera roll access is required.');
+          showWarning('Permission Denied', 'Camera roll access is required.');
           return;
         }
         const result = await ImagePicker.launchImageLibraryAsync({
@@ -713,7 +711,7 @@ export const TasksScreen: React.FC = () => {
           const asset = result.assets[0];
           setUploadingAttachment(true);
           await uploadTaskAttachment(selectedTask.id, asset.uri, asset.fileName || 'photo.jpg', asset.mimeType || 'image/jpeg');
-          Alert.alert('Success', 'Photo uploaded to task attachments!');
+          showSuccess('Success', 'Photo uploaded to task attachments!');
           const updated = await getTaskDetail(selectedTask.id);
           if (updated) setSelectedTask(updated);
         }
@@ -726,13 +724,13 @@ export const TasksScreen: React.FC = () => {
           const asset = result.assets[0];
           setUploadingAttachment(true);
           await uploadTaskAttachment(selectedTask.id, asset.uri, asset.name || 'document', asset.mimeType || 'application/octet-stream');
-          Alert.alert('Success', 'File uploaded to task attachments!');
+          showSuccess('Success', 'File uploaded to task attachments!');
           const updated = await getTaskDetail(selectedTask.id);
           if (updated) setSelectedTask(updated);
         }
       }
     } catch (e: any) {
-      Alert.alert('Upload Error', 'Failed to upload attachment.');
+      showError('Failed to upload attachment.');
     } finally {
       setUploadingAttachment(false);
     }
@@ -741,7 +739,7 @@ export const TasksScreen: React.FC = () => {
   const handlePostWorkspaceComment = async () => {
     if (!selectedTask) return;
     if (!commentText.trim() && !attachedFile && !linkInput.trim()) {
-      Alert.alert('Required', 'Please enter a message, record voice, or attach a file.');
+      showWarning('Required', 'Please enter a message, record voice, or attach a file.');
       return;
     }
 
@@ -763,7 +761,7 @@ export const TasksScreen: React.FC = () => {
       loadCommentsForTask(selectedTask.id);
     } catch (e: any) {
       console.error('Failed to post comment:', e);
-      Alert.alert('Error', 'Failed to post comment.');
+      showError('Failed to post comment.');
     } finally {
       setSendingComment(false);
     }
@@ -781,9 +779,10 @@ export const TasksScreen: React.FC = () => {
       );
       setSelectedTask(updated);
       loadTasks();
-      Alert.alert('Success', 'Workspace status updated successfully.');
-    } catch (err) {
+      showSuccess('Success', 'Workspace status updated successfully.');
+    } catch (err: any) {
       console.error('Failed to update task:', err);
+      showError('Failed to update workspace status.');
     } finally {
       setUpdating(false);
     }
