@@ -287,14 +287,18 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
   const absentCount = dateFilteredRecords.filter((r) => r.status === 'ABSENT').length;
   const pendingCount = dateFilteredRecords.filter(isPendingRecord).length;
 
+  const isManager = user?.role === 'REPORTING_MANAGER' || user?.role === 'TEAM_LEADER';
+  const pageTitle = isManager ? 'Team Attendance' : 'Attendance Records';
+  const companyTitle = (user?.company_name && user.company_name !== 'N/A') ? user.company_name : 'All Companies';
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['left', 'right']}>
       <StatusBar style="dark" hidden={false} />
       <AdminHRHeader
-        title="Attendance Records"
+        title={pageTitle}
         subtitle={`${filteredRecords.length} records on ${selectedDate}`}
         role={user?.role || 'ADMIN'}
-        companyName={user?.company_name}
+        companyName={companyTitle}
         companyLogo={user?.company_logo}
       />
 

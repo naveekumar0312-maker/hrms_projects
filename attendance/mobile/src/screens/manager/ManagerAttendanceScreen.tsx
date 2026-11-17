@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Modal,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';

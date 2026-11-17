@@ -597,8 +597,19 @@ class TranscribeAudioView(APIView):
                         with sr.AudioFile(tmp_path) as source:
                             audio_data = r.record(source)
 
-                # Recognize speech using Google's speech recognition
-                text = r.recognize_google(audio_data)
+                # Recognize speech using Google's speech recognition with multi-language fallback (en-IN, ta-IN, en-US)
+                text = ""
+                for lang in ['en-IN', 'ta-IN', 'en-US']:
+                    try:
+                        res = r.recognize_google(audio_data, language=lang)
+                        if res and res.strip():
+                            text = res.strip()
+                            break
+                    except sr.UnknownValueError:
+                        continue
+                    except Exception:
+                        pass
+
                 return Response({"text": text.strip()})
 
             except sr.UnknownValueError:

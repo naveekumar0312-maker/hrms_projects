@@ -10,8 +10,14 @@ export const formatAttendanceDate = (dateString: string | null | undefined): str
 export const formatAttendanceTime = (timeString: string | null | undefined): string => {
   if (!timeString) return '--';
 
-  // Handle 'HH:MM' or 'HH:MM:SS' time string
   const trimmed = timeString.trim();
+
+  // If already formatted with AM/PM (e.g. "10:56 AM" or "03:08 PM")
+  if (/^[0-1]?\d:[0-5]\d(\s?[APap][Mm])$/.test(trimmed) || /(AM|PM)/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  // Handle 'HH:MM' or 'HH:MM:SS' time string
   if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(trimmed)) {
     const parts = trimmed.split(':');
     let hour = parseInt(parts[0], 10);
@@ -23,7 +29,7 @@ export const formatAttendanceTime = (timeString: string | null | undefined): str
 
   // Handle ISO datetime string like '2026-11-05T06:13:50.953165+00:00'
   const date = new Date(trimmed);
-  if (isNaN(date.getTime())) return '--';
+  if (isNaN(date.getTime())) return trimmed;
 
   const options: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', hour12: true };
   return date.toLocaleTimeString('en-US', options);

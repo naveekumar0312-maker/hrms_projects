@@ -131,7 +131,9 @@ export default function ManagerDashboardScreen({ navigation }: any) {
         <View style={styles.headerTopRow}>
           <View>
             <Text style={styles.companyName}>
-              {summary?.company_name || employee?.company_name || 'Attendance Portal'}
+              {summary?.company_name && summary.company_name !== 'N/A'
+                ? summary.company_name
+                : (employee?.company_name && employee.company_name !== 'N/A' ? employee.company_name : 'All Companies')}
             </Text>
             <Text style={styles.roleBadge}>{roleTitle}</Text>
           </View>

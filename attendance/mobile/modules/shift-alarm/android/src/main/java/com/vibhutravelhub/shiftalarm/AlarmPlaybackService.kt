@@ -47,16 +47,33 @@ class AlarmPlaybackService : Service() {
 
     if (player == null) {
       try {
-        player = MediaPlayer.create(this, com.vibhutravelhub.shiftalarm.R.raw.shift_reminder_alarm)
-        player?.isLooping = true
-        player?.setOnErrorListener { mp, _, _ ->
-          try { mp.release() } catch (_: Exception) {}
-          player = null
-          true
+        val audioAttributes = android.media.AudioAttributes.Builder()
+          .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+          .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+          .build()
+
+        player = MediaPlayer().apply {
+          setAudioAttributes(audioAttributes)
+          val afd = resources.openRawResourceFd(com.vibhutravelhub.shiftalarm.R.raw.shift_reminder_alarm)
+          setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+          afd.close()
+          isLooping = true
+          setOnErrorListener { mp, _, _ ->
+            try { mp.release() } catch (_: Exception) {}
+            player = null
+            true
+          }
+          prepare()
+          start()
         }
-        player?.start()
       } catch (_: Exception) {
-        stopPlayback()
+        try {
+          player = MediaPlayer.create(this, com.vibhutravelhub.shiftalarm.R.raw.shift_reminder_alarm)
+          player?.isLooping = true
+          player?.start()
+        } catch (_: Exception) {
+          stopPlayback()
+        }
       }
     } else {
       val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager

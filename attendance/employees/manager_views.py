@@ -377,7 +377,7 @@ class ManagerMyTeamView(ManagerPortalBaseView):
                 Q(designation__icontains=search)
             )
 
-        serializer = AssignedEmployeeBriefSerializer(queryset, many=True)
+        serializer = AssignedEmployeeBriefSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -626,7 +626,7 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
             elif calc_status == 'HOLIDAY':
                 holiday += 1
 
-        comp_name = manager.branch.company.name if (manager.branch and manager.branch.company) else (request.user.company.name if request.user.company else 'N/A')
+        comp_name = manager.branch.company.name if (manager.branch and manager.branch.company) else (request.user.company.name if request.user.company else 'All Companies')
         tl_count = sum(1 for e in assigned_employees if e.user and e.user.role == 'TEAM_LEADER')
         dir_count = total_employees - tl_count
 
@@ -812,7 +812,7 @@ class TeamLeaderDashboardSummaryView(views.APIView):
 
         today = timezone.localdate()
         company = emp.branch.company if emp.branch else None
-        company_name = company.name if company else (user.company.name if user.company else 'N/A')
+        company_name = company.name if company else (user.company.name if user.company else 'All Companies')
         rep_mgr_name = emp.reporting_manager.full_name if emp.reporting_manager else 'N/A'
 
         team_members = list(emp.team_members.filter(status=True).select_related('shift', 'branch'))
@@ -908,5 +908,5 @@ class TeamLeaderMyTeamView(views.APIView):
                 Q(designation__icontains=search)
             )
 
-        serializer = AssignedEmployeeBriefSerializer(queryset, many=True)
+        serializer = AssignedEmployeeBriefSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)

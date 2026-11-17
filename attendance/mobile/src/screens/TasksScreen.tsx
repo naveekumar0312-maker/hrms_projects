@@ -36,6 +36,13 @@ import {
   Play,
   Pause,
   Download,
+  Timer,
+  History,
+  UploadCloud,
+  FolderCheck,
+  CheckCircle2,
+  AlertCircle,
+  PlusCircle,
 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -50,6 +57,9 @@ import {
   getAssignableMembers,
   createTask,
   transcribeAudio,
+  getTaskDetail,
+  logTaskTime,
+  uploadTaskAttachment,
   MobileTask,
   AssignedEmployee,
 } from '../services/taskService';
@@ -264,6 +274,11 @@ export const TasksScreen: React.FC = () => {
         return;
       }
 
+      await setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
+      });
+
       const recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
       await recorder.prepareToRecordAsync();
       recorder.record();
@@ -287,7 +302,6 @@ export const TasksScreen: React.FC = () => {
       clearInterval(voiceTypingInterval.current);
       voiceTypingInterval.current = null;
     }
-    setVoiceTypingTarget(null);
 
     if (voiceTypingRecorder.current && target) {
       try {
@@ -310,16 +324,16 @@ export const TasksScreen: React.FC = () => {
             } else {
               setDescription((prev) => (prev ? prev.trim() + ' ' + text.trim() : text.trim()));
             }
-          } else {
-            Alert.alert('Voice Input', 'Voice recorded and saved in box. (No clear speech text returned)');
           }
         }
       } catch (err: any) {
         console.error('Failed to transcribe voice:', err);
-        Alert.alert('Voice Recording', 'Voice audio saved in box.');
       } finally {
         setTranscribing(false);
+        setVoiceTypingTarget(null);
       }
+    } else {
+      setVoiceTypingTarget(null);
     }
   };
 
@@ -416,7 +430,9 @@ export const TasksScreen: React.FC = () => {
 
   const playAudio = async (audioUri: string, id: number | string) => {
     try {
-      const fullUri = resolveMediaUrl(audioUri) || audioUri;
+      const fullUri = (audioUri.startsWith('file://') || audioUri.startsWith('content://'))
+        ? audioUri
+        : (resolveMediaUrl(audioUri) || audioUri);
 
       if (playingAudioId === id) {
         // Toggle pause / stop
@@ -533,7 +549,14 @@ export const TasksScreen: React.FC = () => {
     }
   };
 
-  const handleOpenTask = (task: MobileTask) => {
+  const [detailTab, setDetailTab] = useState<'comment' | 'attachment' | 'activity' | 'timelog'>('comment');
+  const [logHours, setLogHours] = useState('');
+  const [logDate, setLogDate] = useState(new Date().toISOString().split('T')[0]);
+  const [logDescription, setLogDescription] = useState('');
+  const [loggingTime, setLoggingTime] = useState(false);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+
+  const handleOpenTask = async (task: MobileTask) => {
     setSelectedTask(task);
     setNewStatus(task.status === 'PENDING' ? 'IN_PROGRESS' : task.status);
     setCommentText('');
@@ -541,7 +564,83 @@ export const TasksScreen: React.FC = () => {
     setAttachedFile(null);
     setActiveCommentType('TEXT');
     setLinkInput('');
+    setDetailTab('comment');
+    setLogHours('');
+    setLogDescription('');
     loadCommentsForTask(task.id);
+    try {
+      const full = await getTaskDetail(task.id);
+      if (full) setSelectedTask(full);
+    } catch {}
+  };
+
+  const handleSaveTimeLog = async () => {
+    if (!selectedTask) return;
+    const h = parseFloat(logHours);
+    if (isNaN(h) || h <= 0) {
+      Alert.alert('Required', 'Please enter valid hours (e.g. 1.5).');
+      return;
+    }
+    try {
+      setLoggingTime(true);
+      await logTaskTime(selectedTask.id, {
+        hours: h,
+        date: logDate || new Date().toISOString().split('T')[0],
+        description: logDescription.trim() || undefined,
+      });
+      setLogHours('');
+      setLogDescription('');
+      Alert.alert('Success', `${h} hours logged successfully!`);
+      const updated = await getTaskDetail(selectedTask.id);
+      if (updated) setSelectedTask(updated);
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.response?.data?.message || 'Failed to log time.';
+      Alert.alert('Error', msg);
+    } finally {
+      setLoggingTime(false);
+    }
+  };
+
+  const handlePickAndUploadDirectAttachment = async (type: 'doc' | 'image') => {
+    if (!selectedTask) return;
+    try {
+      if (type === 'image') {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('Permission Denied', 'Camera roll access is required.');
+          return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 0.8,
+        });
+        if (!result.canceled && result.assets?.[0]) {
+          const asset = result.assets[0];
+          setUploadingAttachment(true);
+          await uploadTaskAttachment(selectedTask.id, asset.uri, asset.fileName || 'photo.jpg', asset.mimeType || 'image/jpeg');
+          Alert.alert('Success', 'Photo uploaded to task attachments!');
+          const updated = await getTaskDetail(selectedTask.id);
+          if (updated) setSelectedTask(updated);
+        }
+      } else {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: '*/*',
+          copyToCacheDirectory: true,
+        });
+        if (!result.canceled && result.assets?.[0]) {
+          const asset = result.assets[0];
+          setUploadingAttachment(true);
+          await uploadTaskAttachment(selectedTask.id, asset.uri, asset.name || 'document', asset.mimeType || 'application/octet-stream');
+          Alert.alert('Success', 'File uploaded to task attachments!');
+          const updated = await getTaskDetail(selectedTask.id);
+          if (updated) setSelectedTask(updated);
+        }
+      }
+    } catch (e: any) {
+      Alert.alert('Upload Error', 'Failed to upload attachment.');
+    } finally {
+      setUploadingAttachment(false);
+    }
   };
 
   const handlePostWorkspaceComment = async () => {
@@ -1248,197 +1347,572 @@ export const TasksScreen: React.FC = () => {
                   )}
                 </View>
 
-                {/* Discussion Thread & Rich Comments List */}
-                <Text style={styles.sectionHeading}>Discussion Thread ({taskCommentsList.length})</Text>
-                {loadingComments ? (
-                  <ActivityIndicator size="small" color="#22C55E" style={{ marginVertical: 10 }} />
-                ) : taskCommentsList.length === 0 ? (
-                  <Text style={styles.noCommentsText}>No comments or attachments posted yet.</Text>
-                ) : (
-                  <View style={styles.commentsList}>
-                    {taskCommentsList.map((comm) => (
-                      <View key={comm.id} style={styles.commentItem}>
-                        <View style={styles.commentHeader}>
-                          <Text style={styles.commentAuthor}>{comm.author_name || 'Member'}</Text>
-                          <Text style={styles.commentTime}>
-                            {new Date(comm.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                {/* Task Workspace Tabs (Discussion, Attachments, Activity, Time Log) */}
+                <View style={styles.webTabContainer}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.webTabHeader}>
+                    <TouchableOpacity
+                      style={[styles.webTabItem, detailTab === 'comment' && styles.webTabItemActive]}
+                      onPress={() => setDetailTab('comment')}
+                    >
+                      <MessageSquare size={13} color={detailTab === 'comment' ? '#22C55E' : '#666666'} />
+                      <Text style={[styles.webTabText, detailTab === 'comment' && styles.webTabTextActive]}>
+                        Discussion ({taskCommentsList.length})
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.webTabItem, detailTab === 'attachment' && styles.webTabItemActive]}
+                      onPress={() => setDetailTab('attachment')}
+                    >
+                      <Paperclip size={13} color={detailTab === 'attachment' ? '#22C55E' : '#666666'} />
+                      <Text style={[styles.webTabText, detailTab === 'attachment' && styles.webTabTextActive]}>
+                        Files ({((selectedTask.task_attachments?.length || 0) + taskCommentsList.filter(c => c.attachment).length)})
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.webTabItem, detailTab === 'activity' && styles.webTabItemActive]}
+                      onPress={() => setDetailTab('activity')}
+                    >
+                      <History size={13} color={detailTab === 'activity' ? '#22C55E' : '#666666'} />
+                      <Text style={[styles.webTabText, detailTab === 'activity' && styles.webTabTextActive]}>
+                        Activity Log ({selectedTask.activities?.length || 0})
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.webTabItem, detailTab === 'timelog' && styles.webTabItemActive]}
+                      onPress={() => setDetailTab('timelog')}
+                    >
+                      <Timer size={13} color={detailTab === 'timelog' ? '#22C55E' : '#666666'} />
+                      <Text style={[styles.webTabText, detailTab === 'timelog' && styles.webTabTextActive]}>
+                        Time Log ({selectedTask.total_logged_hours || 0}h)
+                      </Text>
+                    </TouchableOpacity>
+                  </ScrollView>
+                </View>
+
+                {/* TAB 1: DISCUSSION THREAD */}
+                {detailTab === 'comment' && (
+                  <>
+                    <Text style={[styles.sectionHeading, { marginTop: 14 }]}>
+                      Discussion Thread ({taskCommentsList.length})
+                    </Text>
+                    {loadingComments ? (
+                      <ActivityIndicator size="small" color="#22C55E" style={{ marginVertical: 10 }} />
+                    ) : taskCommentsList.length === 0 ? (
+                      <Text style={styles.noCommentsText}>No comments or attachments posted yet.</Text>
+                    ) : (
+                      <View style={styles.commentsList}>
+                        {taskCommentsList.map((comm) => (
+                          <View key={comm.id} style={styles.commentItem}>
+                            <View style={styles.commentHeader}>
+                              <Text style={styles.commentAuthor}>{comm.author_name || 'Member'}</Text>
+                              <Text style={styles.commentTime}>
+                                {new Date(comm.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                              </Text>
+                            </View>
+
+                            {/* Text Comment */}
+                            {comm.comment ? <Text style={styles.commentBodyText}>{comm.comment}</Text> : null}
+
+                            {/* Image Attachment - In-app Full Screen Viewer */}
+                            {comm.comment_type === 'IMAGE' && comm.attachment && (
+                              <TouchableOpacity
+                                activeOpacity={0.9}
+                                onPress={() =>
+                                  setViewingMedia({
+                                    type: 'IMAGE',
+                                    url: resolveMediaUrl(comm.attachment)!,
+                                    title: comm.file_name || 'Photo Attachment',
+                                  })
+                                }
+                              >
+                                <Image
+                                  source={{ uri: resolveMediaUrl(comm.attachment)! }}
+                                  style={styles.commentAttachedImage}
+                                  resizeMode="cover"
+                                />
+                              </TouchableOpacity>
+                            )}
+
+                            {/* Voice Note Audio Playback - In-app Player */}
+                            {comm.comment_type === 'AUDIO' && comm.attachment && (
+                              <TouchableOpacity
+                                style={styles.voicePlayBtn}
+                                onPress={() => playAudio(comm.attachment, comm.id)}
+                              >
+                                {playingAudioId === comm.id ? (
+                                  <Pause size={16} color="#FFFFFF" />
+                                ) : (
+                                  <Play size={16} color="#FFFFFF" />
+                                )}
+                                <Text style={styles.voicePlayText}>
+                                  {playingAudioId === comm.id ? 'Playing Voice Note...' : 'Play Voice Message'}
+                                </Text>
+                              </TouchableOpacity>
+                            )}
+
+                            {/* File Attachment - In-app Preview Modal */}
+                            {comm.comment_type === 'FILE' && comm.attachment && (
+                              <TouchableOpacity
+                                style={styles.fileDownloadPill}
+                                onPress={() =>
+                                  setViewingMedia({
+                                    type: 'FILE',
+                                    url: resolveMediaUrl(comm.attachment)!,
+                                    title: comm.file_name || 'Document File',
+                                  })
+                                }
+                              >
+                                <FileText size={15} color="#22C55E" />
+                                <Text style={styles.fileNameText} numberOfLines={1}>
+                                  {comm.file_name || 'View Attachment'}
+                                </Text>
+                                <Eye size={14} color="#22C55E" />
+                              </TouchableOpacity>
+                            )}
+
+                            {/* Link */}
+                            {comm.comment_type === 'LINK' && comm.link_url && (
+                              <TouchableOpacity
+                                style={styles.linkPill}
+                                onPress={() => Linking.openURL(comm.link_url)}
+                              >
+                                <Link2 size={14} color="#22C55E" />
+                                <Text style={styles.linkText} numberOfLines={1}>{comm.link_url}</Text>
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+
+                    {/* Rich Comment Composer */}
+                    <Text style={styles.sectionHeading}>Post Update / Media</Text>
+                    <View style={styles.richComposerBox}>
+                      {attachedFile && (
+                        <View style={styles.attachmentPill}>
+                          {activeCommentType === 'AUDIO' ? (
+                            <Mic size={14} color="#22C55E" />
+                          ) : activeCommentType === 'IMAGE' ? (
+                            <ImageIcon size={14} color="#22C55E" />
+                          ) : (
+                            <FileText size={14} color="#22C55E" />
+                          )}
+                          <Text style={styles.attachmentPillText} numberOfLines={1}>
+                            {attachedFile.name} ({attachedFile.size})
                           </Text>
+                          <TouchableOpacity onPress={() => setAttachedFile(null)}>
+                            <X size={14} color="#EF4444" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
+                      {activeCommentType === 'LINK' && (
+                        <View style={styles.linkInputRow}>
+                          <Link2 size={15} color="#22C55E" />
+                          <TextInput
+                            style={styles.linkInput}
+                            placeholder="Paste link URL..."
+                            placeholderTextColor="#999"
+                            value={linkInput}
+                            onChangeText={setLinkInput}
+                            autoCapitalize="none"
+                          />
+                          <TouchableOpacity onPress={() => { setLinkInput(''); setActiveCommentType('TEXT'); }}>
+                            <X size={14} color="#888" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
+                      <TextInput
+                        style={styles.richTextInput}
+                        placeholder="Share updates, notes or instructions..."
+                        placeholderTextColor="#888888"
+                        value={commentText}
+                        onChangeText={setCommentText}
+                        multiline
+                      />
+
+                      {/* Toolbar */}
+                      <View style={styles.richToolbarRow}>
+                        <View style={styles.composerIcons}>
+                          <TouchableOpacity
+                            style={styles.toolIconBtn}
+                            onPress={() => pickImage(false)}
+                          >
+                            <ImageIcon size={18} color="#22C55E" />
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.toolIconBtn}
+                            onPress={() => pickDocument(false)}
+                          >
+                            <Paperclip size={18} color="#22C55E" />
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={[styles.toolIconBtn, isRecording && styles.toolIconBtnActive]}
+                            onPress={() => (isRecording ? stopLiveRecording(false) : startLiveRecording(false))}
+                          >
+                            {isRecording ? <Square size={16} color="#EF4444" /> : <Mic size={18} color="#22C55E" />}
+                          </TouchableOpacity>
+
+                          <TouchableOpacity
+                            style={styles.toolIconBtn}
+                            onPress={() => setActiveCommentType('LINK')}
+                          >
+                            <Link2 size={18} color="#22C55E" />
+                          </TouchableOpacity>
+
+                          {isRecording && (
+                            <View style={styles.recordingLiveIndicator}>
+                              <View style={styles.redDot} />
+                              <Text style={styles.recordingDurationText}>{recordingDuration}s</Text>
+                            </View>
+                          )}
                         </View>
 
-                        {/* Text Comment */}
-                        {comm.comment ? <Text style={styles.commentBodyText}>{comm.comment}</Text> : null}
-
-                        {/* Image Attachment - In-app Full Screen Viewer */}
-                        {comm.comment_type === 'IMAGE' && comm.attachment && (
-                          <TouchableOpacity
-                            activeOpacity={0.9}
-                            onPress={() =>
-                              setViewingMedia({
-                                type: 'IMAGE',
-                                url: resolveMediaUrl(comm.attachment)!,
-                                title: comm.file_name || 'Photo Attachment',
-                              })
-                            }
-                          >
-                            <Image
-                              source={{ uri: resolveMediaUrl(comm.attachment)! }}
-                              style={styles.commentAttachedImage}
-                              resizeMode="cover"
-                            />
-                          </TouchableOpacity>
-                        )}
-
-                        {/* Voice Note Audio Playback - In-app Player */}
-                        {comm.comment_type === 'AUDIO' && comm.attachment && (
-                          <TouchableOpacity
-                            style={styles.voicePlayBtn}
-                            onPress={() => playAudio(comm.attachment, comm.id)}
-                          >
-                            {playingAudioId === comm.id ? (
-                              <Pause size={16} color="#FFFFFF" />
-                            ) : (
-                              <Play size={16} color="#FFFFFF" />
-                            )}
-                            <Text style={styles.voicePlayText}>
-                              {playingAudioId === comm.id ? 'Playing Voice Note...' : 'Play Voice Message'}
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-
-                        {/* File Attachment - In-app Preview Modal */}
-                        {comm.comment_type === 'FILE' && comm.attachment && (
-                          <TouchableOpacity
-                            style={styles.fileDownloadPill}
-                            onPress={() =>
-                              setViewingMedia({
-                                type: 'FILE',
-                                url: resolveMediaUrl(comm.attachment)!,
-                                title: comm.file_name || 'Document File',
-                              })
-                            }
-                          >
-                            <FileText size={15} color="#22C55E" />
-                            <Text style={styles.fileNameText} numberOfLines={1}>
-                              {comm.file_name || 'View Attachment'}
-                            </Text>
-                            <Eye size={14} color="#22C55E" />
-                          </TouchableOpacity>
-                        )}
-
-                        {/* Link */}
-                        {comm.comment_type === 'LINK' && comm.link_url && (
-                          <TouchableOpacity
-                            style={styles.linkPill}
-                            onPress={() => Linking.openURL(comm.link_url)}
-                          >
-                            <Link2 size={14} color="#22C55E" />
-                            <Text style={styles.linkText} numberOfLines={1}>{comm.link_url}</Text>
-                          </TouchableOpacity>
-                        )}
+                        <TouchableOpacity
+                          style={styles.sendCommentBtn}
+                          onPress={handlePostWorkspaceComment}
+                          disabled={sendingComment}
+                        >
+                          {sendingComment ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                          ) : (
+                            <Send size={15} color="#FFFFFF" />
+                          )}
+                        </TouchableOpacity>
                       </View>
-                    ))}
+                    </View>
+                  </>
+                )}
+
+                {/* TAB 2: ATTACHMENTS & FILE UPLOAD */}
+                {detailTab === 'attachment' && (
+                  <View style={{ marginTop: 14 }}>
+                    <Text style={styles.sectionHeading}>Task Files & Uploads</Text>
+
+                    {/* Upload Buttons */}
+                    <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          backgroundColor: '#F0FDF4',
+                          borderWidth: 1,
+                          borderColor: '#BBF7D0',
+                          paddingVertical: 10,
+                          borderRadius: 8,
+                        }}
+                        onPress={() => handlePickAndUploadDirectAttachment('image')}
+                        disabled={uploadingAttachment}
+                      >
+                        <ImageIcon size={16} color="#16A34A" />
+                        <Text style={{ fontSize: 12, color: '#16A34A', fontFamily: 'Comfortaa_700Bold' }}>
+                          Upload Photo
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={{
+                          flex: 1,
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 6,
+                          backgroundColor: '#EFF6FF',
+                          borderWidth: 1,
+                          borderColor: '#BFDBFE',
+                          paddingVertical: 10,
+                          borderRadius: 8,
+                        }}
+                        onPress={() => handlePickAndUploadDirectAttachment('doc')}
+                        disabled={uploadingAttachment}
+                      >
+                        <UploadCloud size={16} color="#2563EB" />
+                        <Text style={{ fontSize: 12, color: '#2563EB', fontFamily: 'Comfortaa_700Bold' }}>
+                          Upload Document
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {uploadingAttachment && (
+                      <View style={{ alignItems: 'center', marginVertical: 8 }}>
+                        <ActivityIndicator size="small" color="#22C55E" />
+                        <Text style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>Uploading attachment...</Text>
+                      </View>
+                    )}
+
+                    {/* Direct Task Attachments List */}
+                    {selectedTask.task_attachments && selectedTask.task_attachments.length > 0 ? (
+                      selectedTask.task_attachments.map((att: any) => (
+                        <View
+                          key={att.id}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: '#FFFFFF',
+                            borderWidth: 1,
+                            borderColor: '#E2E8F0',
+                            padding: 10,
+                            borderRadius: 8,
+                            marginBottom: 8,
+                          }}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                            <FileText size={18} color="#22C55E" />
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: '#0F172A' }} numberOfLines={1}>
+                                {att.file_name || 'Task Attachment'}
+                              </Text>
+                              <Text style={{ fontSize: 10, color: '#64748B' }}>
+                                {att.file_size || ''} {att.uploaded_by_name ? `• ${att.uploaded_by_name}` : ''}
+                              </Text>
+                            </View>
+                          </View>
+                          <TouchableOpacity
+                            onPress={() =>
+                              setViewingMedia({
+                                type: (att.file_type || '').includes('image') ? 'IMAGE' : 'FILE',
+                                url: resolveMediaUrl(att.file || att.file_url)!,
+                                title: att.file_name || 'Attachment',
+                              })
+                            }
+                            style={{ padding: 6 }}
+                          >
+                            <Eye size={16} color="#22C55E" />
+                          </TouchableOpacity>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.noCommentsText}>No dedicated files uploaded to this task yet.</Text>
+                    )}
                   </View>
                 )}
 
-                {/* Rich Comment Composer */}
-                <Text style={styles.sectionHeading}>Post Update / Media</Text>
-                <View style={styles.richComposerBox}>
-                  {attachedFile && (
-                    <View style={styles.attachmentPill}>
-                      {activeCommentType === 'AUDIO' ? (
-                        <Mic size={14} color="#22C55E" />
-                      ) : activeCommentType === 'IMAGE' ? (
-                        <ImageIcon size={14} color="#22C55E" />
-                      ) : (
-                        <FileText size={14} color="#22C55E" />
-                      )}
-                      <Text style={styles.attachmentPillText} numberOfLines={1}>
-                        {attachedFile.name} ({attachedFile.size})
-                      </Text>
-                      <TouchableOpacity onPress={() => setAttachedFile(null)}>
-                        <X size={14} color="#EF4444" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  {activeCommentType === 'LINK' && (
-                    <View style={styles.linkInputRow}>
-                      <Link2 size={15} color="#22C55E" />
-                      <TextInput
-                        style={styles.linkInput}
-                        placeholder="Paste link URL..."
-                        placeholderTextColor="#999"
-                        value={linkInput}
-                        onChangeText={setLinkInput}
-                        autoCapitalize="none"
-                      />
-                      <TouchableOpacity onPress={() => { setLinkInput(''); setActiveCommentType('TEXT'); }}>
-                        <X size={14} color="#888" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-
-                  <TextInput
-                    style={styles.richTextInput}
-                    placeholder="Share updates, notes or instructions..."
-                    placeholderTextColor="#888888"
-                    value={commentText}
-                    onChangeText={setCommentText}
-                    multiline
-                  />
-
-                  {/* Toolbar */}
-                  <View style={styles.richToolbarRow}>
-                    <View style={styles.composerIcons}>
-                      <TouchableOpacity
-                        style={styles.toolIconBtn}
-                        onPress={() => pickImage(false)}
-                      >
-                        <ImageIcon size={18} color="#22C55E" />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.toolIconBtn}
-                        onPress={() => pickDocument(false)}
-                      >
-                        <Paperclip size={18} color="#22C55E" />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[styles.toolIconBtn, isRecording && styles.toolIconBtnActive]}
-                        onPress={() => (isRecording ? stopLiveRecording(false) : startLiveRecording(false))}
-                      >
-                        {isRecording ? <Square size={16} color="#EF4444" /> : <Mic size={18} color="#22C55E" />}
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={styles.toolIconBtn}
-                        onPress={() => setActiveCommentType('LINK')}
-                      >
-                        <Link2 size={18} color="#22C55E" />
-                      </TouchableOpacity>
-
-                      {isRecording && (
-                        <View style={styles.recordingLiveIndicator}>
-                          <View style={styles.redDot} />
-                          <Text style={styles.recordingDurationText}>{recordingDuration}s</Text>
+                {/* TAB 3: ACTIVITY LOG */}
+                {detailTab === 'activity' && (
+                  <View style={{ marginTop: 14 }}>
+                    <Text style={styles.sectionHeading}>Task Activity Trail</Text>
+                    {selectedTask.activities && selectedTask.activities.length > 0 ? (
+                      selectedTask.activities.map((act: any) => (
+                        <View
+                          key={act.id}
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'flex-start',
+                            gap: 10,
+                            backgroundColor: '#FFFFFF',
+                            borderWidth: 1,
+                            borderColor: '#E2E8F0',
+                            padding: 10,
+                            borderRadius: 8,
+                            marginBottom: 8,
+                          }}
+                        >
+                          <View
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: 14,
+                              backgroundColor: '#F0FDF4',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              marginTop: 2,
+                            }}
+                          >
+                            <History size={14} color="#16A34A" />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Text style={{ fontSize: 12, fontWeight: '700', color: '#0F172A' }}>
+                                {act.action || 'Activity'}
+                              </Text>
+                              <Text style={{ fontSize: 10, color: '#94A3B8' }}>
+                                {new Date(act.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                              </Text>
+                            </View>
+                            <Text style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
+                              {act.description || ''}
+                            </Text>
+                            <Text style={{ fontSize: 10, color: '#64748B', marginTop: 2 }}>
+                              By {act.user_name || 'System'}
+                            </Text>
+                          </View>
                         </View>
-                      )}
+                      ))
+                    ) : (
+                      <Text style={styles.noCommentsText}>No activity recorded on this task yet.</Text>
+                    )}
+                  </View>
+                )}
+
+                {/* TAB 4: TIME LOG */}
+                {detailTab === 'timelog' && (
+                  <View style={{ marginTop: 14 }}>
+                    <Text style={styles.sectionHeading}>Work Time Logs</Text>
+
+                    {/* Total Logged Hours Banner */}
+                    <View
+                      style={{
+                        backgroundColor: '#F0FDF4',
+                        borderWidth: 1,
+                        borderColor: '#BBF7D0',
+                        borderRadius: 10,
+                        padding: 14,
+                        alignItems: 'center',
+                        marginBottom: 14,
+                      }}
+                    >
+                      <Text style={{ fontSize: 11, color: '#16A34A', fontWeight: '600' }}>TOTAL LOGGED TIME</Text>
+                      <Text style={{ fontSize: 24, fontWeight: '800', color: '#15803D', marginTop: 2 }}>
+                        {selectedTask.total_logged_hours || 0} hrs
+                      </Text>
                     </View>
 
-                    <TouchableOpacity
-                      style={styles.sendCommentBtn}
-                      onPress={handlePostWorkspaceComment}
-                      disabled={sendingComment}
+                    {/* Log New Time Entry Form */}
+                    <View
+                      style={{
+                        backgroundColor: '#FFFFFF',
+                        borderWidth: 1,
+                        borderColor: '#E2E8F0',
+                        borderRadius: 10,
+                        padding: 14,
+                        marginBottom: 16,
+                      }}
                     >
-                      {sendingComment ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Send size={15} color="#FFFFFF" />
-                      )}
-                    </TouchableOpacity>
+                      <Text style={{ fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 10 }}>
+                        Log Hours Spent
+                      </Text>
+
+                      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 10 }}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 11, color: '#64748B', marginBottom: 4 }}>Hours *</Text>
+                          <TextInput
+                            style={{
+                              borderWidth: 1,
+                              borderColor: '#CBD5E1',
+                              borderRadius: 8,
+                              paddingHorizontal: 10,
+                              paddingVertical: 8,
+                              fontSize: 13,
+                              color: '#0F172A',
+                            }}
+                            placeholder="e.g. 2.5"
+                            placeholderTextColor="#94A3B8"
+                            keyboardType="numeric"
+                            value={logHours}
+                            onChangeText={setLogHours}
+                          />
+                        </View>
+
+                        <View style={{ flex: 1 }}>
+                          <Text style={{ fontSize: 11, color: '#64748B', marginBottom: 4 }}>Date *</Text>
+                          <TextInput
+                            style={{
+                              borderWidth: 1,
+                              borderColor: '#CBD5E1',
+                              borderRadius: 8,
+                              paddingHorizontal: 10,
+                              paddingVertical: 8,
+                              fontSize: 13,
+                              color: '#0F172A',
+                            }}
+                            placeholder="YYYY-MM-DD"
+                            placeholderTextColor="#94A3B8"
+                            value={logDate}
+                            onChangeText={setLogDate}
+                          />
+                        </View>
+                      </View>
+
+                      <Text style={{ fontSize: 11, color: '#64748B', marginBottom: 4 }}>Work Description</Text>
+                      <TextInput
+                        style={{
+                          borderWidth: 1,
+                          borderColor: '#CBD5E1',
+                          borderRadius: 8,
+                          paddingHorizontal: 10,
+                          paddingVertical: 8,
+                          fontSize: 13,
+                          color: '#0F172A',
+                          minHeight: 50,
+                          textAlignVertical: 'top',
+                          marginBottom: 12,
+                        }}
+                        placeholder="What work was completed during this time?"
+                        placeholderTextColor="#94A3B8"
+                        value={logDescription}
+                        onChangeText={setLogDescription}
+                        multiline
+                      />
+
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: '#22C55E',
+                          borderRadius: 8,
+                          paddingVertical: 10,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        onPress={handleSaveTimeLog}
+                        disabled={loggingTime}
+                      >
+                        {loggingTime ? (
+                          <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                          <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
+                            Save Time Log
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Past Logs List */}
+                    <Text style={[styles.sectionHeading, { fontSize: 12 }]}>Previous Time Logs</Text>
+                    {selectedTask.time_logs && selectedTask.time_logs.length > 0 ? (
+                      selectedTask.time_logs.map((tl: any) => (
+                        <View
+                          key={tl.id}
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            backgroundColor: '#F8FAFC',
+                            borderWidth: 1,
+                            borderColor: '#E2E8F0',
+                            padding: 10,
+                            borderRadius: 8,
+                            marginBottom: 6,
+                          }}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 12, fontWeight: '700', color: '#0F172A' }}>
+                              {tl.hours} hrs on {tl.date}
+                            </Text>
+                            {tl.description ? (
+                              <Text style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+                                {tl.description}
+                              </Text>
+                            ) : null}
+                            <Text style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>
+                              Logged by {tl.user_name || 'Staff'}
+                            </Text>
+                          </View>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={styles.noCommentsText}>No time logged on this task yet.</Text>
+                    )}
                   </View>
-                </View>
+                )}
 
                 {/* Status Switcher */}
                 <Text style={styles.sectionHeading}>Update Workspace Status</Text>

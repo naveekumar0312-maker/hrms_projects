@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { api } from '../context/AuthContext';
 
 export interface AssignedEmployee {
@@ -13,36 +14,63 @@ export interface AssignedEmployee {
   profile_photo_url?: string | null;
 }
 
-export interface MobileTask {
+export interface TaskItem {
   id: number;
   title: string;
-  description: string;
-  category: string;
-  assigned_to_name: string;
+  description?: string;
+  category?: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  status: 'PENDING' | 'IN_PROGRESS' | 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'CANCELLED';
+  assigned_to_name?: string;
   assigned_to_code?: string;
   assigned_to_role?: string;
   assigned_to_avatar?: string | null;
-  assigned_employees?: AssignedEmployee[];
-  assigned_employee_ids?: number[];
-  assigned_by_name: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  status: 'PENDING' | 'IN_PROGRESS' | 'UNDER_REVIEW' | 'COMPLETED' | 'ON_HOLD' | 'CANCELLED' | 'DRAFT' | 'OVERDUE';
-  due_date: string;
+  company_name?: string;
   start_date?: string;
+  due_date?: string;
   start_time?: string;
   end_time?: string;
   estimated_hours?: number;
   total_logged_hours?: number;
-  is_overdue: boolean;
+  is_overdue?: boolean;
   completion_notes?: string;
   additional_instructions?: string;
-  comments?: any[];
+  assigned_by_name?: string;
+  assigned_by_role?: string;
+  assigned_employees?: AssignedEmployee[];
+  assigned_employee_ids?: number[];
+  reporting_manager_name?: string;
+  team_leader_name?: string;
+  comments?: TaskComment[];
+  task_attachments?: any[];
+  activities?: any[];
+  time_logs?: any[];
+  attachment?: string | null;
   created_at: string;
 }
 
+export type MobileTask = TaskItem;
+
+export interface TaskComment {
+  id: number;
+  task: number;
+  author_name: string;
+  comment: string;
+  comment_type: 'TEXT' | 'IMAGE' | 'AUDIO' | 'FILE' | 'LINK';
+  attachment?: string | null;
+  file_name?: string;
+  file_size?: string;
+  link_url?: string;
+  created_at: string;
+}
+
+export const getTasks = async (params?: any): Promise<TaskItem[]> => {
+  const response = await api.get('/tasks-module/tasks/', { params });
+  return Array.isArray(response.data) ? response.data : (response.data?.results || []);
+};
+
 export const getEmployeeTasks = async (): Promise<MobileTask[]> => {
-  const response = await api.get('/tasks-module/tasks/');
-  return Array.isArray(response.data) ? response.data : [];
+  return getTasks();
 };
 
 export const getAssignableMembers = async (): Promise<AssignedEmployee[]> => {
@@ -50,14 +78,23 @@ export const getAssignableMembers = async (): Promise<AssignedEmployee[]> => {
   return Array.isArray(response.data) ? response.data : [];
 };
 
-export const createTask = async (payload: any): Promise<MobileTask> => {
-  const response = await api.post('/tasks-module/tasks/', payload);
+export const getTaskDetail = async (id: number): Promise<TaskItem> => {
+  const response = await api.get(`/tasks-module/tasks/${id}/`);
   return response.data;
 };
 
-export const updateTask = async (taskId: number, payload: any): Promise<MobileTask> => {
-  const response = await api.patch(`/tasks-module/tasks/${taskId}/`, payload);
+export const createTask = async (data: any): Promise<TaskItem> => {
+  const response = await api.post('/tasks-module/tasks/', data);
   return response.data;
+};
+
+export const updateTask = async (id: number, data: any): Promise<TaskItem> => {
+  const response = await api.patch(`/tasks-module/tasks/${id}/`, data);
+  return response.data;
+};
+
+export const deleteTask = async (id: number): Promise<void> => {
+  await api.delete(`/tasks-module/tasks/${id}/`);
 };
 
 export const updateTaskStatus = async (
@@ -73,7 +110,7 @@ export const updateTaskStatus = async (
 
   if (comment && comment.trim()) {
     try {
-      await addTaskComment(taskId, comment.trim());
+      await addComment(taskId, comment.trim());
     } catch (e) {
       console.log('Error adding comment with status update:', e);
     }
@@ -82,11 +119,11 @@ export const updateTaskStatus = async (
   return response.data;
 };
 
-export const addTaskComment = async (
+export const addComment = async (
   taskId: number,
   comment: string,
   extra?: {
-    comment_type?: 'TEXT' | 'IMAGE' | 'AUDIO' | 'LINK' | 'FILE';
+    comment_type?: 'TEXT' | 'IMAGE' | 'AUDIO' | 'FILE' | 'LINK';
     link_url?: string;
     fileUri?: string;
     fileName?: string;
@@ -103,15 +140,21 @@ export const addTaskComment = async (
     if (extra.link_url) formData.append('link_url', extra.link_url);
 
     if (extra.fileUri) {
+      const cleanUri = Platform.OS === 'android' ? extra.fileUri : extra.fileUri.replace('file://', '');
       formData.append('attachment', {
-        uri: extra.fileUri,
+        uri: cleanUri,
         name: extra.fileName || 'file',
         type: extra.mimeType || 'application/octet-stream',
       } as any);
     }
 
     const response = await api.post(`/tasks-module/tasks/${taskId}/comments/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      transformRequest: (data: any, headers: any) => {
+        if (headers) {
+          delete headers['Content-Type'];
+        }
+        return data;
+      },
     });
     return response.data;
   }
@@ -124,22 +167,62 @@ export const addTaskComment = async (
   return response.data;
 };
 
-export const getTaskComments = async (taskId: number) => {
+export const addTaskComment = addComment;
+
+export const getTaskComments = async (taskId: number): Promise<TaskComment[]> => {
   const response = await api.get(`/tasks-module/tasks/${taskId}/comments/`);
   return Array.isArray(response.data) ? response.data : [];
 };
 
+export const logTaskTime = async (
+  taskId: number,
+  data: { hours: number; date: string; description?: string; start_time?: string; end_time?: string }
+) => {
+  const response = await api.post(`/tasks-module/tasks/${taskId}/timelogs/`, data);
+  return response.data;
+};
+
+export const uploadTaskAttachment = async (
+  taskId: number,
+  fileUri: string,
+  fileName?: string,
+  mimeType?: string
+) => {
+  const formData = new FormData();
+  const cleanUri = Platform.OS === 'android' ? fileUri : fileUri.replace('file://', '');
+  formData.append('file', {
+    uri: cleanUri,
+    name: fileName || 'attachment',
+    type: mimeType || 'application/octet-stream',
+  } as any);
+
+  const response = await api.post(`/tasks-module/tasks/${taskId}/attachments/`, formData, {
+    transformRequest: (data: any, headers: any) => {
+      if (headers) {
+        delete headers['Content-Type'];
+      }
+      return data;
+    },
+  });
+  return response.data;
+};
+
 export const transcribeAudio = async (audioUri: string, mimeType?: string, fileName?: string): Promise<string> => {
   const formData = new FormData();
+  const cleanUri = Platform.OS === 'android' ? audioUri : audioUri.replace('file://', '');
   formData.append('audio', {
-    uri: audioUri,
-    name: fileName || 'voice_recording.wav',
-    type: mimeType || 'audio/wav',
+    uri: cleanUri,
+    name: fileName || 'voice_recording.m4a',
+    type: mimeType || 'audio/m4a',
   } as any);
 
   const response = await api.post('/tasks-module/tasks/transcribe-audio/', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    transformRequest: (data: any, headers: any) => {
+      if (headers) {
+        delete headers['Content-Type'];
+      }
+      return data;
+    },
   });
   return response.data?.text || '';
 };
-

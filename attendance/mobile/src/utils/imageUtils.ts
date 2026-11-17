@@ -2,6 +2,17 @@ export const resolveMediaUrl = (url: string | null | undefined): string | null =
   if (!url || typeof url !== 'string' || !url.trim()) return null;
 
   const rawUrl = url.trim();
+
+  // Return local device file, content, data, or blob URIs as-is
+  if (
+    rawUrl.startsWith('file://') ||
+    rawUrl.startsWith('content://') ||
+    rawUrl.startsWith('data:') ||
+    rawUrl.startsWith('blob:')
+  ) {
+    return rawUrl;
+  }
+
   const apiBase = (process.env.EXPO_PUBLIC_API_URL || 'https://hrms.yaazh360digitech.in/api').replace(/\/api\/?$/, '');
 
   let fullUrl = '';
@@ -26,7 +37,11 @@ export const resolveMediaUrl = (url: string | null | undefined): string | null =
       fullUrl = rawUrl.replace(/^http:\/\//i, 'https://');
     }
   } else {
-    const cleanPath = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+    let cleanPath = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
+    // If relative path is e.g. /profile_photos/... or /task_attachments/... prepend /media
+    if (!cleanPath.startsWith('/media/') && !cleanPath.startsWith('/static/')) {
+      cleanPath = `/media${cleanPath}`;
+    }
     fullUrl = `${apiBase}${cleanPath}`;
   }
 
@@ -37,4 +52,3 @@ export const resolveMediaUrl = (url: string | null | undefined): string | null =
     return fullUrl;
   }
 };
-

@@ -210,7 +210,7 @@ export default function ManagerTeamScreen() {
           }
           renderItem={({ item }) => {
             const isTL = item.role === 'TEAM_LEADER';
-            const avatarUrl = resolveMediaUrl(item.profile_photo);
+            const avatarUrl = resolveMediaUrl(item.profile_photo || (item as any).profile_photo_url);
             return (
               <View style={styles.card}>
                 <View style={styles.cardTop}>
@@ -300,10 +300,17 @@ export default function ManagerTeamScreen() {
             {selectedMember && (
               <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
                 <View style={styles.profileHeaderBox}>
-                  <View style={[styles.avatar, { width: 54, height: 54, borderRadius: 27 }]}>
-                    <Text style={[styles.avatarText, { fontSize: 22 }]}>
-                      {selectedMember.full_name?.charAt(0) || 'U'}
-                    </Text>
+                  <View style={[styles.avatar, { width: 54, height: 54, borderRadius: 27, overflow: 'hidden' }]}>
+                    {resolveMediaUrl(selectedMember.profile_photo || (selectedMember as any).profile_photo_url) ? (
+                      <Image
+                        source={{ uri: resolveMediaUrl(selectedMember.profile_photo || (selectedMember as any).profile_photo_url)! }}
+                        style={{ width: '100%', height: '100%', borderRadius: 27 }}
+                      />
+                    ) : (
+                      <Text style={[styles.avatarText, { fontSize: 22 }]}>
+                        {selectedMember.full_name?.charAt(0) || 'U'}
+                      </Text>
+                    )}
                   </View>
                   <Text style={styles.profileModalName}>{selectedMember.full_name}</Text>
                   <Text style={styles.profileModalSub}>

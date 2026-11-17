@@ -41,7 +41,7 @@ const ARROW_COLOR = '#071F49'; // Deep Navy arrow matching corporate theme
 export default function ProfileScreen({ navigation }: any) {
   const { showSuccess, showError, showWarning, showConfirm } = useAppMessage();
   const insets = useSafeAreaInsets();
-  const { logout, employee, refreshEmployee } = useContext(AuthContext);
+  const { logout, employee, refreshEmployee, user } = useContext(AuthContext);
   const [uploading, setUploading] = useState(false);
   const [viewPhotoModal, setViewPhotoModal] = useState(false);
 
@@ -189,7 +189,7 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={styles.topBadgeRow}>
           <View style={styles.empIdBadge}>
             <Text style={styles.empIdText}>
-              #ID: {employee?.employee_id || 'AH044'}
+              #ID: {employee?.employee_id || (user?.role === 'HR' ? 'HR-PORTAL' : (user?.role === 'SUPER_ADMIN' ? 'SUPER-ADMIN' : (user?.username || '--')))}
             </Text>
           </View>
         </View>
@@ -206,7 +206,7 @@ export default function ProfileScreen({ navigation }: any) {
               ) : (
                 <View style={styles.avatarPlaceholder}>
                   <Text style={styles.avatarText}>
-                    {employee?.full_name?.charAt(0) || 'U'}
+                    {(employee?.full_name || user?.username || 'HR').charAt(0).toUpperCase()}
                   </Text>
                 </View>
               )}
@@ -233,14 +233,22 @@ export default function ProfileScreen({ navigation }: any) {
               numberOfLines={2}
               ellipsizeMode="tail"
             >
-              {employee?.full_name || '--'}
+              {employee?.full_name || user?.username || 'HR Officer'}
             </Text>
             <Text
               style={styles.employeeRole}
               numberOfLines={1}
               ellipsizeMode="tail"
             >
-              {employee?.designation || employee?.role || 'Employee'}
+              {user?.role === 'HR'
+                ? 'Human Resources (HR)'
+                : user?.role === 'SUPER_ADMIN'
+                ? 'Super Admin'
+                : user?.role === 'ADMIN'
+                ? 'Administrator'
+                : user?.role === 'REPORTING_MANAGER'
+                ? 'Reporting Manager'
+                : (employee?.designation || employee?.role || 'Staff Member')}
             </Text>
           </View>
         </View>
@@ -310,20 +318,20 @@ export default function ProfileScreen({ navigation }: any) {
           </View>
           <ScrollView contentContainerStyle={styles.modalScroll}>
             <View style={styles.infoGroup}>
-              <Text style={styles.infoLabel}>Employee ID</Text>
+              <Text style={styles.infoLabel}>Employee ID / Code</Text>
               <Text style={styles.infoValue}>
-                {employee?.employee_id || '--'}
+                {employee?.employee_id || user?.username || '--'}
               </Text>
             </View>
             <View style={styles.infoGroup}>
-              <Text style={styles.infoLabel}>Employee Name</Text>
+              <Text style={styles.infoLabel}>Name / Username</Text>
               <Text style={styles.infoValue}>
-                {employee?.full_name || '--'}
+                {employee?.full_name || user?.username || '--'}
               </Text>
             </View>
             <View style={styles.infoGroup}>
               <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{employee?.email || '--'}</Text>
+              <Text style={styles.infoValue}>{employee?.email || user?.email || '--'}</Text>
             </View>
             <View style={styles.infoGroup}>
               <Text style={styles.infoLabel}>Phone</Text>
@@ -333,12 +341,22 @@ export default function ProfileScreen({ navigation }: any) {
             </View>
             <View style={styles.infoGroup}>
               <Text style={styles.infoLabel}>Role</Text>
-              <Text style={styles.infoValue}>{employee?.role || '--'}</Text>
+              <Text style={styles.infoValue}>
+                {user?.role === 'HR'
+                  ? 'Human Resources (HR)'
+                  : user?.role === 'SUPER_ADMIN'
+                  ? 'Super Admin'
+                  : user?.role === 'ADMIN'
+                  ? 'Administrator'
+                  : user?.role === 'REPORTING_MANAGER'
+                  ? 'Reporting Manager'
+                  : (employee?.role || user?.role || '--')}
+              </Text>
             </View>
             <View style={styles.infoGroup}>
               <Text style={styles.infoLabel}>Company</Text>
               <Text style={styles.infoValue}>
-                {employee?.company?.name || '--'}
+                {employee?.company?.name || user?.company_name || 'All Companies'}
               </Text>
             </View>
             <View style={styles.infoGroup}>

@@ -160,7 +160,12 @@ internal object AlarmScheduler {
       val operation = pendingIntent(context, item)
 
       try {
-        if (
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+          manager.setAlarmClock(
+            AlarmManager.AlarmClockInfo(timestamp, operation),
+            operation
+          )
+        } else if (
           Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
           manager.canScheduleExactAlarms()
         ) {
