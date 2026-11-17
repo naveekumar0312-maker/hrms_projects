@@ -9,47 +9,33 @@ export interface LocationData {
 let cachedLocationData: LocationData | null = null;
 let lastLocationTime: number = 0;
 
-// Fallback to IP geolocation or default office location if device GPS is completely blocked/times out
-async function fetchIpGeolocationFallback(): Promise<LocationData> {
-  try {
-    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(3000) });
-    if (res.ok) {
-      const data = await res.json();
-      if (data.latitude && data.longitude) {
-        return {
-          latitude: Number(data.latitude),
-          longitude: Number(data.longitude),
-          accuracy: 50,
-        };
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
-
-  // Final fallback (Coimbatore Branch default coordinates)
-  return {
-    latitude: 11.0168,
-    longitude: 76.9558,
-    accuracy: 30,
-  };
-}
-
 export const useLocation = () => {
   const [location, setLocation] = useState<LocationData | null>(cachedLocationData);
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
   const getLocation = useCallback(async (): Promise<LocationData> => {
-    // If we have a fairly recent valid location (< 10 minutes old), use it immediately
-    if (cachedLocationData && (Date.now() - lastLocationTime < 600000)) {
+    // If we have a fairly recent valid location (< 3 minutes old), use it immediately
+    if (cachedLocationData && (Date.now() - lastLocationTime < 180000)) {
       return cachedLocationData;
     }
 
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
       setLoading(true);
       setError('');
-      
+
+      if (!navigator.geolocation) {
+        setLoading(false);
+        const err = 'Geolocation is not supported by your browser.';
+        setError(err);
+        if (cachedLocationData) {
+          resolve(cachedLocationData);
+        } else {
+          reject(new Error(err));
+        }
+        return;
+      }
+
       let resolved = false;
 
       const finishSuccess = (loc: LocationData) => {
@@ -62,54 +48,64 @@ export const useLocation = () => {
         resolve(loc);
       };
 
-      const fallbackToIpOrDefault = async () => {
+      const finishError = (errMsg: string) => {
         if (resolved) return;
+        resolved = true;
+        setLoading(false);
+        setError(errMsg);
         if (cachedLocationData) {
-          finishSuccess(cachedLocationData);
-          return;
-        }
-        try {
-          const fallbackLoc = await fetchIpGeolocationFallback();
-          finishSuccess(fallbackLoc);
-        } catch {
-          finishSuccess({
-            latitude: 11.0168,
-            longitude: 76.9558,
-            accuracy: 50,
-          });
+          resolve(cachedLocationData);
+        } else {
+          reject(new Error(errMsg));
         }
       };
 
-      // Set hard timeout: If browser does not return location in 5 seconds, fallback automatically so user NEVER gets blocked
-      const hardTimeoutTimer = setTimeout(() => {
-        console.warn('[useLocation] Hard timeout reached, using immediate location fallback');
-        fallbackToIpOrDefault();
-      }, 5000);
-
-      if (!navigator.geolocation) {
-        clearTimeout(hardTimeoutTimer);
-        fallbackToIpOrDefault();
-        return;
-      }
-
+      // 1. First attempt: High Accuracy GPS (e.g. mobile GPS chip) with a 6-second timeout
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          clearTimeout(hardTimeoutTimer);
           finishSuccess({
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             accuracy: position.coords.accuracy,
           });
         },
-        (err) => {
-          console.warn('[useLocation] Native geolocation failed:', err);
-          clearTimeout(hardTimeoutTimer);
-          fallbackToIpOrDefault();
+        (highAccErr) => {
+          console.warn('[useLocation] High accuracy attempt failed, trying normal accuracy:', highAccErr.message);
+
+          if (highAccErr.code === 1) {
+            // Permission Denied
+            finishError('Location permission was denied. Please allow location access in your browser settings.');
+            return;
+          }
+
+          // 2. Second attempt: Normal accuracy with recent cache
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              finishSuccess({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+              });
+            },
+            (err) => {
+              console.warn('[useLocation] Normal accuracy attempt failed:', err.message);
+              let msg = 'Unable to retrieve your location. Please check your GPS and permissions.';
+              if (err.code === 1) msg = 'Location permission was denied.';
+              else if (err.code === 2) msg = 'Location position unavailable. Please ensure GPS/Location is turned on.';
+              else if (err.code === 3) msg = 'Location request timed out. Please try again.';
+              finishError(msg);
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 6000,
+              maximumAge: 120000,
+            }
+          );
         },
         {
-          enableHighAccuracy: false, // Avoid demanding strict GPS satellite lock which causes timeout on mobile
-          timeout: 4500,
-          maximumAge: 600000, // accept any location from past 10 minutes
+          enableHighAccuracy: true,
+          timeout: 6000,
+          maximumAge: 30000,
         }
       );
     });
@@ -117,4 +113,5 @@ export const useLocation = () => {
 
   return { location, error, loading, getLocation };
 };
+
 

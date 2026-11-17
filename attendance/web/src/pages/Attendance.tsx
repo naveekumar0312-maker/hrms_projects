@@ -886,7 +886,7 @@ const Attendance = () => {
               className="admin-table-desktop"
               style={{ overflowX: 'auto' }}
             >
-              <table style={{ minWidth: '1050px' }}>
+              <table style={{ width: '100%', minWidth: '1550px' }}>
                 <thead>
                   <tr>
                     <th style={{ minWidth: '220px' }}>
@@ -901,7 +901,7 @@ const Attendance = () => {
                     <th style={{ minWidth: '120px' }}>
                       Punch In
                     </th>
-                    <th style={{ minWidth: '180px', width: '220px' }}>
+                    <th style={{ minWidth: '220px', width: '240px' }}>
                       Late
                     </th>
                     <th style={{ minWidth: '120px' }}>
@@ -1026,7 +1026,7 @@ const Attendance = () => {
                           </div>
                         </td>
 
-                        <td style={{ minWidth: '180px', maxWidth: '240px' }}>
+                        <td style={{ minWidth: '220px', width: '240px' }}>
                           <div
                             style={{
                               display: 'flex',
@@ -1034,6 +1034,7 @@ const Attendance = () => {
                               alignItems: 'flex-start',
                               gap: '6px',
                               width: '100%',
+                              minWidth: '200px',
                             }}
                           >
                             <span
@@ -1055,15 +1056,17 @@ const Attendance = () => {
                                 style={{
                                   display: 'block',
                                   width: '100%',
+                                  minWidth: '190px',
                                   boxSizing: 'border-box',
                                   fontSize: '11px',
                                   color: '#dc2626',
                                   background: '#fef2f2',
                                   border: '1px solid #fecaca',
-                                  padding: '4px 8px',
+                                  padding: '5px 8px',
                                   borderRadius: '6px',
-                                  lineHeight: 1.35,
-                                  wordBreak: 'break-word',
+                                  lineHeight: 1.4,
+                                  wordBreak: 'normal',
+                                  overflowWrap: 'break-word',
                                   whiteSpace: 'normal',
                                 }}
                                 title={`Late Reason: ${record.late_reason}`}

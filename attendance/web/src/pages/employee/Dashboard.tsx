@@ -396,8 +396,14 @@ const EmployeeDashboard = () => {
     setLoadingAction(true);
 
     try {
-      // Use location fetched during camera opening if available, otherwise fetch fresh/cached location
-      const locationData = currentActionLocationRef.current || await getLocation();
+      // Always get fresh GPS location during capture if possible
+      let locationData = currentActionLocationRef.current;
+      try {
+        locationData = await getLocation();
+        currentActionLocationRef.current = locationData;
+      } catch (locErr) {
+        if (!locationData) throw locErr;
+      }
 
       if (actionType === 'CHECK_IN') {
         await checkIn(locationData, photoUri);
