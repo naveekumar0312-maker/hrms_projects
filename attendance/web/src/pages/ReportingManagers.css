@@ -152,8 +152,27 @@
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  -webkit-overflow-scrolling: touch;
+}
+
+.rm-table-card::-webkit-scrollbar {
+  height: 8px;
+}
+
+.rm-table-card::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.rm-table-card::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.rm-table-card::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .rm-table {

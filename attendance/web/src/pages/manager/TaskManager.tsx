@@ -279,7 +279,8 @@ const TaskManager: React.FC = () => {
             <p>No tasks found. Create a new task to get started.</p>
           </div>
         ) : (
-          <table className="rm-table">
+          <div className="task-table-scroll-wrapper">
+            <table className="rm-table">
             <thead>
               <tr>
                 <th style={{ minWidth: '180px' }}>Task</th>
@@ -445,6 +446,7 @@ const TaskManager: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
         )}
       </div>
 

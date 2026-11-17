@@ -153,7 +153,8 @@ const EmployeeTasks: React.FC = () => {
             <p>You have no active assigned tasks at this moment.</p>
           </div>
         ) : (
-          <table className="rm-table">
+          <div className="task-table-scroll-wrapper">
+            <table className="rm-table">
             <thead>
               <tr>
                 <th>Task Title</th>
@@ -249,6 +250,7 @@ const EmployeeTasks: React.FC = () => {
               ))}
             </tbody>
           </table>
+        </div>
         )}
       </div>
 
