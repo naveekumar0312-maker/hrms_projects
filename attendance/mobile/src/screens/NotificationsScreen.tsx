@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useContext } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Bell, CheckCheck, ArrowLeft, Clock, MapPin } from 'lucide-react-native';
-import { api } from '../context/AuthContext';
+import { api, AuthContext } from '../context/AuthContext';
 import { useAppMessage } from '../context/MessageContext';
 import { COLORS } from '../constants/theme';
 import { colors } from '../theme/colors';
@@ -32,6 +32,7 @@ interface NotificationItem {
 
 export default function NotificationsScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
+  const { user } = useContext(AuthContext);
   const { showSuccess, showError, showConfirm } = useAppMessage();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -125,6 +126,73 @@ export default function NotificationsScreen({ navigation }: any) {
     });
   };
 
+  const handleNotificationClick = (item: NotificationItem) => {
+    markAsRead(item);
+
+    const userRole = (user?.role || '').toUpperCase();
+    const isAdminOrHR = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' || userRole === 'HR';
+    const isManager = userRole === 'REPORTING_MANAGER';
+    const isTeamLeader = userRole === 'TEAM_LEADER';
+
+    const event = item.event;
+
+    if (event === 'LOCATION_REQUIRED') {
+      navigation.navigate('Dashboard' as any);
+      return;
+    }
+
+    if (event === 'TASK_ASSIGNED') {
+      if (isManager) {
+        navigation.navigate('ManagerTasksTab' as any);
+      } else if (isTeamLeader) {
+        navigation.navigate('TeamLeaderTasksTab' as any);
+      } else if (isAdminOrHR) {
+        navigation.navigate('Tasks' as any);
+      } else {
+        navigation.navigate('Tasks' as any);
+      }
+      return;
+    }
+
+    if (event === 'LEAVE_APPLIED' || event === 'LEAVE_APPROVED' || event === 'LEAVE_REJECTED') {
+      if (isAdminOrHR || isManager) {
+        navigation.navigate('AdminLeaves' as any);
+      } else {
+        navigation.navigate('Leave' as any);
+      }
+      return;
+    }
+
+    if (event === 'PERMISSION_APPLIED' || event === 'PERMISSION_APPROVED' || event === 'PERMISSION_REJECTED') {
+      if (isAdminOrHR || isManager) {
+        navigation.navigate('AdminPermissions' as any);
+      } else {
+        navigation.navigate('Permission' as any);
+      }
+      return;
+    }
+
+    if (event === 'WFH_APPLIED' || event === 'WFH_APPROVED' || event === 'WFH_REJECTED') {
+      if (isAdminOrHR || isManager) {
+        navigation.navigate('AdminWFH' as any);
+      } else {
+        navigation.navigate('WFH' as any);
+      }
+      return;
+    }
+
+    if (event === 'SHIFT_START' || event === 'SHIFT_END') {
+      if (isAdminOrHR) {
+        navigation.navigate('AdminAttendance' as any);
+      } else if (isManager) {
+        navigation.navigate('ManagerAttendance' as any);
+      } else {
+        navigation.navigate('AttendanceHistory' as any);
+      }
+      return;
+    }
+  };
+
   const renderItem = ({ item }: { item: NotificationItem }) => (
     <TouchableOpacity
       style={[
@@ -133,12 +201,7 @@ export default function NotificationsScreen({ navigation }: any) {
         item.event === 'LOCATION_REQUIRED' && { borderColor: '#FCA5A5', backgroundColor: '#FFF5F5' },
       ]}
       activeOpacity={0.75}
-      onPress={() => {
-        markAsRead(item);
-        if (item.event === 'LOCATION_REQUIRED') {
-          navigation.navigate('Dashboard' as any);
-        }
-      }}
+      onPress={() => handleNotificationClick(item)}
       disabled={updatingId !== null}
     >
       <View

@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useContext } from 'react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Bell, CheckCheck, X } from 'lucide-react';
 import api from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 
 interface NotificationItem {
   id: number;
@@ -20,6 +22,10 @@ interface NotificationResponse {
 }
 
 export default function NotificationBell() {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { companySlug: routeSlug } = useParams<{ companySlug?: string }>();
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
@@ -77,6 +83,97 @@ export default function NotificationBell() {
     }
   };
 
+  const handleItemClick = (item: NotificationItem) => {
+    void markRead(item.id);
+    setOpen(false);
+
+    const role = (user?.role || '').toUpperCase();
+    const isSuper = role === 'SUPER_ADMIN' || (role === 'ADMIN' && (user?.is_superuser || user?.is_staff));
+    const activeSlug = routeSlug || user?.company_slug || localStorage.getItem('attendance_company_slug');
+    const adminBase = isSuper
+      ? (location.pathname.startsWith('/admin') ? '/admin' : '/super-admin')
+      : (activeSlug ? `/${encodeURIComponent(activeSlug)}/hr` : '/admin');
+
+    const event = item.event;
+
+    if (event === 'TASK_ASSIGNED') {
+      if (role === 'REPORTING_MANAGER') {
+        navigate('/manager/tasks');
+      } else if (role === 'TEAM_LEADER') {
+        navigate('/team-leader/tasks');
+      } else if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'HR') {
+        navigate('/tasks');
+      } else {
+        navigate('/tasks');
+      }
+      return;
+    }
+
+    if (event === 'LEAVE_APPLIED') {
+      if (role === 'REPORTING_MANAGER') {
+        navigate('/manager/leaves');
+      } else if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'HR') {
+        navigate(`${adminBase}/leaves`);
+      } else {
+        navigate('/leave');
+      }
+      return;
+    }
+
+    if (event === 'LEAVE_APPROVED' || event === 'LEAVE_REJECTED') {
+      navigate('/leave');
+      return;
+    }
+
+    if (event === 'PERMISSION_APPLIED') {
+      if (role === 'REPORTING_MANAGER') {
+        navigate('/manager/permissions');
+      } else if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'HR') {
+        navigate(`${adminBase}/permissions`);
+      } else {
+        navigate('/permission');
+      }
+      return;
+    }
+
+    if (event === 'PERMISSION_APPROVED' || event === 'PERMISSION_REJECTED') {
+      navigate('/permission');
+      return;
+    }
+
+    if (event === 'WFH_APPLIED') {
+      if (role === 'REPORTING_MANAGER') {
+        navigate('/manager/wfh');
+      } else if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'HR') {
+        navigate(`${adminBase}/wfh`);
+      } else {
+        navigate('/wfh');
+      }
+      return;
+    }
+
+    if (event === 'WFH_APPROVED' || event === 'WFH_REJECTED') {
+      navigate('/wfh');
+      return;
+    }
+
+    if (event === 'SHIFT_START' || event === 'SHIFT_END') {
+      if (role === 'REPORTING_MANAGER') {
+        navigate('/manager/team-attendance');
+      } else if (role === 'SUPER_ADMIN' || role === 'ADMIN' || role === 'HR') {
+        navigate(`${adminBase}/attendance`);
+      } else {
+        navigate('/attendance');
+      }
+      return;
+    }
+
+    if (event === 'LOCATION_REQUIRED') {
+      navigate('/dashboard');
+      return;
+    }
+  };
+
   return (
     <div style={{ position: 'relative', display: 'inline-flex' }}>
       <button
@@ -114,16 +211,39 @@ export default function NotificationBell() {
           {!error && items.length === 0 && <p style={{ padding: 18, color: '#6b7280', fontSize: 13 }}>No notifications yet.</p>}
 
           {items.map(item => (
-            <div key={item.id} style={{ padding: 13, borderBottom: '1px solid #f1f1f1', background: item.is_read ? '#fff' : '#f0fdf4' }}>
+            <div
+              key={item.id}
+              onClick={() => handleItemClick(item)}
+              style={{
+                padding: 13,
+                borderBottom: '1px solid #f1f1f1',
+                background: item.is_read ? '#fff' : '#f0fdf4',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = item.is_read ? '#f8fafc' : '#eafaf1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = item.is_read ? '#fff' : '#f0fdf4';
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                <strong style={{ fontSize: 13 }}>{item.title}</strong>
+                <strong style={{ fontSize: 13, color: '#0f172a' }}>{item.title}</strong>
                 {!item.is_read && (
-                  <button type="button" onClick={() => void markRead(item.id)} style={{ border: 0, background: 'transparent', color: '#22c55e', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap' }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void markRead(item.id);
+                    }}
+                    style={{ border: 0, background: 'transparent', color: '#22c55e', cursor: 'pointer', fontSize: 11, whiteSpace: 'nowrap' }}
+                  >
                     Mark read
                   </button>
                 )}
               </div>
-              <p style={{ margin: '6px 0', fontSize: 13, lineHeight: 1.5 }}>{item.message}</p>
+              <p style={{ margin: '6px 0', fontSize: 13, lineHeight: 1.5, color: '#334155' }}>{item.message}</p>
               <small style={{ color: '#6b7280' }}>{item.created_at ? new Date(item.created_at).toLocaleString() : ''}</small>
             </div>
           ))}

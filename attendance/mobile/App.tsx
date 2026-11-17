@@ -8,6 +8,7 @@ import {
   Comfortaa_700Bold,
 } from '@expo-google-fonts/comfortaa';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { navigationRef } from './src/navigation/RootNavigation';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -445,7 +446,7 @@ function AppContent() {
     <>
       <PersonalAlarmManager />
       <PushNotificationManager isAuthenticated={isAuthenticated} />
-      <NavigationContainer theme={navTheme}>
+      <NavigationContainer ref={navigationRef} theme={navTheme}>
         <RootNavigator />
       </NavigationContainer>
     </>

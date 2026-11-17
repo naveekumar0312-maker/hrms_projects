@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
 import { api } from '../context/AuthContext';
+import { navigate } from '../navigation/RootNavigation';
 
 // Configure foreground notification behavior: show banner, list, play sound
 Notifications.setNotificationHandler({
@@ -203,6 +204,21 @@ export default function PushNotificationManager({
     const responseSub = Notifications.addNotificationResponseReceivedListener((response) => {
       console.log('[PushNotificationManager] Notification clicked:', response.notification.request.content.data);
       onNotificationReceived?.();
+      const notifData = response.notification.request.content.data || {};
+      const event = notifData.event;
+      if (event === 'TASK_ASSIGNED') {
+        navigate('Tasks');
+      } else if (event === 'LEAVE_APPLIED' || event === 'LEAVE_APPROVED' || event === 'LEAVE_REJECTED') {
+        navigate('Leave');
+      } else if (event === 'PERMISSION_APPLIED' || event === 'PERMISSION_APPROVED' || event === 'PERMISSION_REJECTED') {
+        navigate('Permission');
+      } else if (event === 'WFH_APPLIED' || event === 'WFH_APPROVED' || event === 'WFH_REJECTED') {
+        navigate('WFH');
+      } else if (event === 'SHIFT_START' || event === 'SHIFT_END') {
+        navigate('AttendanceHistory');
+      } else {
+        navigate('Notifications');
+      }
     });
 
     return () => {
