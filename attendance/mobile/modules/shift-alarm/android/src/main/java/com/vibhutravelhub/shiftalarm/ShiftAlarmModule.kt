@@ -1,4 +1,4 @@
-﻿package com.vibhutravelhub.shiftalarm
+package com.vibhutravelhub.shiftalarm
 
 import android.app.AlarmManager
 import android.content.Context
