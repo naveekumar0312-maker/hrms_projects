@@ -8,6 +8,7 @@ import {
   RefreshCw,
   ArrowRight,
   Building,
+  Building2,
   Shield,
   Award,
   User,
@@ -49,6 +50,11 @@ const ManagerDashboard: React.FC = () => {
   const { user } = useContext(AuthContext);
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [team, setTeam] = useState<TeamMember[]>([]);
+  const [pendingStats, setPendingStats] = useState<{
+    pending_leaves: number;
+    pending_permissions: number;
+    pending_wfh: number;
+  }>({ pending_leaves: 0, pending_permissions: 0, pending_wfh: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -56,12 +62,20 @@ const ManagerDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError('');
-      const [sumRes, teamRes] = await Promise.all([
+      const [sumRes, teamRes, reminderRes] = await Promise.all([
         api.get('/employees/manager/dashboard-summary/'),
         api.get('/employees/manager/team/'),
+        api.get('/attendance/pending-actions-reminder/').catch(() => ({ data: {} })),
       ]);
       setSummary(sumRes.data);
       setTeam(teamRes.data);
+      if (reminderRes.data && reminderRes.data.summary) {
+        setPendingStats({
+          pending_leaves: reminderRes.data.summary.pending_leaves || 0,
+          pending_permissions: reminderRes.data.summary.pending_permissions || 0,
+          pending_wfh: reminderRes.data.summary.pending_wfh || 0,
+        });
+      }
     } catch (err: any) {
       console.error('Failed to load dashboard:', err);
       setError('Unable to load team metrics. Please try again.');
@@ -240,6 +254,57 @@ const ManagerDashboard: React.FC = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* SECTION 3: REQUESTS & APPROVALS (LEAVES, PERMISSIONS, WFH) */}
+      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', marginBottom: '14px' }}>
+        Team Approvals & Requests
+      </h3>
+      <div className="mgr-cards-grid" style={{ marginBottom: '32px' }}>
+        <Link to="/manager/leaves" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="mgr-stat-card" style={{ cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}>
+            <div className="mgr-stat-icon" style={{ background: '#fff7ed', color: '#ea580c' }}>
+              <Calendar size={24} />
+            </div>
+            <div className="mgr-stat-content">
+              <span className="mgr-stat-label">Leave Requests</span>
+              <span className="mgr-stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {loading ? '--' : `${pendingStats.pending_leaves} Pending`}
+                <ArrowRight size={16} color="#ea580c" />
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        <Link to="/manager/permissions" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="mgr-stat-card" style={{ cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}>
+            <div className="mgr-stat-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
+              <Clock size={24} />
+            </div>
+            <div className="mgr-stat-content">
+              <span className="mgr-stat-label">Permission Requests</span>
+              <span className="mgr-stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {loading ? '--' : `${pendingStats.pending_permissions} Pending`}
+                <ArrowRight size={16} color="#2563eb" />
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        <Link to="/manager/wfh" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <div className="mgr-stat-card" style={{ cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}>
+            <div className="mgr-stat-icon" style={{ background: '#faf5ff', color: '#7c3aed' }}>
+              <Building2 size={24} />
+            </div>
+            <div className="mgr-stat-content">
+              <span className="mgr-stat-label">WFH Requests</span>
+              <span className="mgr-stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {loading ? '--' : `${pendingStats.pending_wfh} Pending`}
+                <ArrowRight size={16} color="#7c3aed" />
+              </span>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Assigned Team Members Table Preview */}

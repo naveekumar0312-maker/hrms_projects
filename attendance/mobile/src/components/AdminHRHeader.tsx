@@ -59,7 +59,9 @@ export const AdminHRHeader: React.FC<AdminHRHeaderProps> = ({
             </Text>
           ) : null}
           <View style={styles.companyBadge}>
-            <Text style={styles.companyBadgeText}>{isHR ? 'HR' : role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : 'ADMIN'}</Text>
+            <Text style={styles.companyBadgeText}>
+              {isHR ? 'HR' : role === 'SUPER_ADMIN' ? 'SUPER ADMIN' : (role === 'REPORTING_MANAGER' || role === 'TEAM_LEADER') ? 'MANAGER' : 'ADMIN'}
+            </Text>
           </View>
         </View>
       ) : role === 'SUPER_ADMIN' ? (

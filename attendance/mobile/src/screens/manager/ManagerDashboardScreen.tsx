@@ -18,6 +18,7 @@ import {
   UserX,
   Calendar,
   Building,
+  Building2,
   ChevronRight,
   ListTodo,
   CalendarCheck,
@@ -292,6 +293,60 @@ export default function ManagerDashboardScreen({ navigation }: any) {
                 </View>
                 <ChevronRight size={18} color="#888888" />
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionListItem}
+                onPress={() => navigation.navigate('AdminLeaves')}
+              >
+                <View style={styles.actionListLeft}>
+                  <Calendar size={18} color="#EA580C" strokeWidth={2.2} />
+                  <Text style={styles.actionListText}>Review Leave Applications</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  {(reminderData.summary.pending_leaves || 0) > 0 && (
+                    <View style={styles.pendingBadge}>
+                      <Text style={styles.pendingBadgeText}>{reminderData.summary.pending_leaves} New</Text>
+                    </View>
+                  )}
+                  <ChevronRight size={18} color="#888888" />
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionListItem}
+                onPress={() => navigation.navigate('AdminPermissions')}
+              >
+                <View style={styles.actionListLeft}>
+                  <Clock size={18} color="#2563EB" strokeWidth={2.2} />
+                  <Text style={styles.actionListText}>Review Permission Requests</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  {(reminderData.summary.pending_permissions || 0) > 0 && (
+                    <View style={[styles.pendingBadge, { backgroundColor: '#EFF6FF' }]}>
+                      <Text style={[styles.pendingBadgeText, { color: '#1D4ED8' }]}>{reminderData.summary.pending_permissions} New</Text>
+                    </View>
+                  )}
+                  <ChevronRight size={18} color="#888888" />
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.actionListItem}
+                onPress={() => navigation.navigate('AdminWFH')}
+              >
+                <View style={styles.actionListLeft}>
+                  <Building2 size={18} color="#7C3AED" strokeWidth={2.2} />
+                  <Text style={styles.actionListText}>Review WFH Requests</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  {(reminderData.summary.pending_wfh || 0) > 0 && (
+                    <View style={[styles.pendingBadge, { backgroundColor: '#FAF5FF' }]}>
+                      <Text style={[styles.pendingBadgeText, { color: '#6D28D9' }]}>{reminderData.summary.pending_wfh} New</Text>
+                    </View>
+                  )}
+                  <ChevronRight size={18} color="#888888" />
+                </View>
+              </TouchableOpacity>
             </View>
           </>
         )}
@@ -307,6 +362,15 @@ export default function ManagerDashboardScreen({ navigation }: any) {
         onNavigateAction={(item) => {
           setReminderModalVisible(false);
           switch (item.type) {
+            case 'LEAVE':
+              navigation.navigate('AdminLeaves');
+              break;
+            case 'PERMISSION':
+              navigation.navigate('AdminPermissions');
+              break;
+            case 'WFH':
+              navigation.navigate('AdminWFH');
+              break;
             case 'ATTENDANCE_PUNCH':
               navigation.navigate('ManagerAttendance');
               break;
@@ -506,6 +570,19 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'Comfortaa_600SemiBold',
     color: '#000000',
+  },
+  pendingBadge: {
+    backgroundColor: '#FFF7ED',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: '#FED7AA',
+  },
+  pendingBadgeText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#EA580C',
   },
 });
 

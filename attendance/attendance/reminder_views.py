@@ -74,6 +74,16 @@ class PendingActionsReminderView(APIView):
                 wfh_qs = WFHRequest.objects.all()
                 attendance_qs = Attendance.objects.all()
                 tasks_qs = Task.objects.all()
+            elif emp.branch_id:
+                leaves_qs = LeaveRequest.objects.filter(employee__branch_id=emp.branch_id)
+                permissions_qs = PermissionRequest.objects.filter(employee__branch_id=emp.branch_id)
+                wfh_qs = WFHRequest.objects.filter(employee__branch_id=emp.branch_id)
+                attendance_qs = Attendance.objects.filter(employee__branch_id=emp.branch_id)
+                tasks_qs = Task.objects.filter(
+                    Q(reporting_manager=emp) |
+                    Q(assigned_by=user) |
+                    Q(assigned_employees__branch_id=emp.branch_id)
+                ).distinct()
             elif user.company_id:
                 leaves_qs = LeaveRequest.objects.filter(employee__branch__company_id=user.company_id)
                 permissions_qs = PermissionRequest.objects.filter(employee__branch__company_id=user.company_id)
@@ -130,8 +140,8 @@ class PendingActionsReminderView(APIView):
                 "title": f"Leave: {l.leave_type}",
                 "detail": f"{l.start_date} to {l.end_date} • Reason: {l.reason or 'Not specified'}",
                 "created_at": l.created_at.isoformat() if l.created_at else None,
-                "action_url": "/admin/leaves" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "/manager/team-attendance",
-                "mobile_screen": "AdminLeaves" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "ManagerAttendance",
+                "action_url": "/admin/leaves" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "/manager/leaves",
+                "mobile_screen": "AdminLeaves",
             })
 
         for p in pending_permissions[:8]:
@@ -144,8 +154,8 @@ class PendingActionsReminderView(APIView):
                 "title": f"Permission: {p.duration_minutes} mins",
                 "detail": f"Date: {p.date} • {p.start_time or ''} - {p.end_time or ''} • Reason: {p.reason or 'Not specified'}",
                 "created_at": p.created_at.isoformat() if p.created_at else None,
-                "action_url": "/admin/permissions" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "/manager/team-attendance",
-                "mobile_screen": "AdminPermissions" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "ManagerAttendance",
+                "action_url": "/admin/permissions" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "/manager/permissions",
+                "mobile_screen": "AdminPermissions",
             })
 
         for w in pending_wfh[:8]:
@@ -158,8 +168,8 @@ class PendingActionsReminderView(APIView):
                 "title": f"Work From Home Request",
                 "detail": f"Date: {w.date} • Reason: {w.reason or 'Not specified'}",
                 "created_at": w.created_at.isoformat() if w.created_at else None,
-                "action_url": "/admin/wfh" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "/manager/team-attendance",
-                "mobile_screen": "AdminWFH" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "ManagerAttendance",
+                "action_url": "/admin/wfh" if role in ('SUPER_ADMIN', 'ADMIN', 'HR') else "/manager/wfh",
+                "mobile_screen": "AdminWFH",
             })
 
         for att in pending_punches[:8]:

@@ -135,8 +135,10 @@ export const AdminWFHScreen = ({ navigation }: any) => {
         title="Work From Home"
         subtitle="WFH requests & approvals"
         role={user?.role || 'ADMIN'}
-        companyName={user?.company_name}
+        companyName={user?.company_name || (user?.role === 'REPORTING_MANAGER' ? (user?.employee_profile?.branch_name ? `${user.employee_profile.branch_name} Branch` : 'All Companies') : undefined)}
         companyLogo={user?.company_logo}
+        showBack={navigation?.canGoBack ? navigation.canGoBack() : true}
+        onBack={() => navigation.goBack()}
       />
 
       <View style={styles.tabContainer}>

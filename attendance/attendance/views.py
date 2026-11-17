@@ -2439,11 +2439,7 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
     def _check_employee_request_modification(self, instance):
         user = self.request.user
 
-        if hasattr(user, 'employee_profile'):
-            if instance.status != 'PENDING':
-                raise ValidationError(
-                    "Only pending requests can be edited or deleted."
-                )
+        if user.role in ('SUPER_ADMIN', 'ADMIN'):
             return
 
         if user.role == 'HR':
@@ -2458,16 +2454,57 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
                 )
             return
 
-        if user.role in ('SUPER_ADMIN', 'ADMIN'):
+        if user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
+            emp = getattr(user, 'employee_profile', None)
+            if emp and instance.employee_id == emp.id:
+                if instance.status != 'PENDING':
+                    raise ValidationError("Only pending requests can be edited or deleted.")
+                return
+            if emp:
+                if emp.branch_id and instance.employee.branch_id == emp.branch_id:
+                    return
+                if user.company_id and instance.employee.branch and instance.employee.branch.company_id == user.company_id:
+                    return
+                if not emp.branch_id and not user.company_id:
+                    return
+            raise PermissionDenied("You cannot modify requests outside your scope.")
+
+        if hasattr(user, 'employee_profile'):
+            if instance.status != 'PENDING':
+                raise ValidationError(
+                    "Only pending requests can be edited or deleted."
+                )
             return
 
         raise PermissionDenied(
-            "Only the employee, assigned company HR, or Super Admin "
+            "Only the employee, assigned company HR, manager, or Super Admin "
             "can modify this request."
         )
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        status_val = request.data.get('status')
+        if status_val in ('APPROVED', 'REJECTED'):
+            if not bool(
+                request.user
+                and request.user.is_authenticated
+                and (
+                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER')
+                    or (request.user.role == 'HR' and request.user.company_id is not None)
+                )
+            ):
+                raise PermissionDenied("You do not have permission to approve or reject requests.")
+            instance.status = status_val
+            instance.approved_by = request.user
+            instance.approved_at = timezone.now()
+            if status_val == 'APPROVED':
+                instance.rejection_reason = None
+            else:
+                instance.rejection_reason = request.data.get('rejection_reason', '')
+            instance.save()
+            notify_employee_request_decision(instance, kind='permission')
+            return Response(PermissionRequestSerializer(instance, context={'request': request}).data)
+
         self._check_employee_request_modification(instance)
         return super().update(request, *args, **kwargs)
 
@@ -2486,6 +2523,7 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
         ).order_by('-date', '-created_at')
 
         user = self.request.user
+        emp = getattr(user, 'employee_profile', None)
 
         if user.role in ('SUPER_ADMIN', 'ADMIN'):
             pass
@@ -2493,8 +2531,25 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
             if not user.company_id:
                 return queryset.none()
             queryset = queryset.filter(employee__branch__company_id=user.company_id)
-        elif hasattr(user, 'employee_profile'):
-            queryset = queryset.filter(employee=user.employee_profile)
+        elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
+            scope_param = self.request.query_params.get('scope')
+            if scope_param == 'my':
+                if emp:
+                    queryset = queryset.filter(employee=emp)
+                else:
+                    return queryset.none()
+            else:
+                if not emp:
+                    return queryset.none()
+                if emp.branch_id:
+                    queryset = queryset.filter(employee__branch_id=emp.branch_id)
+                elif user.company_id:
+                    queryset = queryset.filter(employee__branch__company_id=user.company_id)
+                else:
+                    # Global Access Manager: all companies
+                    pass
+        elif emp:
+            queryset = queryset.filter(employee=emp)
         else:
             return queryset.none()
 
@@ -2502,9 +2557,16 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
         if status_param and status_param.upper() != 'ALL':
             queryset = queryset.filter(status=status_param.upper())
 
+        is_global_manager = (user.role == 'REPORTING_MANAGER' and emp and not emp.branch_id and not user.company_id)
+
         company_param = self.request.query_params.get('company')
-        if company_param and user.role in ('SUPER_ADMIN', 'ADMIN'):
+        if company_param and (user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager):
             queryset = queryset.filter(employee__branch__company_id=company_param)
+
+        branch_param = self.request.query_params.get('branch')
+        if branch_param:
+            if user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager or (user.role == 'REPORTING_MANAGER' and emp and str(emp.branch_id) == str(branch_param)):
+                queryset = queryset.filter(employee__branch_id=branch_param)
 
         return queryset
 
@@ -2700,11 +2762,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     def _check_employee_request_modification(self, instance):
         user = self.request.user
 
-        if hasattr(user, 'employee_profile'):
-            if instance.status != 'PENDING':
-                raise ValidationError(
-                    "Only pending requests can be edited or deleted."
-                )
+        if user.role in ('SUPER_ADMIN', 'ADMIN'):
             return
 
         if user.role == 'HR':
@@ -2719,16 +2777,57 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                 )
             return
 
-        if user.role in ('SUPER_ADMIN', 'ADMIN'):
+        if user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
+            emp = getattr(user, 'employee_profile', None)
+            if emp and instance.employee_id == emp.id:
+                if instance.status != 'PENDING':
+                    raise ValidationError("Only pending requests can be edited or deleted.")
+                return
+            if emp:
+                if emp.branch_id and instance.employee.branch_id == emp.branch_id:
+                    return
+                if user.company_id and instance.employee.branch and instance.employee.branch.company_id == user.company_id:
+                    return
+                if not emp.branch_id and not user.company_id:
+                    return
+            raise PermissionDenied("You cannot modify requests outside your scope.")
+
+        if hasattr(user, 'employee_profile'):
+            if instance.status != 'PENDING':
+                raise ValidationError(
+                    "Only pending requests can be edited or deleted."
+                )
             return
 
         raise PermissionDenied(
-            "Only the employee, assigned company HR, or Super Admin "
+            "Only the employee, assigned company HR, manager, or Super Admin "
             "can modify this request."
         )
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        status_val = request.data.get('status')
+        if status_val in ('APPROVED', 'REJECTED'):
+            if not bool(
+                request.user
+                and request.user.is_authenticated
+                and (
+                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER')
+                    or (request.user.role == 'HR' and request.user.company_id is not None)
+                )
+            ):
+                raise PermissionDenied("You do not have permission to approve or reject requests.")
+            instance.status = status_val
+            instance.approved_by = request.user
+            instance.approved_at = timezone.now()
+            if status_val == 'APPROVED':
+                instance.rejection_reason = None
+            else:
+                instance.rejection_reason = request.data.get('rejection_reason', '')
+            instance.save()
+            notify_employee_request_decision(instance, kind='leave')
+            return Response(LeaveRequestSerializer(instance, context={'request': request}).data)
+
         self._check_employee_request_modification(instance)
         return super().update(request, *args, **kwargs)
 
@@ -2747,6 +2846,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         ).order_by('-start_date', '-created_at')
 
         user = self.request.user
+        emp = getattr(user, 'employee_profile', None)
 
         if user.role in ('SUPER_ADMIN', 'ADMIN'):
             pass
@@ -2754,8 +2854,25 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             if not user.company_id:
                 return queryset.none()
             queryset = queryset.filter(employee__branch__company_id=user.company_id)
-        elif hasattr(user, 'employee_profile'):
-            queryset = queryset.filter(employee=user.employee_profile)
+        elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
+            scope_param = self.request.query_params.get('scope')
+            if scope_param == 'my':
+                if emp:
+                    queryset = queryset.filter(employee=emp)
+                else:
+                    return queryset.none()
+            else:
+                if not emp:
+                    return queryset.none()
+                if emp.branch_id:
+                    queryset = queryset.filter(employee__branch_id=emp.branch_id)
+                elif user.company_id:
+                    queryset = queryset.filter(employee__branch__company_id=user.company_id)
+                else:
+                    # Global Access Manager: all companies
+                    pass
+        elif emp:
+            queryset = queryset.filter(employee=emp)
         else:
             return queryset.none()
 
@@ -2763,9 +2880,16 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         if status_param and status_param.upper() != 'ALL':
             queryset = queryset.filter(status=status_param.upper())
 
+        is_global_manager = (user.role == 'REPORTING_MANAGER' and emp and not emp.branch_id and not user.company_id)
+
         company_param = self.request.query_params.get('company')
-        if company_param and user.role in ('SUPER_ADMIN', 'ADMIN'):
+        if company_param and (user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager):
             queryset = queryset.filter(employee__branch__company_id=company_param)
+
+        branch_param = self.request.query_params.get('branch')
+        if branch_param:
+            if user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager or (user.role == 'REPORTING_MANAGER' and emp and str(emp.branch_id) == str(branch_param)):
+                queryset = queryset.filter(employee__branch_id=branch_param)
 
         return queryset
 
@@ -2928,6 +3052,7 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
         ).order_by('-date', '-created_at')
 
         user = self.request.user
+        emp = getattr(user, 'employee_profile', None)
 
         if user.role in ('SUPER_ADMIN', 'ADMIN'):
             pass
@@ -2935,8 +3060,25 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
             if not user.company_id:
                 return queryset.none()
             queryset = queryset.filter(employee__branch__company_id=user.company_id)
-        elif hasattr(user, 'employee_profile'):
-            queryset = queryset.filter(employee=user.employee_profile)
+        elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
+            scope_param = self.request.query_params.get('scope')
+            if scope_param == 'my':
+                if emp:
+                    queryset = queryset.filter(employee=emp)
+                else:
+                    return queryset.none()
+            else:
+                if not emp:
+                    return queryset.none()
+                if emp.branch_id:
+                    queryset = queryset.filter(employee__branch_id=emp.branch_id)
+                elif user.company_id:
+                    queryset = queryset.filter(employee__branch__company_id=user.company_id)
+                else:
+                    # Global Access Manager: all companies
+                    pass
+        elif emp:
+            queryset = queryset.filter(employee=emp)
         else:
             return queryset.none()
 
@@ -2944,20 +3086,23 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
         if status_param and status_param.upper() != 'ALL':
             queryset = queryset.filter(status=status_param.upper())
 
+        is_global_manager = (user.role == 'REPORTING_MANAGER' and emp and not emp.branch_id and not user.company_id)
+
         company_param = self.request.query_params.get('company')
-        if company_param and user.role in ('SUPER_ADMIN', 'ADMIN'):
+        if company_param and (user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager):
             queryset = queryset.filter(employee__branch__company_id=company_param)
+
+        branch_param = self.request.query_params.get('branch')
+        if branch_param:
+            if user.role in ('SUPER_ADMIN', 'ADMIN') or is_global_manager or (user.role == 'REPORTING_MANAGER' and emp and str(emp.branch_id) == str(branch_param)):
+                queryset = queryset.filter(employee__branch_id=branch_param)
 
         return queryset
 
     def _check_modification_permission(self, instance):
         user = self.request.user
 
-        if hasattr(user, 'employee_profile'):
-            if instance.status != 'PENDING':
-                raise ValidationError(
-                    'Only pending WFH requests can be edited or deleted.'
-                )
+        if user.role in ('SUPER_ADMIN', 'ADMIN'):
             return
 
         if user.role == 'HR':
@@ -2971,13 +3116,54 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
                 )
             return
 
-        if user.role in ('SUPER_ADMIN', 'ADMIN'):
+        if user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
+            emp = getattr(user, 'employee_profile', None)
+            if emp and instance.employee_id == emp.id:
+                if instance.status != 'PENDING':
+                    raise ValidationError('Only pending WFH requests can be edited or deleted.')
+                return
+            if emp:
+                if emp.branch_id and instance.employee.branch_id == emp.branch_id:
+                    return
+                if user.company_id and instance.employee.branch and instance.employee.branch.company_id == user.company_id:
+                    return
+                if not emp.branch_id and not user.company_id:
+                    return
+            raise PermissionDenied('You cannot modify requests outside your scope.')
+
+        if hasattr(user, 'employee_profile'):
+            if instance.status != 'PENDING':
+                raise ValidationError(
+                    'Only pending WFH requests can be edited or deleted.'
+                )
             return
 
         raise PermissionDenied('You cannot modify this WFH request.')
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
+        status_val = request.data.get('status')
+        if status_val in ('APPROVED', 'REJECTED'):
+            if not bool(
+                request.user
+                and request.user.is_authenticated
+                and (
+                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER')
+                    or (request.user.role == 'HR' and request.user.company_id is not None)
+                )
+            ):
+                raise PermissionDenied("You do not have permission to approve or reject requests.")
+            instance.status = status_val
+            instance.approved_by = request.user
+            instance.approved_at = timezone.now()
+            if status_val == 'APPROVED':
+                instance.rejection_reason = None
+            else:
+                instance.rejection_reason = request.data.get('rejection_reason', '')
+            instance.save()
+            notify_employee_request_decision(instance, kind='wfh')
+            return Response(WFHRequestSerializer(instance, context={'request': request}).data)
+
         self._check_modification_permission(instance)
         return super().update(request, *args, **kwargs)
 

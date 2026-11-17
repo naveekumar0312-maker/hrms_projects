@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.db.models import Q
 
 from .models import Notification
 from .fcm import send_web_push
@@ -70,12 +71,28 @@ def notify_admins_request_submitted(request_obj, kind):
     if company_id is None:
         return
 
-    # Only administrators belonging to this company, plus its HR.
+    # Administrators belonging to this company, plus its HR.
     recipients = User.objects.filter(
         is_active=True,
         role__in=('SUPER_ADMIN', 'ADMIN', 'HR'),
         company_id=company_id,
     )
+
+    # Also notify the relevant Reporting Manager:
+    # 1. Branch Manager of the employee's branch
+    # 2. Company Manager of the employee's company
+    # 3. Global Access Manager (all companies)
+    # 4. Designated reporting_manager
+    manager_q = Q(role='REPORTING_MANAGER', is_active=True) & (
+        Q(employee_profile__branch_id=employee.branch_id) |
+        Q(company_id=company_id, employee_profile__branch__isnull=True) |
+        Q(company_id__isnull=True, employee_profile__branch__isnull=True)
+    )
+    if employee.reporting_manager and employee.reporting_manager.user:
+        manager_q = manager_q | Q(pk=employee.reporting_manager.user.pk)
+
+    manager_users = User.objects.filter(manager_q)
+    recipients = (recipients | manager_users).distinct()
 
     key = f'{kind}:{request_obj.pk}:applied'
 

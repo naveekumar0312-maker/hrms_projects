@@ -280,6 +280,9 @@ const AppRoutes = () => {
           <Route path="tasks" element={<TaskManager />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="team-attendance" element={<Attendance />} />
+          <Route path="leaves" element={<AdminLeaves />} />
+          <Route path="permissions" element={<AdminPermissions />} />
+          <Route path="wfh" element={<WFHManagement />} />
         </Route>
 
         {/* ==================================================
