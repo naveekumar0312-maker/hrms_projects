@@ -1,9 +1,9 @@
   const getOverallAttendanceStatus = (record: AttendanceRecord): string => {
-    if (record.check_in_approval_status === 'REJECTED' || record.check_out_approval_status === 'REJECTED') return 'REJECTED';
     const recStatus = String(record.calculated_status || record.status || '').toUpperCase();
-    if (recStatus === 'HOLIDAY') return 'HOLIDAY';
     if (recStatus === 'ON_LEAVE' || recStatus === 'ON LEAVE') return 'ON LEAVE';
     if (recStatus === 'HALF DAY' || recStatus === 'HALF_DAY') return 'HALF DAY';
+    if (recStatus === 'HOLIDAY') return 'HOLIDAY';
+    if (record.check_in_approval_status === 'REJECTED' || record.check_out_approval_status === 'REJECTED') return 'REJECTED';
     if (recStatus === 'ABSENT') return 'ABSENT';
 
     // Must have BOTH check-in and check-out approved to be PRESENT or LATE

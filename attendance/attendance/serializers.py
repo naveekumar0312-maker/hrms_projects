@@ -253,11 +253,14 @@ class AttendanceSerializer(serializers.ModelSerializer):
 
         # Consistent overall status calculation:
         from attendance.services import get_employee_attendance_status
-        response['calculated_status'] = get_employee_attendance_status(
+        calc_status = get_employee_attendance_status(
             record=instance,
             employee=employee,
             target_date=instance.date,
         )
+        response['calculated_status'] = calc_status
+        if calc_status in ('ON_LEAVE', 'HALF DAY', 'WFH', 'HOLIDAY'):
+            response['status'] = calc_status
 
         # Approved permission details for this attendance date.
         permission_items = []

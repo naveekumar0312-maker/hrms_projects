@@ -499,7 +499,7 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
                     late_str = f"{m}m"
                 reason = f"Late by {late_str}"
 
-            status_key = calculated_status.lower()
+            status_key = calculated_status.lower().replace(' ', '_')
             if status_key in counts:
                 counts[status_key] += 1
             else:
@@ -637,7 +637,7 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
                 late += 1
             elif calc_status == 'ABSENT':
                 absent += 1
-            elif calc_status == 'ON_LEAVE':
+            elif calc_status in ('ON_LEAVE', 'HALF DAY', 'HALF_DAY'):
                 on_leave += 1
             elif calc_status == 'HOLIDAY':
                 holiday += 1

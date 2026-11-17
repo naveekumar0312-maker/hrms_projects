@@ -381,6 +381,40 @@ def get_employee_attendance_status(
         now = timezone.localtime()
     today = now.date()
 
+    # Automatically resolve approved_leave if not provided
+    if approved_leave is None and employee is not None and target_date is not None:
+        try:
+            from attendance.models import LeaveRequest
+            approved_leave = LeaveRequest.objects.filter(
+                employee=employee,
+                status='APPROVED',
+                start_date__lte=target_date,
+                end_date__gte=target_date,
+            ).first()
+        except Exception:
+            approved_leave = None
+
+    # Automatically resolve approved_wfh if not provided
+    if approved_wfh is None and employee is not None and target_date is not None:
+        try:
+            from attendance.models import WFHRequest
+            approved_wfh = WFHRequest.objects.filter(
+                employee=employee,
+                status='APPROVED',
+                start_date__lte=target_date,
+                end_date__gte=target_date,
+            ).first()
+        except Exception:
+            approved_wfh = None
+
+    # 1. Confirmed/Approved Leave ALWAYS takes precedence!
+    # Even if an employee punched check-in and left without check-out due to sudden leave,
+    # once their leave is approved, their attendance status MUST show ON_LEAVE (or HALF DAY).
+    if approved_leave is not None:
+        if getattr(approved_leave, 'leave_type', None) == 'HALF_DAY':
+            return 'HALF DAY'
+        return 'ON_LEAVE'
+
     if record is not None:
         # Check explicit rejections
         check_in_appr = getattr(record, 'check_in_approval_status', None)
@@ -399,10 +433,6 @@ def get_employee_attendance_status(
         if late_mins > 0 or rec_status == 'LATE':
             return 'LATE'
 
-        # If they had half day leave and checked in
-        if approved_leave and approved_leave.leave_type == 'HALF_DAY':
-            return 'HALF DAY'
-
         if approved_wfh is not None:
             return 'WFH'
 
@@ -411,11 +441,6 @@ def get_employee_attendance_status(
     # No attendance record was punched:
     if approved_wfh is not None:
         return 'WFH'
-
-    if approved_leave is not None:
-        if approved_leave.leave_type == 'HALF_DAY':
-            return 'HALF DAY'
-        return 'ON_LEAVE'
 
     if holiday is not None:
         return 'HOLIDAY'

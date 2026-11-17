@@ -219,6 +219,10 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
   };
 
   const isPresentRecord = (r: any) => {
+    const rawStatus = String(r.calculated_status || r.status || '').toUpperCase();
+    if (rawStatus === 'ON_LEAVE' || rawStatus === 'ON LEAVE' || rawStatus === 'HALF_DAY' || rawStatus === 'HALF DAY' || rawStatus === 'HOLIDAY' || rawStatus === 'WEEKLY_OFF') {
+      return false;
+    }
     const checkInApproved = r.check_in_approval_status === 'APPROVED';
     const checkOutApproved = r.check_out_approval_status === 'APPROVED';
     const bothApproved = checkInApproved && checkOutApproved;
@@ -226,6 +230,10 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
   };
 
   const isLateRecord = (r: any) => {
+    const rawStatus = String(r.calculated_status || r.status || '').toUpperCase();
+    if (rawStatus === 'ON_LEAVE' || rawStatus === 'ON LEAVE' || rawStatus === 'HALF_DAY' || rawStatus === 'HALF DAY' || rawStatus === 'HOLIDAY' || rawStatus === 'WEEKLY_OFF') {
+      return false;
+    }
     const checkInApproved = r.check_in_approval_status === 'APPROVED';
     const checkOutApproved = r.check_out_approval_status === 'APPROVED';
     const bothApproved = checkInApproved && checkOutApproved;
@@ -233,6 +241,10 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
   };
 
   const isPendingRecord = (r: any) => {
+    const rawStatus = String(r.calculated_status || r.status || '').toUpperCase();
+    if (rawStatus === 'ON_LEAVE' || rawStatus === 'ON LEAVE' || rawStatus === 'HALF_DAY' || rawStatus === 'HALF DAY' || rawStatus === 'HOLIDAY' || rawStatus === 'WEEKLY_OFF') {
+      return false;
+    }
     if (r.check_in_approval_status === 'REJECTED' || r.check_out_approval_status === 'REJECTED') {
       return false;
     }
@@ -276,7 +288,21 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
     return r.status === statusFilter;
   });
 
-  const getStatusBadge = (status: string, approvalStatus?: string, checkInStatus?: string, checkOutStatus?: string) => {
+  const getStatusBadge = (status: string, approvalStatus?: string, checkInStatus?: string, checkOutStatus?: string, calculatedStatus?: string) => {
+    const effStatus = String(calculatedStatus || status || '').toUpperCase();
+    if (effStatus === 'ON_LEAVE' || effStatus === 'ON LEAVE') {
+      return { bg: '#E0F2FE', text: '#0284C7', label: 'On Leave' };
+    }
+    if (effStatus === 'HALF_DAY' || effStatus === 'HALF DAY') {
+      return { bg: '#FFF7ED', text: '#EA580C', label: 'Half Day' };
+    }
+    if (effStatus === 'HOLIDAY') {
+      return { bg: '#FEF3C7', text: '#D97706', label: 'Holiday' };
+    }
+    if (effStatus === 'WEEKLY_OFF') {
+      return { bg: '#F3F4F6', text: '#6B7280', label: 'Weekly Off' };
+    }
+
     if (checkInStatus === 'REJECTED' || checkOutStatus === 'REJECTED') {
       return { bg: '#FFEBEE', text: '#C62828', label: 'Rejected' };
     }
@@ -300,15 +326,6 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
     }
     if (status === 'ABSENT') {
       return { bg: '#FFEBEE', text: '#C62828', label: 'Absent' };
-    }
-    if (status === 'ON_LEAVE') {
-      return { bg: '#E0F2FE', text: '#0284C7', label: 'On Leave' };
-    }
-    if (status === 'HOLIDAY') {
-      return { bg: '#FEF3C7', text: '#D97706', label: 'Holiday' };
-    }
-    if (status === 'WEEKLY_OFF') {
-      return { bg: '#F3F4F6', text: '#6B7280', label: 'Weekly Off' };
     }
     if (status === 'PENDING' || approvalStatus === 'PENDING') {
       return { bg: '#FFFBEB', text: '#D97706', label: 'Pending' };
@@ -446,7 +463,8 @@ export const AdminAttendanceScreen = ({ navigation }: any) => {
               item.status,
               item.approval_status,
               item.check_in_approval_status,
-              item.check_out_approval_status
+              item.check_out_approval_status,
+              item.calculated_status
             );
             return (
               <View style={styles.card}>

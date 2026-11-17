@@ -976,11 +976,18 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         attendance = Attendance.objects.filter(employee=employee, date=today_date).first()
         
         if not attendance:
+            from attendance.services import get_employee_attendance_status
+            calc_st = get_employee_attendance_status(
+                record=None,
+                employee=employee,
+                target_date=today_date,
+            )
             resp = {
                 "date": str(today_date),
                 "check_in": None,
                 "check_out": None,
-                "status": "NOT_CHECKED_IN"
+                "status": calc_st if calc_st in ('ON_LEAVE', 'HALF DAY', 'WFH', 'HOLIDAY') else "NOT_CHECKED_IN",
+                "calculated_status": calc_st,
             }
             resp.update(meta_info)
             return Response(resp)

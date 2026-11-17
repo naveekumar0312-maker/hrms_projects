@@ -862,9 +862,21 @@ export default function DashboardScreen({ navigation }: any) {
   const hasCheckedOut = todayAttendance?.check_out_time != null;
   const isCompleted = hasCheckedOut || todayAttendance?.status === 'COMPLETED';
 
+  const effCalcStatus = String(todayAttendance?.calculated_status || todayAttendance?.status || '').toUpperCase();
   let displayStatus = 'Not Checked In';
-  if (hasCheckedIn && !isCompleted) displayStatus = 'Working';
-  else if (isCompleted) displayStatus = 'Completed';
+  if (effCalcStatus === 'ON_LEAVE' || effCalcStatus === 'ON LEAVE') {
+    displayStatus = 'On Leave';
+  } else if (effCalcStatus === 'HALF_DAY' || effCalcStatus === 'HALF DAY') {
+    displayStatus = 'Half Day';
+  } else if (effCalcStatus === 'WFH') {
+    displayStatus = 'Work From Home';
+  } else if (effCalcStatus === 'HOLIDAY') {
+    displayStatus = 'Holiday';
+  } else if (hasCheckedIn && !isCompleted) {
+    displayStatus = 'Working';
+  } else if (isCompleted) {
+    displayStatus = 'Completed';
+  }
 
   // Calculate Approval Badge
   const approvalStatus = todayAttendance?.approval_status || 'PENDING';
@@ -998,16 +1010,23 @@ export default function DashboardScreen({ navigation }: any) {
                   </Text>
                 )}
               </View>
-              {todayAttendance && todayAttendance.status === 'LATE' && (
+              {effCalcStatus === 'ON_LEAVE' || effCalcStatus === 'ON LEAVE' ? (
+                <View style={[styles.badge, { backgroundColor: '#F5F3FF', borderColor: '#DDD6FE', borderWidth: 1 }]}>
+                  <Text style={{ color: '#7C3AED', fontFamily: 'Comfortaa_700Bold', fontSize: 11 }}>On Leave</Text>
+                </View>
+              ) : effCalcStatus === 'HALF_DAY' || effCalcStatus === 'HALF DAY' ? (
+                <View style={[styles.badge, { backgroundColor: '#FFF7ED', borderColor: '#FFEDD5', borderWidth: 1 }]}>
+                  <Text style={{ color: '#EA580C', fontFamily: 'Comfortaa_700Bold', fontSize: 11 }}>Half Day</Text>
+                </View>
+              ) : todayAttendance && todayAttendance.status === 'LATE' ? (
                 <View style={[styles.badge, styles.badgeLate]}>
                   <Text style={styles.badgeTextLate}>Late</Text>
                 </View>
-              )}
-              {todayAttendance && (todayAttendance.status === 'ON_TIME' || todayAttendance.status === 'WORKING' || todayAttendance.status === 'COMPLETED') && (
+              ) : todayAttendance && (todayAttendance.status === 'ON_TIME' || todayAttendance.status === 'WORKING' || todayAttendance.status === 'COMPLETED') ? (
                 <View style={[styles.badge, styles.badgeSuccess]}>
                   <Text style={styles.badgeTextSuccess}>On Time</Text>
                 </View>
-              )}
+              ) : null}
             </View>
 
             {isCompleted ? (

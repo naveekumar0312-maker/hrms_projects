@@ -126,6 +126,20 @@ const ManagerTeamAttendance: React.FC = () => {
   });
 
   const getStatusBadge = (status: string, row?: TeamAttendanceRow) => {
+    const rawStatus = String(status || '').toUpperCase();
+    if (rawStatus === 'ON_LEAVE' || rawStatus === 'ON LEAVE') {
+      return <span className="rm-badge" style={{ background: '#f5f3ff', color: '#7c3aed' }}>On Leave</span>;
+    }
+    if (rawStatus === 'HALF_DAY' || rawStatus === 'HALF DAY') {
+      return <span className="rm-badge" style={{ background: '#f0fdf4', color: '#ea580c' }}>Half Day</span>;
+    }
+    if (rawStatus === 'HOLIDAY') {
+      return <span className="rm-badge" style={{ background: '#f0f9ff', color: '#0284c7' }}>Holiday</span>;
+    }
+    if (rawStatus === 'WEEKLY_OFF') {
+      return <span className="rm-badge" style={{ background: '#f3f4f6', color: '#4b5563' }}>Weekly Off</span>;
+    }
+
     // If row is passed, verify punch approvals
     if (row && (row.check_in || row.check_out || row.attendance_id)) {
       const isCheckInApproved = row.check_in_approval_status === 'APPROVED';
@@ -146,14 +160,6 @@ const ManagerTeamAttendance: React.FC = () => {
         return <span className="rm-badge" style={{ background: '#fef3c7', color: '#b45309' }}>Late</span>;
       case 'ABSENT':
         return <span className="rm-badge rm-badge-inactive">Absent</span>;
-      case 'ON_LEAVE':
-        return <span className="rm-badge" style={{ background: '#f5f3ff', color: '#7c3aed' }}>On Leave</span>;
-      case 'HOLIDAY':
-        return <span className="rm-badge" style={{ background: '#f0f9ff', color: '#0284c7' }}>Holiday</span>;
-      case 'WEEKLY_OFF':
-        return <span className="rm-badge" style={{ background: '#f3f4f6', color: '#4b5563' }}>Weekly Off</span>;
-      case 'HALF_DAY':
-        return <span className="rm-badge" style={{ background: '#f0fdf4', color: '#ea580c' }}>Half Day</span>;
       default:
         return <span className="rm-badge" style={{ background: '#f9fafb', color: '#6b7280' }}>{status}</span>;
     }
