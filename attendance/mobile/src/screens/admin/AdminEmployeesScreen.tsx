@@ -114,6 +114,7 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
   const initialForm = {
     // Basic
     full_name: '',
+    employee_id: '',
     date_of_birth: '',
     gender: 'MALE',
     profile_photo: '',
@@ -242,6 +243,7 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
     // Populate all fields
     setFormData({
       full_name: emp.full_name || '',
+      employee_id: emp.employee_id || '',
       date_of_birth: emp.date_of_birth || '',
       gender: emp.gender || 'MALE',
       profile_photo: emp.profile_photo || '',
@@ -352,6 +354,7 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
     setSubmitting(true);
     try {
       const payload: any = {
+        employee_id: formData.employee_id?.trim() ? formData.employee_id.trim() : undefined,
         full_name: formData.full_name.trim(),
         phone_number: formData.phone_number.trim(),
         email: formData.email.trim().toLowerCase(),
@@ -877,6 +880,17 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
                     value={formData.full_name}
                     onChangeText={(t) => setFormData({ ...formData, full_name: t })}
                   />
+
+                  <Text style={styles.formLabel}>Employee ID</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Leave blank for auto-generate (e.g. EMP-041)"
+                    value={formData.employee_id}
+                    onChangeText={(t) => setFormData({ ...formData, employee_id: t })}
+                  />
+                  <Text style={{ fontSize: 11, color: '#888888', marginTop: -4, marginBottom: 8 }}>
+                    Auto-generated based on Date of Joining if left blank
+                  </Text>
 
                   <DatePicker
                     label="Date of Birth"

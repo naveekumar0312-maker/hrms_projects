@@ -138,30 +138,9 @@ class ReportingManagerSerializer(serializers.ModelSerializer):
 
 
 def generate_manager_employee_id():
-    """Generates the next sequential EMP-YYYY-XXX employee ID."""
-    today = timezone.localdate()
-    year = today.year
-    prefix = f"EMP-{year}-"
-    
-    sequence, _ = EmployeeIdSequence.objects.get_or_create(
-        year=year, defaults={'last_number': 0}
-    )
-    sequence = EmployeeIdSequence.objects.select_for_update().get(pk=sequence.pk)
-
-    numbers = []
-    for existing_id in Employee.objects.filter(employee_id__startswith=prefix).values_list('employee_id', flat=True):
-        try:
-            numbers.append(int(existing_id.rsplit('-', 1)[1]))
-        except (ValueError, IndexError):
-            continue
-
-    next_number = max([sequence.last_number, *numbers], default=0) + 1
-    while Employee.objects.filter(employee_id=f"EMP-{year}-{next_number:03d}").exists():
-        next_number += 1
-
-    sequence.last_number = next_number
-    sequence.save(update_fields=['last_number'])
-    return f"EMP-{year}-{next_number:03d}"
+    """Generates the next sequential EMP-XXX employee ID."""
+    from .serializers import generate_next_employee_id
+    return generate_next_employee_id()
 
 
 class CreateReportingManagerSerializer(serializers.Serializer):

@@ -87,9 +87,14 @@ export async function cancelPersonalAlarmNotifications() {
 
   try {
     ShiftAlarm?.cancelAlarms();
+    ShiftAlarm?.stopAlarm();
   } catch (error) {
     // Expected in Expo Go without custom native module
   }
+
+  try {
+    await Notifications.dismissAllNotificationsAsync();
+  } catch {}
 }
 
 export default function PersonalAlarmManager() {
@@ -178,6 +183,21 @@ export default function PersonalAlarmManager() {
   }, []);
 
   const playAlarm = useCallback(async (timeStr?: string, titleStr?: string) => {
+    // Guard against stale triggers or triggers when alarm was not meant for current time
+    if (timeStr) {
+      const parsed = parseTime(timeStr);
+      if (parsed) {
+        const now = new Date();
+        const currentTotal = now.getHours() * 60 + now.getMinutes();
+        const alarmTotal = parsed.hours * 60 + parsed.minutes;
+        const diff = Math.abs(currentTotal - alarmTotal);
+        if (diff > 3 && diff < (1440 - 3)) {
+          console.log(`[PersonalAlarmManager] Ignored stale alarm trigger (${timeStr}) at current time ${now.toLocaleTimeString()}`);
+          return;
+        }
+      }
+    }
+
     setActiveAlarm(true);
     setActiveAlarmTime(timeStr || '');
     setActiveAlarmTitle(titleStr || 'Personal Alarm');
@@ -354,6 +374,11 @@ export default function PersonalAlarmManager() {
   }, [isAuthenticated, stopAlarm, checkExactAlarmPermission, ensureNotificationChannel]);
 
   useEffect(() => {
+    // Stop any stale background playback on mount
+    try {
+      ShiftAlarm?.stopAlarm();
+    } catch {}
+
     void syncPersonalAlarm();
 
     const receivedListener = Notifications.addNotificationReceivedListener(
