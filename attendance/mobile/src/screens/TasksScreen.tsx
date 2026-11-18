@@ -71,6 +71,7 @@ import { MobileEmployeeMultiSelect } from '../components/pickers/MobileEmployeeM
 import { DatePicker } from '../components/pickers/DatePicker';
 import { colors } from '../theme/colors';
 import { resolveMediaUrl } from '../utils/imageUtils';
+import { formatAttendanceTime } from '../utils/dateUtils';
 import { AppHeader } from '../components/AppHeader';
 import { AuthContext } from '../context/AuthContext';
 import { useAppMessage } from '../context/MessageContext';
@@ -1818,7 +1819,7 @@ export const TasksScreen: React.FC = () => {
                             <View style={styles.commentHeader}>
                               <Text style={styles.commentAuthor}>{comm.author_name || 'Member'}</Text>
                               <Text style={styles.commentTime}>
-                                {new Date(comm.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                {formatAttendanceTime(comm.created_at)}
                               </Text>
                             </View>
 
