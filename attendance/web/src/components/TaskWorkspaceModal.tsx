@@ -1122,7 +1122,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                               <span className="task-comment-role">{c.author_role}</span>
                             </div>
                             <span className="task-comment-time">
-                              {new Date(c.created_at).toLocaleDateString()} {new Date(c.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(c.created_at).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' })} {new Date(c.created_at).toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', hour12: true })}
                             </span>
                           </div>
 
