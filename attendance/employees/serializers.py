@@ -276,6 +276,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             if instance.branch
             else None
         )
+        response['branch_name'] = instance.branch.branch_name if instance.branch else None
+        response['office_address'] = instance.office_address or (instance.branch.office_address if instance.branch else None)
 
         response['shift'] = (
             {

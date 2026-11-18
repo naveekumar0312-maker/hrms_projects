@@ -64,8 +64,14 @@ const EmployeeDetailsPage = () => {
     return () => { active = false; };
   }, [id, employeeId]);
 
+  const isMarried = employee?.marital_status === 'MARRIED' || employee?.marital_status === 'Married' || String(employee?.marital_status || '').toLowerCase() === 'yes';
+
   const entries = Object.entries(employee ?? {}).filter(
-    ([key]) => !hiddenKey.test(key) && key !== 'id'
+    ([key]) => {
+      if (hiddenKey.test(key) || key === 'id') return false;
+      if (key === 'spouse_name' && !isMarried) return false;
+      return true;
+    }
   );
 
   return (

@@ -89,6 +89,11 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
     joining_date: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10),
     date_of_birth: '',
     gender: '',
+    marital_status: '',
+    blood_group: '',
+    father_name: '',
+    mother_name: '',
+    spouse_name: '',
     current_address: '',
     permanent_address: '',
     emergency_contact_name: '',
@@ -193,6 +198,11 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
             joining_date: emp.joining_date || '',
             date_of_birth: emp.date_of_birth || '',
             gender: emp.gender || '',
+            marital_status: emp.marital_status || '',
+            blood_group: emp.blood_group || '',
+            father_name: emp.father_name || '',
+            mother_name: emp.mother_name || '',
+            spouse_name: emp.spouse_name || '',
             current_address: emp.current_address || '',
             permanent_address: emp.permanent_address || '',
             emergency_contact_name: emp.emergency_contact_name || '',
@@ -254,6 +264,10 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
     setFormData(prev => {
       if (name === 'company') {
         return { ...prev, company: value, branch: '' };
+      }
+      if (name === 'marital_status') {
+        const isMarried = value === 'MARRIED' || value === 'Married';
+        return { ...prev, marital_status: value, spouse_name: isMarried ? prev.spouse_name : '' };
       }
       return { ...prev, [name]: value };
     });
@@ -417,6 +431,11 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
         joining_date: formData.joining_date || null,
         date_of_birth: formData.date_of_birth || null,
         gender: formData.gender || '',
+        marital_status: formData.marital_status || '',
+        blood_group: formData.blood_group || '',
+        father_name: formData.father_name || '',
+        mother_name: formData.mother_name || '',
+        spouse_name: (formData.marital_status === 'MARRIED' || formData.marital_status === 'Married') ? (formData.spouse_name || '') : '',
         current_address: formData.current_address,
         permanent_address: formData.permanent_address,
         emergency_contact_name: formData.emergency_contact_name,
@@ -755,7 +774,7 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
 
                 <section>
                   <h3 className="employee-section-title">
-                    3. Demographic Information
+                    3. Demographic & Family Information
                   </h3>
                   <div className="employee-grid-2">
                     <div className="form-group" style={{ marginBottom: 0 }}>
@@ -786,6 +805,82 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
                         <option value="OTHER">Other</option>
                       </select>
                     </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>Marital Status</label>
+                      <select
+                        name="marital_status"
+                        value={formData.marital_status}
+                        onChange={handleChange}
+                        className="form-control"
+                      >
+                        <option value="">Select Marital Status</option>
+                        <option value="SINGLE">Single / Unmarried</option>
+                        <option value="MARRIED">Married</option>
+                        <option value="DIVORCED">Divorced</option>
+                        <option value="WIDOWED">Widowed</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>Blood Group</label>
+                      <select
+                        name="blood_group"
+                        value={formData.blood_group}
+                        onChange={handleChange}
+                        className="form-control"
+                      >
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                      </select>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>Father's Name</label>
+                      <input
+                        type="text"
+                        name="father_name"
+                        value={formData.father_name}
+                        onChange={handleChange}
+                        className="form-control"
+                        placeholder="Enter father's name"
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>Mother's Name</label>
+                      <input
+                        type="text"
+                        name="mother_name"
+                        value={formData.mother_name}
+                        onChange={handleChange}
+                        className="form-control"
+                        placeholder="Enter mother's name"
+                      />
+                    </div>
+
+                    {(formData.marital_status === 'MARRIED' || formData.marital_status === 'Married') && (
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label" style={{ fontWeight: 600 }}>
+                          Spouse's Name <span style={{ color: 'var(--danger)' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="spouse_name"
+                          value={formData.spouse_name}
+                          onChange={handleChange}
+                          className="form-control"
+                          placeholder="Enter spouse name"
+                        />
+                      </div>
+                    )}
                   </div>
                 </section>
               </div>

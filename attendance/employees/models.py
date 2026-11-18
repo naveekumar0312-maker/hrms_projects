@@ -27,6 +27,11 @@ class Employee(models.Model):
     # Personal and contact information
     date_of_birth = models.DateField(null=True, blank=True)
     gender = models.CharField(max_length=20, blank=True, default='')
+    marital_status = models.CharField(max_length=20, blank=True, default='')
+    blood_group = models.CharField(max_length=10, blank=True, default='')
+    father_name = models.CharField(max_length=255, blank=True, default='')
+    mother_name = models.CharField(max_length=255, blank=True, default='')
+    spouse_name = models.CharField(max_length=255, blank=True, default='')
     current_address = models.TextField(blank=True, default='')
     permanent_address = models.TextField(blank=True, default='')
     emergency_contact_name = models.CharField(max_length=255, blank=True, default='')

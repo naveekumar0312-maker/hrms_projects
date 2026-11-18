@@ -147,8 +147,24 @@ export default function PersonalInfoScreen({ navigation }: any) {
             }
           />
           <DetailRow label="Date of Birth" value={employee?.date_of_birth} />
-          <DetailRow label="Marital Status" value={employee?.marital_status} />
+          <DetailRow
+            label="Marital Status"
+            value={
+              employee?.marital_status === 'MARRIED' ? 'Married' :
+              employee?.marital_status === 'SINGLE' ? 'Single / Unmarried' :
+              employee?.marital_status === 'DIVORCED' ? 'Divorced' :
+              employee?.marital_status === 'WIDOWED' ? 'Widowed' : (employee?.marital_status || '--')
+            }
+          />
           <DetailRow label="Blood Group" value={employee?.blood_group} />
+          <DetailRow label="Father's Name" value={employee?.father_name} />
+          <DetailRow label="Mother's Name" value={employee?.mother_name} />
+          {(employee?.marital_status === 'MARRIED' || employee?.marital_status === 'Married' || String(employee?.marital_status || '').toLowerCase() === 'yes') && (
+            <DetailRow
+              label="Spouse's Name"
+              value={employee?.spouse_name}
+            />
+          )}
           <DetailRow
             label="Emergency Contact"
             value={
@@ -156,12 +172,6 @@ export default function PersonalInfoScreen({ navigation }: any) {
               employee?.emergency_contact ||
               employee?.emergency_contact_name
             }
-          />
-          <DetailRow label="Father's Name" value={employee?.father_name} />
-          <DetailRow label="Mother's Name" value={employee?.mother_name} />
-          <DetailRow
-            label="Spouse's Name"
-            value={employee?.spouse_name}
             isLast
           />
         </ExpandableSection>
@@ -181,12 +191,16 @@ export default function PersonalInfoScreen({ navigation }: any) {
             }
           />
           <DetailRow
-            label="Branch"
+            label="Branch / Location"
             value={
               typeof employee?.branch === 'object'
-                ? employee?.branch?.name || employee?.branch?.branch_name
+                ? employee?.branch?.branch_name || employee?.branch?.name
                 : employee?.branch_name
             }
+          />
+          <DetailRow
+            label="Office Address"
+            value={employee?.office_address || employee?.branch?.office_address}
           />
           <DetailRow label="Department" value={employee?.department} />
           <DetailRow label="Designation" value={employee?.designation} />

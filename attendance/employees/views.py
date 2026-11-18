@@ -113,7 +113,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         elif request.method == 'PATCH':
             allowed_fields = [
                 'full_name', 'profile_photo', 'phone_number', 'email',
-                'date_of_birth', 'gender', 'current_address', 'permanent_address',
+                'date_of_birth', 'gender', 'marital_status', 'blood_group',
+                'father_name', 'mother_name', 'spouse_name',
+                'current_address', 'permanent_address',
                 'emergency_contact_name', 'emergency_contact_number'
             ]
             data = {k: v for k, v in request.data.items() if k in allowed_fields}

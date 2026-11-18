@@ -412,9 +412,50 @@ export default function ProfileScreen({ navigation }: any) {
               </Text>
             </View>
             <View style={styles.infoGroup}>
-              <Text style={styles.infoLabel}>Branch</Text>
+              <Text style={styles.infoLabel}>Branch / Office Location</Text>
               <Text style={styles.infoValue}>
                 {employee?.branch?.branch_name || '--'}
+              </Text>
+            </View>
+            <View style={styles.infoGroup}>
+              <Text style={styles.infoLabel}>Office Address</Text>
+              <Text style={styles.infoValue}>
+                {employee?.office_address || employee?.branch?.office_address || '--'}
+              </Text>
+            </View>
+            <View style={styles.infoGroup}>
+              <Text style={styles.infoLabel}>Marital Status</Text>
+              <Text style={styles.infoValue}>
+                {employee?.marital_status === 'MARRIED' ? 'Married' :
+                 employee?.marital_status === 'SINGLE' ? 'Single / Unmarried' :
+                 employee?.marital_status === 'DIVORCED' ? 'Divorced' :
+                 employee?.marital_status === 'WIDOWED' ? 'Widowed' : (employee?.marital_status || '--')}
+              </Text>
+            </View>
+            {(employee?.marital_status === 'MARRIED' || employee?.marital_status === 'Married' || String(employee?.marital_status || '').toLowerCase() === 'yes') && (
+              <View style={styles.infoGroup}>
+                <Text style={styles.infoLabel}>Spouse's Name</Text>
+                <Text style={styles.infoValue}>
+                  {employee?.spouse_name || '--'}
+                </Text>
+              </View>
+            )}
+            <View style={styles.infoGroup}>
+              <Text style={styles.infoLabel}>Blood Group</Text>
+              <Text style={styles.infoValue}>
+                {employee?.blood_group || '--'}
+              </Text>
+            </View>
+            <View style={styles.infoGroup}>
+              <Text style={styles.infoLabel}>Father's Name</Text>
+              <Text style={styles.infoValue}>
+                {employee?.father_name || '--'}
+              </Text>
+            </View>
+            <View style={styles.infoGroup}>
+              <Text style={styles.infoLabel}>Mother's Name</Text>
+              <Text style={styles.infoValue}>
+                {employee?.mother_name || '--'}
               </Text>
             </View>
             <View style={styles.infoGroup}>

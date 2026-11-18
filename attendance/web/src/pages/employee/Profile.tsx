@@ -41,6 +41,11 @@ const EmployeeProfile = () => {
     email: '',
     date_of_birth: '',
     gender: '',
+    marital_status: '',
+    blood_group: '',
+    father_name: '',
+    mother_name: '',
+    spouse_name: '',
     current_address: '',
     permanent_address: '',
     emergency_contact_name: '',
@@ -56,6 +61,11 @@ const EmployeeProfile = () => {
         email: employee.email || '',
         date_of_birth: employee.date_of_birth || '',
         gender: employee.gender || '',
+        marital_status: employee.marital_status || '',
+        blood_group: employee.blood_group || '',
+        father_name: employee.father_name || '',
+        mother_name: employee.mother_name || '',
+        spouse_name: employee.spouse_name || '',
         current_address: employee.current_address || '',
         permanent_address: employee.permanent_address || '',
         emergency_contact_name: employee.emergency_contact_name || '',
@@ -78,7 +88,13 @@ const EmployeeProfile = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      if (name === 'marital_status') {
+        const isMarried = value === 'MARRIED' || value === 'Married';
+        return { ...prev, marital_status: value, spouse_name: isMarried ? prev.spouse_name : '' };
+      }
+      return { ...prev, [name]: value };
+    });
   };
 
   // Upload Profile Photo
@@ -141,6 +157,11 @@ const EmployeeProfile = () => {
         email: formData.email.trim(),
         date_of_birth: formData.date_of_birth,
         gender: formData.gender,
+        marital_status: formData.marital_status,
+        blood_group: formData.blood_group,
+        father_name: formData.father_name.trim(),
+        mother_name: formData.mother_name.trim(),
+        spouse_name: (formData.marital_status === 'MARRIED' || formData.marital_status === 'Married') ? formData.spouse_name.trim() : '',
         current_address: formData.current_address.trim(),
         permanent_address: formData.permanent_address.trim(),
         emergency_contact_name: formData.emergency_contact_name.trim(),
@@ -181,6 +202,11 @@ const EmployeeProfile = () => {
         email: employee.email || '',
         date_of_birth: employee.date_of_birth || '',
         gender: employee.gender || '',
+        marital_status: employee.marital_status || '',
+        blood_group: employee.blood_group || '',
+        father_name: employee.father_name || '',
+        mother_name: employee.mother_name || '',
+        spouse_name: employee.spouse_name || '',
         current_address: employee.current_address || '',
         permanent_address: employee.permanent_address || '',
         emergency_contact_name: employee.emergency_contact_name || '',
@@ -569,6 +595,118 @@ const EmployeeProfile = () => {
               </div>
             </div>
 
+            {/* Marital Status */}
+            <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  color: 'var(--text-muted)',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                <User size={18} />{' '}
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Marital Status
+                </span>
+              </div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.05rem' }}>
+                {employee.marital_status ? (
+                  employee.marital_status === 'MARRIED' ? 'Married' :
+                  employee.marital_status === 'SINGLE' ? 'Single / Unmarried' :
+                  employee.marital_status === 'DIVORCED' ? 'Divorced' :
+                  employee.marital_status === 'WIDOWED' ? 'Widowed' : employee.marital_status
+                ) : 'Not specified'}
+              </div>
+            </div>
+
+            {/* Blood Group */}
+            <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  color: 'var(--text-muted)',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                <Shield size={18} />{' '}
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Blood Group
+                </span>
+              </div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.05rem' }}>
+                {employee.blood_group || 'Not specified'}
+              </div>
+            </div>
+
+            {/* Father's Name */}
+            <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  color: 'var(--text-muted)',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                <User size={18} />{' '}
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Father's Name
+                </span>
+              </div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.05rem' }}>
+                {employee.father_name || 'Not provided'}
+              </div>
+            </div>
+
+            {/* Mother's Name */}
+            <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  color: 'var(--text-muted)',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                <User size={18} />{' '}
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Mother's Name
+                </span>
+              </div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.05rem' }}>
+                {employee.mother_name || 'Not provided'}
+              </div>
+            </div>
+
+            {/* Spouse's Name (ONLY IF MARRIED) */}
+            {(employee.marital_status === 'MARRIED' || employee.marital_status === 'Married' || String(employee.marital_status || '').toLowerCase() === 'yes') && (
+              <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--border)' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    color: 'var(--text-muted)',
+                    marginBottom: '0.4rem',
+                  }}
+                >
+                  <User size={18} />{' '}
+                  <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Spouse's Name
+                  </span>
+                </div>
+                <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.05rem' }}>
+                  {employee.spouse_name || 'Not provided'}
+                </div>
+              </div>
+            )}
+
             {/* Department */}
             <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--border)' }}>
               <div
@@ -608,6 +746,30 @@ const EmployeeProfile = () => {
               </div>
               <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.05rem' }}>
                 {employee.branch?.name || employee.branch?.branch_name || 'Not available'}
+              </div>
+            </div>
+
+            {/* Office Address & Location */}
+            <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  color: 'var(--text-muted)',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                <Building2 size={18} />{' '}
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Office Location & Address
+                </span>
+              </div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1.05rem' }}>
+                <div><strong>Location:</strong> {employee.branch?.branch_name || employee.branch_name || 'Main Office'}</div>
+                <div style={{ marginTop: '4px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                  {employee.office_address || employee.branch?.office_address || 'Not specified'}
+                </div>
               </div>
             </div>
 
@@ -951,6 +1113,125 @@ const EmployeeProfile = () => {
                   <option value="OTHER">Other</option>
                 </select>
               </div>
+
+              {/* Marital Status */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                  Marital Status
+                </label>
+                <select
+                  name="marital_status"
+                  value={formData.marital_status}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <option value="">Select Marital Status</option>
+                  <option value="SINGLE">Single / Unmarried</option>
+                  <option value="MARRIED">Married</option>
+                  <option value="DIVORCED">Divorced</option>
+                  <option value="WIDOWED">Widowed</option>
+                </select>
+              </div>
+
+              {/* Blood Group */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                  Blood Group
+                </label>
+                <select
+                  name="blood_group"
+                  value={formData.blood_group}
+                  onChange={handleInputChange}
+                  className="form-control"
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                  }}
+                >
+                  <option value="">Select Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                </select>
+              </div>
+
+              {/* Father's Name */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                  Father's Name
+                </label>
+                <input
+                  type="text"
+                  name="father_name"
+                  value={formData.father_name}
+                  onChange={handleInputChange}
+                  placeholder="Father's full name"
+                  className="form-control"
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                  }}
+                />
+              </div>
+
+              {/* Mother's Name */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                  Mother's Name
+                </label>
+                <input
+                  type="text"
+                  name="mother_name"
+                  value={formData.mother_name}
+                  onChange={handleInputChange}
+                  placeholder="Mother's full name"
+                  className="form-control"
+                  style={{
+                    width: '100%',
+                    padding: '0.65rem 0.85rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: '1px solid var(--border)',
+                  }}
+                />
+              </div>
+
+              {/* Spouse's Name (shown only if Married) */}
+              {(formData.marital_status === 'MARRIED' || formData.marital_status === 'Married') && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                    Spouse's Name *
+                  </label>
+                  <input
+                    type="text"
+                    name="spouse_name"
+                    value={formData.spouse_name}
+                    onChange={handleInputChange}
+                    placeholder="Husband / Wife name"
+                    className="form-control"
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem 0.85rem',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border)',
+                    }}
+                  />
+                </div>
+              )}
 
               {/* Emergency Contact Name */}
               <div>

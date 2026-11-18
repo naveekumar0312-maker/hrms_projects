@@ -118,6 +118,11 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
     employee_id: '',
     date_of_birth: '',
     gender: 'MALE',
+    marital_status: '',
+    blood_group: '',
+    father_name: '',
+    mother_name: '',
+    spouse_name: '',
     profile_photo: '',
 
     // Contact
@@ -272,6 +277,11 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
       employee_id: emp.employee_id || '',
       date_of_birth: emp.date_of_birth || '',
       gender: emp.gender || 'MALE',
+      marital_status: emp.marital_status || '',
+      blood_group: emp.blood_group || '',
+      father_name: emp.father_name || '',
+      mother_name: emp.mother_name || '',
+      spouse_name: emp.spouse_name || '',
       profile_photo: emp.profile_photo || '',
 
       phone_number: emp.phone_number || emp.user?.phone_number || '',
@@ -386,6 +396,11 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
         email: formData.email.trim().toLowerCase(),
         gender: formData.gender,
         date_of_birth: formData.date_of_birth || null,
+        marital_status: formData.marital_status || '',
+        blood_group: formData.blood_group || '',
+        father_name: formData.father_name.trim(),
+        mother_name: formData.mother_name.trim(),
+        spouse_name: (formData.marital_status === 'MARRIED' || formData.marital_status === 'Married') ? formData.spouse_name.trim() : '',
 
         current_address: formData.current_address,
         permanent_address: formData.permanent_address,
@@ -684,6 +699,33 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
                     <Text style={styles.detailLabel}>Gender</Text>
                     <Text style={styles.detailValue}>{selectedEmployee.gender || 'Not Specified'}</Text>
                   </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Marital Status</Text>
+                    <Text style={styles.detailValue}>
+                      {selectedEmployee.marital_status === 'MARRIED' ? 'Married' :
+                       selectedEmployee.marital_status === 'SINGLE' ? 'Single / Unmarried' :
+                       selectedEmployee.marital_status === 'DIVORCED' ? 'Divorced' :
+                       selectedEmployee.marital_status === 'WIDOWED' ? 'Widowed' : (selectedEmployee.marital_status || 'Not Specified')}
+                    </Text>
+                  </View>
+                  {(selectedEmployee.marital_status === 'MARRIED' || selectedEmployee.marital_status === 'Married' || String(selectedEmployee.marital_status || '').toLowerCase() === 'yes') && (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Spouse's Name</Text>
+                      <Text style={styles.detailValue}>{selectedEmployee.spouse_name || 'Not Provided'}</Text>
+                    </View>
+                  )}
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Blood Group</Text>
+                    <Text style={styles.detailValue}>{selectedEmployee.blood_group || 'Not Specified'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Father's Name</Text>
+                    <Text style={styles.detailValue}>{selectedEmployee.father_name || 'Not Provided'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Mother's Name</Text>
+                    <Text style={styles.detailValue}>{selectedEmployee.mother_name || 'Not Provided'}</Text>
+                  </View>
                 </View>
 
                 {/* Section 2: Contact & Emergency */}
@@ -724,7 +766,11 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
                   </View>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Branch</Text>
-                    <Text style={styles.detailValue}>{selectedEmployee.branch_name || selectedEmployee.branch?.name || 'N/A'}</Text>
+                    <Text style={styles.detailValue}>{selectedEmployee.branch_name || selectedEmployee.branch?.name || selectedEmployee.branch?.branch_name || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Office Address</Text>
+                    <Text style={styles.detailValue}>{selectedEmployee.office_address || selectedEmployee.branch?.office_address || 'Not Provided'}</Text>
                   </View>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Department</Text>
@@ -942,6 +988,72 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
                     ]}
                     value={formData.gender}
                     onChange={(v) => setFormData({ ...formData, gender: String(v) })}
+                  />
+
+                  <DropdownPicker
+                    label="Marital Status"
+                    options={[
+                      { label: 'Single / Unmarried', value: 'SINGLE' },
+                      { label: 'Married', value: 'MARRIED' },
+                      { label: 'Divorced', value: 'DIVORCED' },
+                      { label: 'Widowed', value: 'WIDOWED' },
+                    ]}
+                    value={formData.marital_status}
+                    onChange={(v) => {
+                      const val = String(v);
+                      const isMarried = val === 'MARRIED' || val === 'Married';
+                      setFormData({
+                        ...formData,
+                        marital_status: val,
+                        spouse_name: isMarried ? formData.spouse_name : '',
+                      });
+                    }}
+                    placeholder="Select Marital Status"
+                  />
+
+                  {(formData.marital_status === 'MARRIED' || formData.marital_status === 'Married') && (
+                    <>
+                      <Text style={styles.formLabel}>Spouse's Name *</Text>
+                      <TextInput
+                        style={styles.formInput}
+                        placeholder="Enter spouse's full name"
+                        value={formData.spouse_name}
+                        onChangeText={(t) => setFormData({ ...formData, spouse_name: t })}
+                      />
+                    </>
+                  )}
+
+                  <DropdownPicker
+                    label="Blood Group"
+                    options={[
+                      { label: 'A+', value: 'A+' },
+                      { label: 'A-', value: 'A-' },
+                      { label: 'B+', value: 'B+' },
+                      { label: 'B-', value: 'B-' },
+                      { label: 'O+', value: 'O+' },
+                      { label: 'O-', value: 'O-' },
+                      { label: 'AB+', value: 'AB+' },
+                      { label: 'AB-', value: 'AB-' },
+                    ]}
+                    value={formData.blood_group}
+                    onChange={(v) => setFormData({ ...formData, blood_group: String(v) })}
+                    placeholder="Select Blood Group"
+                  />
+
+                  <Text style={styles.formLabel}>Father's Name</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter father's name"
+                    value={formData.father_name}
+                    onChangeText={(t) => setFormData({ ...formData, father_name: t })}
+                  />
+
+                  <Text style={styles.formLabel}>Mother's Name</Text>
+                  <TextInput
+                    style={styles.formInput}
+                    placeholder="Enter mother's name"
+                    value={formData.mother_name}
+                    onChangeText={(t) => setFormData({ ...formData, mother_name: t })}
                   />
 
                   <TouchableOpacity style={styles.nextStepBtn} onPress={() => setActiveTab('contact')}>
