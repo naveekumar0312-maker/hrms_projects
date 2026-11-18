@@ -1,14 +1,15 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ArrowLeft, ChevronDown, ChevronUp, Users, Shield } from 'lucide-react-native';
 import { AuthContext } from '../context/AuthContext';
 import { COLORS } from '../constants/theme';
 
@@ -72,12 +73,17 @@ const ExpandableSection: React.FC<SectionProps> = ({
 
 export default function PersonalInfoScreen({ navigation }: any) {
   const insets = useSafeAreaInsets();
-  const { employee } = useContext(AuthContext);
+  const { employee, refreshEmployee } = useContext(AuthContext);
+
+  useEffect(() => {
+    refreshEmployee?.();
+  }, []);
 
   // Expandable sections states (Profile and Personal open by default)
   const [profileExpanded, setProfileExpanded] = useState(true);
   const [personalExpanded, setPersonalExpanded] = useState(true);
   const [employmentExpanded, setEmploymentExpanded] = useState(true);
+  const [teamExpanded, setTeamExpanded] = useState(true);
 
   return (
     <View style={styles.screen}>
@@ -205,9 +211,54 @@ export default function PersonalInfoScreen({ navigation }: any) {
           <DetailRow
             label="Office Address"
             value={employee?.office_address}
+          />
+          <DetailRow
+            label="Team Leader"
+            value={
+              employee?.team_leader_details
+                ? `${employee.team_leader_details.full_name} (${employee.team_leader_details.employee_id})`
+                : 'Not Assigned'
+            }
             isLast
           />
         </ExpandableSection>
+
+        {/* 4. My Team Members (for Team Leaders) */}
+        {employee?.assigned_team_members && employee.assigned_team_members.length > 0 && (
+          <ExpandableSection
+            title={`My Team Members (${employee.assigned_team_members.length})`}
+            isExpanded={teamExpanded}
+            onToggle={() => setTeamExpanded(!teamExpanded)}
+          >
+            {employee.assigned_team_members.map((member: any, index: number) => {
+              const isLast = index === employee.assigned_team_members.length - 1;
+              return (
+                <View
+                  key={member.id}
+                  style={[
+                    styles.memberCardRow,
+                    isLast && { borderBottomWidth: 0, paddingBottom: 0 },
+                  ]}
+                >
+                  <View style={styles.memberAvatarCircle}>
+                    <Text style={styles.memberAvatarInitial}>
+                      {(member.full_name || 'M').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1, marginLeft: 10 }}>
+                    <Text style={styles.memberNameText}>{member.full_name}</Text>
+                    <Text style={styles.memberMetaText}>
+                      #{member.employee_id} • {member.designation || member.department || 'Staff'}
+                    </Text>
+                    {member.phone_number && (
+                      <Text style={styles.memberPhoneText}>📞 {member.phone_number}</Text>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </ExpandableSection>
+        )}
       </ScrollView>
     </View>
   );
@@ -318,5 +369,43 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'right',
     flex: 1.2,
+  },
+  memberCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+  memberAvatarCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  memberAvatarInitial: {
+    color: '#2563EB',
+    fontSize: 15,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  memberNameText: {
+    fontSize: 14,
+    color: '#0F172A',
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  memberMetaText: {
+    fontSize: 12,
+    color: '#64748B',
+    fontFamily: 'Comfortaa_500Medium',
+    marginTop: 2,
+  },
+  memberPhoneText: {
+    fontSize: 11,
+    color: '#16A34A',
+    fontFamily: 'Comfortaa_600SemiBold',
+    marginTop: 2,
   },
 });

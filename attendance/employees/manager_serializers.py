@@ -67,17 +67,28 @@ class AssignedEmployeeBriefSerializer(serializers.ModelSerializer):
 
     def get_team_leader(self, obj):
         if obj.team_leader:
+            tl = obj.team_leader
+            request = self.context.get('request')
+            photo_url = None
+            if tl.profile_photo:
+                try:
+                    photo_url = request.build_absolute_uri(tl.profile_photo.url) if request else tl.profile_photo.url
+                except Exception:
+                    photo_url = tl.profile_photo.url
             return {
-                'id': obj.team_leader.id,
-                'employee_id': obj.team_leader.employee_id,
-                'full_name': obj.team_leader.full_name,
-                'designation': obj.team_leader.designation,
-                'department': obj.team_leader.department,
+                'id': tl.id,
+                'employee_id': tl.employee_id,
+                'full_name': tl.full_name,
+                'designation': tl.designation,
+                'department': tl.department,
+                'phone_number': tl.user.phone_number if tl.user else None,
+                'email': tl.email,
+                'profile_photo': photo_url,
             }
         return None
 
     def get_assigned_team_members(self, obj):
-        members = obj.team_members.filter(status=True).select_related('branch')
+        members = obj.team_members.filter(status=True).select_related('branch', 'user')
         if not members.exists():
             return []
         request = self.context.get('request')
@@ -95,6 +106,8 @@ class AssignedEmployeeBriefSerializer(serializers.ModelSerializer):
                 'full_name': m.full_name,
                 'designation': m.designation,
                 'department': m.department,
+                'phone_number': m.user.phone_number if m.user else None,
+                'email': m.email,
                 'profile_photo': photo_url,
             })
         return res

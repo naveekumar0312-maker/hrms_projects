@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { Camera, CameraView, CameraType } from 'expo-camera';
 import { AuthContext, api } from '../context/AuthContext';
-import { MapPin, Target, Clock, Calendar, BarChart, User, LogIn, LogOut, ChevronRight, CheckCircle, XCircle, House, Bell, SwitchCamera, RefreshCw, CalendarDays, SlidersHorizontal, Search, FileText, Palmtree, AlertCircle, Building2 } from 'lucide-react-native';
+import { MapPin, Target, Clock, Calendar, BarChart, User, LogIn, LogOut, ChevronRight, CheckCircle, XCircle, House, Bell, SwitchCamera, RefreshCw, CalendarDays, SlidersHorizontal, Search, FileText, Palmtree, AlertCircle, Building2, Shield, Users } from 'lucide-react-native';
 import { resolveMediaUrl } from '../utils/imageUtils';
 import { AppSearchBar } from '../components/AppSearchBar';
 import { CategoryBubblesRow } from '../components/CategoryBubblesRow';
@@ -31,7 +31,7 @@ const { width } = Dimensions.get('window');
 
 
 export default function DashboardScreen({ navigation }: any) {
-  const { employee, user, logout } = useContext(AuthContext);
+  const { employee, user, logout, refreshEmployee } = useContext(AuthContext);
   const insets = useSafeAreaInsets();
   const { showSuccess, showError, showConfirm } = useAppMessage();
   
@@ -419,6 +419,7 @@ export default function DashboardScreen({ navigation }: any) {
 
   useFocusEffect(
     useCallback(() => {
+      refreshEmployee?.();
       updateGreeting();
       fetchData();
       verifyLocation();
@@ -946,6 +947,22 @@ export default function DashboardScreen({ navigation }: any) {
               <Text style={styles.greeting}>
                 {getGreeting()} • {employee?.designation || employee?.branch?.branch_name || 'Staff'}
               </Text>
+              {employee?.team_leader_details && (
+                <View style={styles.tlHeaderBadge}>
+                  <Shield size={11} color="#16A34A" />
+                  <Text style={styles.tlHeaderBadgeText} numberOfLines={1}>
+                    TL: {employee.team_leader_details.full_name} ({employee.team_leader_details.employee_id})
+                  </Text>
+                </View>
+              )}
+              {employee?.assigned_team_members && employee.assigned_team_members.length > 0 && (
+                <View style={[styles.tlHeaderBadge, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
+                  <Users size={11} color="#2563EB" />
+                  <Text style={[styles.tlHeaderBadgeText, { color: '#1E40AF' }]} numberOfLines={1}>
+                    Team Leader • {employee.assigned_team_members.length} Members
+                  </Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.headerRightActions}>
@@ -1130,6 +1147,44 @@ export default function DashboardScreen({ navigation }: any) {
             </View>
           </View>
         )}
+        {/* TEAM LEADER'S ASSIGNED MEMBERS PANEL */}
+        {employee?.assigned_team_members && employee.assigned_team_members.length > 0 && (
+          <View style={styles.tlDashContainer}>
+            <View style={styles.tlDashHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Users size={16} color="#059669" />
+                <Text style={styles.tlDashTitle}>
+                  My Team Members ({employee.assigned_team_members.length})
+                </Text>
+              </View>
+              <Text style={styles.tlDashBadge}>Team Leader</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.tlDashScroll}
+            >
+              {employee.assigned_team_members.map((tm: any) => (
+                <View key={tm.id} style={styles.tlMemberCard}>
+                  <View style={styles.tlMemberAvatar}>
+                    <Text style={styles.tlMemberAvatarText}>
+                      {(tm.full_name || 'M').charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={{ marginLeft: 8, flex: 1 }}>
+                    <Text style={styles.tlMemberName} numberOfLines={1}>
+                      {tm.full_name}
+                    </Text>
+                    <Text style={styles.tlMemberRole} numberOfLines={1}>
+                      #{tm.employee_id} • {tm.designation || tm.department || 'Member'}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         {/* PERSONAL DAILY ALARM CARD */}
         <PersonalAlarmCard />
 
@@ -1662,6 +1717,102 @@ const styles = StyleSheet.create({
     color: COLORS.secondary,
     fontSize: 12,
     marginTop: 3,
+  },
+  tlHeaderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    marginTop: 5,
+    alignSelf: 'flex-start',
+    gap: 4,
+  },
+  tlHeaderBadgeText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#166534',
+  },
+  tlDashContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  tlDashHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    marginBottom: 10,
+  },
+  tlDashTitle: {
+    fontSize: 13,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#0F172A',
+    marginLeft: 6,
+  },
+  tlDashBadge: {
+    fontSize: 10,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#059669',
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+  },
+  tlDashScroll: {
+    paddingHorizontal: 14,
+    gap: 10,
+  },
+  tlMemberCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    minWidth: 160,
+    maxWidth: 200,
+  },
+  tlMemberAvatar: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tlMemberAvatarText: {
+    fontSize: 13,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#2563EB',
+  },
+  tlMemberName: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#1E293B',
+  },
+  tlMemberRole: {
+    fontSize: 10,
+    fontFamily: 'Comfortaa_500Medium',
+    color: '#64748B',
+    marginTop: 1,
   },
   searchBarWrapper: {
     marginTop: 2,

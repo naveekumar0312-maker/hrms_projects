@@ -929,7 +929,15 @@ class TeamLeaderMyTeamView(views.APIView):
     def get(self, request):
         user = request.user
         emp = getattr(user, 'employee_profile', None)
-        if not emp or user.role != 'TEAM_LEADER':
+        is_tl = bool(
+            emp and (
+                user.role == 'TEAM_LEADER' or
+                emp.team_members.exists() or
+                'team leader' in (emp.designation or '').lower() or
+                'lead' in (emp.designation or '').lower()
+            )
+        )
+        if not is_tl:
             raise PermissionDenied("Access allowed only for Team Leaders.")
 
         search = request.query_params.get('search', '').strip()

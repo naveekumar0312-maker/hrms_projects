@@ -17,6 +17,7 @@ import {
   Calendar,
   Shield,
   Upload,
+  Users,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
@@ -454,7 +455,8 @@ const EmployeeProfile = () => {
 
         {/* Content Body */}
         {!isEditing ? (
-          /* View Mode */
+          <>
+          {/* View Mode */}
           <div
             className="stat-card-grid"
             style={{
@@ -698,7 +700,127 @@ const EmployeeProfile = () => {
                   : 'Not provided'}
               </div>
             </div>
+
+            {/* Team Leader */}
+            <div style={{ padding: '1.5rem 2.5rem', borderBottom: '1px solid var(--border)', background: employee.team_leader_details ? '#f0fdf4' : 'transparent' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                  color: employee.team_leader_details ? '#16a34a' : 'var(--text-muted)',
+                  marginBottom: '0.4rem',
+                }}
+              >
+                <Shield size={18} />{' '}
+                <span style={{ fontWeight: 600, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Team Leader
+                </span>
+              </div>
+              <div style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '1rem' }}>
+                {employee.team_leader_details ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{employee.team_leader_details.full_name}</span>
+                      <code style={{ background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '4px', fontSize: '0.82rem' }}>
+                        {employee.team_leader_details.employee_id}
+                      </code>
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#64748b', fontWeight: 500, marginTop: '3px' }}>
+                      {employee.team_leader_details.designation || employee.team_leader_details.department || 'Team Leader'}
+                      {employee.team_leader_details.phone_number ? ` • 📞 ${employee.team_leader_details.phone_number}` : ''}
+                    </div>
+                  </div>
+                ) : (
+                  <span style={{ color: '#94a3b8', fontStyle: 'italic', fontWeight: 400 }}>Not Assigned</span>
+                )}
+              </div>
+            </div>
           </div>
+
+          {/* ASSIGNED TEAM MEMBERS SECTION (FOR TEAM LEADERS) */}
+          {employee.assigned_team_members && employee.assigned_team_members.length > 0 && (
+            <div style={{ padding: '2rem 2.5rem', borderTop: '2px solid #e2e8f0', background: '#fafbfc' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Users size={20} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      My Assigned Team Members ({employee.assigned_team_members.length})
+                    </h4>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                      Employees working directly under your leadership
+                    </p>
+                  </div>
+                </div>
+                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#059669', background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '4px 12px', borderRadius: '12px' }}>
+                  Team Leader
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+                {employee.assigned_team_members.map((tm: any) => (
+                  <div
+                    key={tm.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.85rem',
+                      padding: '0.85rem 1rem',
+                      borderRadius: '12px',
+                      background: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+                    }}
+                  >
+                    {tm.profile_photo ? (
+                      <img
+                        src={tm.profile_photo}
+                        alt={tm.full_name}
+                        style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 42,
+                          height: 42,
+                          borderRadius: '50%',
+                          background: '#eff6ff',
+                          color: '#2563eb',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: '0.95rem',
+                        }}
+                      >
+                        {tm.full_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.92rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {tm.full_name}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+                        <code style={{ background: '#f1f5f9', color: '#0f172a', padding: '1px 5px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600 }}>
+                          {tm.employee_id}
+                        </code>{' '}
+                        • {tm.designation || tm.department || 'Staff'}
+                      </div>
+                      {tm.phone_number && (
+                        <div style={{ fontSize: '0.74rem', color: '#059669', marginTop: '3px' }}>
+                          📞 {tm.phone_number}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          </>
         ) : (
           /* Edit Form Mode */
           <form onSubmit={handleSubmit} style={{ padding: '2rem 2.5rem' }}>

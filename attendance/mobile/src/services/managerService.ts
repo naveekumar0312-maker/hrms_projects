@@ -145,6 +145,12 @@ export const getTeamLeaderAssignedMembers = async (leaderId: number) => {
   return response.data;
 };
 
+export const getMyTeamLeaderMembers = async (search: string = '') => {
+  const params = search ? { search } : {};
+  const response = await api.get('/employees/team-leader/team/', { params });
+  return Array.isArray(response.data) ? response.data : [];
+};
+
 export const getManagerProfile = async () => {
   const response = await api.get('/employees/manager/profile/');
   return response.data;

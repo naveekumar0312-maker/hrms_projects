@@ -175,6 +175,15 @@ const TeamLeaderTabs = () => {
         }} 
       />
       <Tab.Screen 
+        name="TeamLeaderTeamTab" 
+        component={ManagerTeamScreen} 
+        options={{ 
+          title: 'My Team',
+          tabBarLabel: 'My Team',
+          tabBarIcon: ({ color }) => <Users color={color} size={21} strokeWidth={2} /> 
+        }} 
+      />
+      <Tab.Screen 
         name="TeamLeaderHistoryTab" 
         component={HistoryScreen} 
         options={{ 
@@ -337,8 +346,12 @@ const HRTabs = () => {
 };
 
 const RoleBasedTabs = () => {
-  const { user } = useContext(AuthContext);
+  const { user, employee } = useContext(AuthContext);
   const role = user?.role;
+  const isTeamLeader =
+    role === 'TEAM_LEADER' ||
+    Boolean(employee?.assigned_team_members && employee.assigned_team_members.length > 0) ||
+    Boolean(employee?.designation && employee.designation.toLowerCase().includes('team leader'));
 
   if (role === 'SUPER_ADMIN' || role === 'ADMIN') {
     return <SuperAdminTabs />;
@@ -349,7 +362,7 @@ const RoleBasedTabs = () => {
   if (role === 'REPORTING_MANAGER') {
     return <ManagerTabs />;
   }
-  if (role === 'TEAM_LEADER') {
+  if (isTeamLeader) {
     return <TeamLeaderTabs />;
   }
   return <EmployeeTabs />;

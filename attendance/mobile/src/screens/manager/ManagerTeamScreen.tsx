@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   View,
   Text,
@@ -35,14 +35,20 @@ import {
   promoteEmployeeToTeamLeader,
   assignTeamToLeader,
   getTeamLeaderAssignedMembers,
+  getMyTeamLeaderMembers,
   ManagerTeamEmployee,
 } from '../../services/managerService';
+import { AuthContext } from '../../context/AuthContext';
 import { resolveMediaUrl } from '../../utils/imageUtils';
 import { COLORS } from '../../constants/theme';
 import { formatAttendanceTime } from '../../utils/dateUtils';
 
 export default function ManagerTeamScreen() {
   const insets = useSafeAreaInsets();
+  const { user, employee } = useContext(AuthContext);
+  const isManager = user?.role === 'REPORTING_MANAGER' || user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN';
+  const isTeamLeader = user?.role === 'TEAM_LEADER' || (employee?.assigned_team_members && employee.assigned_team_members.length > 0) || (employee?.designation && employee.designation.toLowerCase().includes('team leader'));
+
   const [team, setTeam] = useState<ManagerTeamEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -66,7 +72,12 @@ export default function ManagerTeamScreen() {
   const loadTeamData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getManagerTeam(search.trim());
+      let data = [];
+      if (isTeamLeader && !isManager) {
+        data = await getMyTeamLeaderMembers(search.trim());
+      } else {
+        data = await getManagerTeam(search.trim());
+      }
       const list = Array.isArray(data) ? data : [];
       // Arrange strictly by employee_id
       const sorted = [...list].sort((a, b) =>
@@ -82,7 +93,7 @@ export default function ManagerTeamScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [search]);
+  }, [search, isManager, isTeamLeader]);
 
   useEffect(() => {
     loadTeamData();
@@ -177,8 +188,12 @@ export default function ManagerTeamScreen() {
       {/* HEADER */}
       <View style={styles.headerRow}>
         <View>
-          <Text style={styles.headerTitle}>My Team</Text>
-          <Text style={styles.headerSub}>Manage assigned employees & team leaders</Text>
+          <Text style={styles.headerTitle}>{isManager ? 'My Team' : 'My Team Members'}</Text>
+          <Text style={styles.headerSub}>
+            {isManager
+              ? 'Manage assigned employees & team leaders'
+              : `${team.length} employees assigned under your leadership`}
+          </Text>
         </View>
       </View>
 
@@ -311,7 +326,7 @@ export default function ManagerTeamScreen() {
                     <Text style={styles.detailBtnText}>View Profile</Text>
                   </TouchableOpacity>
 
-                  {!isTL ? (
+                  {isManager && (!isTL ? (
                     <TouchableOpacity
                       style={styles.promoteBtn}
                       onPress={() => handleOpenPromote(item)}
@@ -327,7 +342,7 @@ export default function ManagerTeamScreen() {
                       <UserPlus size={14} color="#000000" style={{ marginRight: 4 }} />
                       <Text style={styles.assignBtnText}>Assign Members</Text>
                     </TouchableOpacity>
-                  )}
+                  ))}
                 </View>
               </View>
             );

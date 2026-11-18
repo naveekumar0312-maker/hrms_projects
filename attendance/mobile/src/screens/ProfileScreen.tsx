@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useContext, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -17,7 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthContext, api } from '../context/AuthContext';
-import { User, Lock, LogOut, ArrowRight, Pencil } from 'lucide-react-native';
+import { User, Lock, LogOut, ArrowRight, Pencil, Shield, Users, Phone, X } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import Svg, {
   Path,
@@ -44,6 +45,13 @@ export default function ProfileScreen({ navigation }: any) {
   const { logout, employee, refreshEmployee, user } = useContext(AuthContext);
   const [uploading, setUploading] = useState(false);
   const [viewPhotoModal, setViewPhotoModal] = useState(false);
+  const [showTeamMembersModal, setShowTeamMembersModal] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refreshEmployee?.();
+    }, [])
+  );
 
   const [showPersonalInfo, setShowPersonalInfo] = useState(false);
 
@@ -252,6 +260,50 @@ export default function ProfileScreen({ navigation }: any) {
             </Text>
           </View>
         </View>
+
+        {/* TEAM LEADER CARD (FOR EMPLOYEES) */}
+        {employee?.team_leader_details && (
+          <View style={styles.tlInfoCard}>
+            <View style={styles.tlIconCircle}>
+              <Shield size={20} color="#16A34A" strokeWidth={2.2} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.tlSubText}>YOUR TEAM LEADER</Text>
+              <Text style={styles.tlNameText}>
+                {employee.team_leader_details.full_name}
+              </Text>
+              <Text style={styles.tlMetaText}>
+                #{employee.team_leader_details.employee_id} • {employee.team_leader_details.designation || employee.team_leader_details.department || 'Team Leader'}
+              </Text>
+              {employee.team_leader_details.phone_number && (
+                <Text style={styles.tlPhoneText}>📞 {employee.team_leader_details.phone_number}</Text>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* MY TEAM MEMBERS CARD (FOR TEAM LEADERS) */}
+        {employee?.assigned_team_members && employee.assigned_team_members.length > 0 && (
+          <TouchableOpacity
+            style={styles.tlInfoCard}
+            onPress={() => setShowTeamMembersModal(true)}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.tlIconCircle, { backgroundColor: '#EFF6FF' }]}>
+              <Users size={20} color="#2563EB" strokeWidth={2.2} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.tlSubText, { color: '#2563EB' }]}>TEAM LEADERSHIP</Text>
+              <Text style={styles.tlNameText}>
+                My Team ({employee.assigned_team_members.length} Members)
+              </Text>
+              <Text style={styles.tlMetaText}>
+                Tap to view your assigned team members
+              </Text>
+            </View>
+            <ArrowRight size={20} color={ARROW_COLOR} strokeWidth={2} />
+          </TouchableOpacity>
+        )}
 
         {/* 3 MENU ROWS */}
         <View style={styles.menuContainer}>
@@ -494,6 +546,58 @@ export default function ProfileScreen({ navigation }: any) {
             <Pencil size={15} color="#FFFFFF" />
             <Text style={styles.changeFromViewerText}>Change Profile Photo</Text>
           </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* TEAM MEMBERS LIST MODAL (FOR TEAM LEADERS) */}
+      <Modal
+        visible={showTeamMembersModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowTeamMembersModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <View>
+              <Text style={styles.modalTitle}>My Team Members</Text>
+              <Text style={{ fontSize: 12, color: '#64748B', fontFamily: 'Comfortaa_500Medium', marginTop: 2 }}>
+                {employee?.assigned_team_members?.length || 0} members under your leadership
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setShowTeamMembersModal(false)}
+              style={styles.modalCloseBtn}
+            >
+              <Text style={styles.modalCloseText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView
+            style={styles.modalBody}
+            contentContainerStyle={{ paddingBottom: 40 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {employee?.assigned_team_members?.map((m: any) => (
+              <View key={m.id} style={styles.teamMemberItem}>
+                <View style={styles.teamMemberAvatar}>
+                  <Text style={styles.teamMemberInitial}>
+                    {(m.full_name || 'M').charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+                <View style={{ flex: 1, marginLeft: 12 }}>
+                  <Text style={styles.teamMemberName}>{m.full_name}</Text>
+                  <Text style={styles.teamMemberMeta}>
+                    #{m.employee_id} • {m.designation || m.department || 'Staff'}
+                  </Text>
+                  {m.phone_number && (
+                    <Text style={styles.teamMemberPhone}>📞 {m.phone_number}</Text>
+                  )}
+                  {m.email && (
+                    <Text style={styles.teamMemberEmail}>✉️ {m.email}</Text>
+                  )}
+                </View>
+              </View>
+            ))}
+          </ScrollView>
         </View>
       </Modal>
 
@@ -768,4 +872,95 @@ const styles = StyleSheet.create({
   primaryBtnDisabled: { opacity: 0.7 },
   primaryBtnText: { color: '#FFF', fontSize: 16, fontFamily: 'Comfortaa_700Bold', },
   errorText: { color: COLORS.danger, marginTop: 12, fontSize: 14 },
+
+  tlInfoCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    marginHorizontal: 20,
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  tlIconCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#DCFCE7',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tlSubText: {
+    fontSize: 10,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#16A34A',
+    letterSpacing: 0.5,
+  },
+  tlNameText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#0F172A',
+    marginTop: 2,
+  },
+  tlMetaText: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_500Medium',
+    color: '#64748B',
+    marginTop: 1,
+  },
+  tlPhoneText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#16A34A',
+    marginTop: 2,
+  },
+
+  teamMemberItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  teamMemberAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#EFF6FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  teamMemberInitial: {
+    fontSize: 16,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#2563EB',
+  },
+  teamMemberName: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#0F172A',
+  },
+  teamMemberMeta: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_500Medium',
+    color: '#64748B',
+    marginTop: 2,
+  },
+  teamMemberPhone: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_600SemiBold',
+    color: '#16A34A',
+    marginTop: 2,
+  },
+  teamMemberEmail: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_500Medium',
+    color: '#3B82F6',
+    marginTop: 1,
+  },
 });

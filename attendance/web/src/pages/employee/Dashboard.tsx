@@ -30,6 +30,8 @@ import {
   Loader2,
   AlertCircle,
   ListTodo,
+  Users,
+  Shield,
 } from 'lucide-react';
 
 import { Link, useNavigate } from 'react-router-dom';
@@ -749,7 +751,33 @@ const EmployeeDashboard = () => {
               </div>
             )}
 
-            
+            {/* TEAM LEADER BADGE FOR EMPLOYEE */}
+            {employee?.team_leader_details && (
+              <div style={{
+                marginTop: '0.75rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.5rem',
+                padding: '0.45rem 0.9rem',
+                background: '#f0fdf4',
+                border: '1px solid #bbf7d0',
+                borderRadius: '10px',
+                color: '#166534',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+              }}>
+                <Shield size={15} color="#16a34a" />
+                <span>Team Leader:</span>
+                <strong style={{ color: '#14532d' }}>{employee.team_leader_details.full_name}</strong>
+                <span style={{ color: '#15803d', fontSize: '0.78rem' }}>({employee.team_leader_details.employee_id})</span>
+                {employee.team_leader_details.designation && (
+                  <span style={{ color: '#166534', fontSize: '0.75rem', background: '#dcfce7', padding: '1px 6px', borderRadius: '4px' }}>
+                    {employee.team_leader_details.designation}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           <button
@@ -772,6 +800,53 @@ const EmployeeDashboard = () => {
           </button>
 
         </div>
+
+        {/* TEAM LEADER'S ASSIGNED MEMBERS PANEL */}
+        {employee?.assigned_team_members && employee.assigned_team_members.length > 0 && (
+          <div style={{
+            marginTop: '1.25rem',
+            padding: '1rem 1.25rem',
+            borderRadius: '14px',
+            background: 'rgba(255, 255, 255, 0.95)',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: 30, height: 30, borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+                  <Users size={16} />
+                </div>
+                <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>
+                  My Team Members ({employee.assigned_team_members.length})
+                </h3>
+              </div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
+                Team Leader
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.65rem' }}>
+              {employee.assigned_team_members.map((tm: any) => (
+                <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', padding: '0.55rem 0.75rem', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                  {tm.profile_photo ? (
+                    <img src={tm.profile_photo} alt={tm.full_name} style={{ width: 34, height: 34, borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem' }}>
+                      {tm.full_name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {tm.full_name}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#64748b' }}>
+                      <code style={{ background: '#e2e8f0', padding: '1px 4px', borderRadius: '4px', fontSize: '0.72rem' }}>{tm.employee_id}</code> • {tm.designation || tm.department || 'Member'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </section>
 

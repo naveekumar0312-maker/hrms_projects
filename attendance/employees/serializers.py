@@ -292,27 +292,46 @@ class EmployeeSerializer(serializers.ModelSerializer):
         )
 
         if instance.team_leader:
+            tl = instance.team_leader
+            tl_photo = None
+            if tl.profile_photo:
+                try:
+                    tl_photo = request.build_absolute_uri(tl.profile_photo.url) if request else tl.profile_photo.url
+                except Exception:
+                    tl_photo = tl.profile_photo.url
             response['team_leader_details'] = {
-                'id': instance.team_leader.id,
-                'employee_id': instance.team_leader.employee_id,
-                'full_name': instance.team_leader.full_name,
-                'designation': instance.team_leader.designation,
-                'department': instance.team_leader.department,
+                'id': tl.id,
+                'employee_id': tl.employee_id,
+                'full_name': tl.full_name,
+                'designation': tl.designation,
+                'department': tl.department,
+                'phone_number': tl.user.phone_number if tl.user else None,
+                'email': tl.email,
+                'profile_photo': tl_photo,
             }
         else:
             response['team_leader_details'] = None
 
-        assigned = instance.team_members.filter(status=True)
-        response['assigned_team_members'] = [
-            {
+        assigned = instance.team_members.filter(status=True).select_related('user')
+        assigned_list = []
+        for m in assigned:
+            m_photo = None
+            if m.profile_photo:
+                try:
+                    m_photo = request.build_absolute_uri(m.profile_photo.url) if request else m.profile_photo.url
+                except Exception:
+                    m_photo = m.profile_photo.url
+            assigned_list.append({
                 'id': m.id,
                 'employee_id': m.employee_id,
                 'full_name': m.full_name,
                 'designation': m.designation,
                 'department': m.department,
-            }
-            for m in assigned
-        ]
-        response['team_members_count'] = assigned.count()
+                'phone_number': m.user.phone_number if m.user else None,
+                'email': m.email,
+                'profile_photo': m_photo,
+            })
+        response['assigned_team_members'] = assigned_list
+        response['team_members_count'] = len(assigned_list)
 
         return response
