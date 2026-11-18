@@ -127,7 +127,7 @@ class ReportingManagerSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source='user.role', read_only=True)
     is_active = serializers.BooleanField(source='user.is_active', read_only=True)
     account_status = serializers.SerializerMethodField()
-    branch_name = serializers.CharField(source='branch.branch_name', read_only=True, default='')
+    branch_name = serializers.SerializerMethodField()
     company_id = serializers.SerializerMethodField()
     company_name = serializers.SerializerMethodField()
     is_all_companies = serializers.SerializerMethodField()
@@ -178,6 +178,11 @@ class ReportingManagerSerializer(serializers.ModelSerializer):
 
     def get_is_all_companies(self, obj):
         return (obj.branch is None and (obj.user is None or obj.user.company is None))
+
+    def get_branch_name(self, obj):
+        if obj.branch and obj.branch.branch_name:
+            return obj.branch.branch_name
+        return 'All Branches'
 
     def get_account_status(self, obj):
         if obj.user and not obj.user.is_active:

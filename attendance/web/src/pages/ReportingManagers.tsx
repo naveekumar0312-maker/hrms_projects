@@ -33,6 +33,7 @@ interface ReportingManager {
   branch_name?: string;
   company_id?: number;
   company_name?: string;
+  is_all_companies?: boolean;
   is_active: boolean;
   account_status: string;
   status: boolean;
@@ -449,7 +450,11 @@ const ReportingManagers: React.FC = () => {
                     {/* COLUMN 4: BRANCH */}
                     <td>
                       <span style={{ fontWeight: 500, color: '#475569' }}>
-                        {m.branch_name || '—'}
+                        {m.branch_name && m.branch_name !== '—'
+                          ? m.branch_name
+                          : (m.is_all_companies || m.company_name === 'All Companies' || !m.company_id
+                              ? 'All Branches'
+                              : '—')}
                       </span>
                     </td>
 
@@ -742,7 +747,15 @@ const ReportingManagers: React.FC = () => {
                   <span className="rm-view-label">
                     <Building size={14} /> Branch
                   </span>
-                  <span className="rm-view-val">{selectedManager.branch_name || 'Main Branch'}</span>
+                  <span className="rm-view-val">
+                    {selectedManager.branch_name && selectedManager.branch_name !== '—'
+                      ? selectedManager.branch_name
+                      : (selectedManager.is_all_companies ||
+                         selectedManager.company_name === 'All Companies' ||
+                         !selectedManager.company_id
+                          ? 'All Branches'
+                          : 'Main Branch')}
+                  </span>
                 </div>
 
                 <div className="rm-view-item">
