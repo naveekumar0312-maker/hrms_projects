@@ -34,6 +34,7 @@ import {
   getManagerTeamEmployeeDetail,
   promoteEmployeeToTeamLeader,
   assignTeamToLeader,
+  getTeamLeaderAssignedMembers,
   ManagerTeamEmployee,
 } from '../../services/managerService';
 import { resolveMediaUrl } from '../../utils/imageUtils';
@@ -130,9 +131,18 @@ export default function ManagerTeamScreen() {
     }
   };
 
-  const handleOpenAssign = (leader: ManagerTeamEmployee) => {
+  const handleOpenAssign = async (leader: ManagerTeamEmployee) => {
     setAssigningLeader(leader);
-    setSelectedIds([]);
+    const existing = leader.assigned_team_members?.map((m) => m.id) || [];
+    setSelectedIds(existing);
+    try {
+      const data = await getTeamLeaderAssignedMembers(leader.id);
+      if (Array.isArray(data?.assigned_employee_ids)) {
+        setSelectedIds(data.assigned_employee_ids);
+      }
+    } catch (e) {
+      // quiet fallback
+    }
   };
 
   const handleConfirmAssignment = async () => {
@@ -159,7 +169,7 @@ export default function ManagerTeamScreen() {
 
   // Potential team members to assign (exclude the team leader themselves)
   const assignableCandidates = team.filter(
-    (m) => assigningLeader && m.id !== assigningLeader.id && m.role !== 'TEAM_LEADER'
+    (m) => assigningLeader && m.id !== assigningLeader.id
   );
 
   return (
@@ -242,10 +252,53 @@ export default function ManagerTeamScreen() {
                     <Text style={styles.designationText}>{item.designation || 'Staff Member'}</Text>
                     <Text style={styles.branchText}>
                       {item.company_name ? `${item.company_name} • ` : ''}
-                      {item.department ? `${item.company_name ? `${item.company_name} • ` : ''}
-                      {item.department} • ` : ''}
+                      {item.department ? `${item.department} • ` : ''}
                       {item.branch_name || 'Main Branch'}
                     </Text>
+
+                    {/* ASSIGNED TEAM PREVIEW IF TL */}
+                    {isTL && (
+                      <View style={{ marginTop: 6 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                          <View style={[
+                            styles.teamCountBadge,
+                            (item.team_members_count || 0) > 0 ? styles.teamCountBadgeActive : styles.teamCountBadgeEmpty
+                          ]}>
+                            <Users size={11} color={(item.team_members_count || 0) > 0 ? '#15803D' : '#64748B'} />
+                            <Text style={[
+                              styles.teamCountText,
+                              (item.team_members_count || 0) > 0 ? styles.teamCountTextActive : styles.teamCountTextEmpty
+                            ]}>
+                              {(item.team_members_count || 0) > 0
+                                ? `Team: ${item.team_members_count} member${item.team_members_count! > 1 ? 's' : ''}`
+                                : 'No members assigned'}
+                            </Text>
+                          </View>
+                        </View>
+
+                        {item.assigned_team_members && item.assigned_team_members.length > 0 && (
+                          <View style={styles.teamChipsWrapper}>
+                            {item.assigned_team_members.map((tm) => (
+                              <View key={tm.id} style={styles.memberChip}>
+                                <Text style={styles.memberChipText}>{tm.full_name} ({tm.employee_id})</Text>
+                              </View>
+                            ))}
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* REPORTS TO TL IF NORMAL EMPLOYEE */}
+                    {!isTL && item.team_leader && (
+                      <View style={{ marginTop: 6, flexDirection: 'row', alignItems: 'center' }}>
+                        <View style={styles.reportsToBadge}>
+                          <Shield size={10} color="#1D4ED8" />
+                          <Text style={styles.reportsToText}>
+                            TL: <Text style={{ fontWeight: '700' }}>{item.team_leader.full_name}</Text> ({item.team_leader.employee_id})
+                          </Text>
+                        </View>
+                      </View>
+                    )}
                   </View>
                 </View>
 
@@ -344,6 +397,30 @@ export default function ManagerTeamScreen() {
                     {selectedMember.shift ? `${selectedMember.shift.name} (${formatAttendanceTime(selectedMember.shift.start_time)} - ${formatAttendanceTime(selectedMember.shift.end_time)})` : '--'}
                   </Text>
                 </View>
+
+                {selectedMember.team_leader_details && (
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Team Leader:</Text>
+                    <Text style={[styles.detailVal, { color: '#1D4ED8' }]}>
+                      {selectedMember.team_leader_details.full_name} ({selectedMember.team_leader_details.employee_id})
+                    </Text>
+                  </View>
+                )}
+
+                {selectedMember.assigned_team_members && selectedMember.assigned_team_members.length > 0 && (
+                  <View style={{ marginTop: 8, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F5F5F5' }}>
+                    <Text style={[styles.detailLabel, { marginBottom: 4, color: '#15803D' }]}>
+                      Assigned Team ({selectedMember.assigned_team_members.length}):
+                    </Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4 }}>
+                      {selectedMember.assigned_team_members.map((m: any) => (
+                        <View key={m.id} style={styles.memberChip}>
+                          <Text style={styles.memberChipText}>{m.full_name} ({m.employee_id})</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                )}
               </ScrollView>
             )}
 
@@ -425,12 +502,33 @@ export default function ManagerTeamScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Assign Team Members</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={styles.modalTitle}>Assign Team Members</Text>
+              <View style={[styles.teamCountBadge, styles.teamCountBadgeActive]}>
+                <Text style={styles.teamCountTextActive}>{selectedIds.length} Selected</Text>
+              </View>
+            </View>
             <Text style={styles.modalSub}>
               Select employees reporting directly under {assigningLeader?.full_name}:
             </Text>
 
-            <ScrollView style={{ maxHeight: 260, marginVertical: 12 }}>
+            {/* Quick Actions */}
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+              <TouchableOpacity
+                style={{ paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#F1F5F9', borderRadius: 6 }}
+                onPress={() => setSelectedIds(assignableCandidates.map((m) => m.id))}
+              >
+                <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#334155' }}>Select All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ paddingHorizontal: 10, paddingVertical: 4, backgroundColor: '#F1F5F9', borderRadius: 6 }}
+                onPress={() => setSelectedIds([])}
+              >
+                <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#64748B' }}>Clear All</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 260, marginVertical: 8 }}>
               {assignableCandidates.length === 0 ? (
                 <Text style={{ textAlign: 'center', color: '#666666', padding: 20 }}>
                   No available employees to assign.
@@ -438,15 +536,25 @@ export default function ManagerTeamScreen() {
               ) : (
                 assignableCandidates.map((m) => {
                   const isChecked = selectedIds.includes(m.id);
+                  const isAssignedToOther = m.team_leader && m.team_leader.id !== assigningLeader?.id;
                   return (
                     <TouchableOpacity
                       key={m.id}
                       style={[styles.memberSelectRow, isChecked && styles.memberSelectRowActive]}
                       onPress={() => toggleSelectMember(m.id)}
                     >
-                      <Text style={styles.memberSelectName}>{m.full_name}</Text>
-                      <Text style={styles.memberSelectId}>({m.employee_id})</Text>
-                      {isChecked && <CheckCircle size={16} color="#000000" style={{ marginLeft: 'auto' }} />}
+                      <View style={{ flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <Text style={styles.memberSelectName}>{m.full_name}</Text>
+                          <Text style={styles.memberSelectId}>({m.employee_id})</Text>
+                        </View>
+                        {isAssignedToOther && (
+                          <Text style={{ fontSize: 10, color: '#B45309', marginTop: 2 }}>
+                            In {m.team_leader?.full_name}'s team
+                          </Text>
+                        )}
+                      </View>
+                      {isChecked && <CheckCircle size={16} color="#047857" style={{ marginLeft: 8 }} />}
                     </TouchableOpacity>
                   );
                 })
@@ -829,6 +937,69 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#666666',
     marginLeft: 6,
+  },
+  teamCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  teamCountBadgeActive: {
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  teamCountBadgeEmpty: {
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  teamCountText: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  teamCountTextActive: {
+    color: '#15803D',
+  },
+  teamCountTextEmpty: {
+    color: '#64748B',
+  },
+  teamChipsWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+  },
+  memberChip: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  memberChipText: {
+    fontSize: 10,
+    color: '#334155',
+    fontFamily: 'Comfortaa_600SemiBold',
+  },
+  reportsToBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  reportsToText: {
+    fontSize: 10,
+    color: '#1E40AF',
+    fontFamily: 'Comfortaa_600SemiBold',
   },
 });
 

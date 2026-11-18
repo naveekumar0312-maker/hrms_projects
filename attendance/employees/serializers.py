@@ -291,4 +291,28 @@ class EmployeeSerializer(serializers.ModelSerializer):
             else None
         )
 
+        if instance.team_leader:
+            response['team_leader_details'] = {
+                'id': instance.team_leader.id,
+                'employee_id': instance.team_leader.employee_id,
+                'full_name': instance.team_leader.full_name,
+                'designation': instance.team_leader.designation,
+                'department': instance.team_leader.department,
+            }
+        else:
+            response['team_leader_details'] = None
+
+        assigned = instance.team_members.filter(status=True)
+        response['assigned_team_members'] = [
+            {
+                'id': m.id,
+                'employee_id': m.employee_id,
+                'full_name': m.full_name,
+                'designation': m.designation,
+                'department': m.department,
+            }
+            for m in assigned
+        ]
+        response['team_members_count'] = assigned.count()
+
         return response

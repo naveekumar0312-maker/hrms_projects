@@ -32,6 +32,22 @@ export interface ManagerTeamEmployee {
   employment_status: string;
   work_type: string;
   role?: string;
+  team_leader?: {
+    id: number;
+    employee_id: string;
+    full_name: string;
+    designation: string;
+    department?: string;
+  } | null;
+  assigned_team_members?: Array<{
+    id: number;
+    employee_id: string;
+    full_name: string;
+    designation: string;
+    department: string;
+    profile_photo?: string | null;
+  }>;
+  team_members_count?: number;
 }
 
 export interface ManagerAttendanceRow {
@@ -121,6 +137,11 @@ export const assignTeamToLeader = async (leaderId: number, employeeIds: number[]
     employee_ids: employeeIds,
     action,
   });
+  return response.data;
+};
+
+export const getTeamLeaderAssignedMembers = async (leaderId: number) => {
+  const response = await api.get(`/employees/manager/team-leaders/${leaderId}/assign-team/`);
   return response.data;
 };
 

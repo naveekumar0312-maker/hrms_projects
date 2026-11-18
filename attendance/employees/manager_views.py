@@ -759,6 +759,23 @@ class TeamLeaderTeamAssignmentView(views.APIView):
     """
     permission_classes = [IsReportingManager]
 
+    def get(self, request, pk):
+        try:
+            team_leader = Employee.objects.select_related('user', 'branch').get(pk=pk)
+        except Employee.DoesNotExist:
+            return Response({"detail": "Team Leader not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        assigned_members = team_leader.team_members.filter(status=True).values(
+            'id', 'employee_id', 'full_name', 'department', 'designation'
+        )
+        assigned_list = list(assigned_members)
+        return Response({
+            'team_leader_id': team_leader.id,
+            'team_leader_name': team_leader.full_name,
+            'assigned_employee_ids': [m['id'] for m in assigned_list],
+            'assigned_members': assigned_list,
+        })
+
     def post(self, request, pk):
         manager_emp = getattr(request.user, 'employee_profile', None)
         if not manager_emp:
@@ -798,7 +815,9 @@ class TeamLeaderTeamAssignmentView(views.APIView):
             valid_employees = valid_employees.filter(branch__company_id=manager_company_id)
 
         if action == 'assign':
-            # Cannot assign team leader to their own team
+            # Synchronize: unassign any employee previously in this team who was unchecked
+            team_leader.team_members.exclude(id__in=employee_ids).update(team_leader=None)
+            # Assign selected employees
             valid_employees = valid_employees.exclude(id=team_leader.id)
             valid_employees.update(team_leader=team_leader)
             msg = f"{valid_employees.count()} employees assigned to Team Leader {team_leader.full_name}."

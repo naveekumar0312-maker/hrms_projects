@@ -21,6 +21,10 @@ class AssignedEmployeeBriefSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source='branch.company.name', read_only=True, default='')
     company_id = serializers.IntegerField(source='branch.company_id', read_only=True, default=None)
     account_status = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    team_leader = serializers.SerializerMethodField()
+    assigned_team_members = serializers.SerializerMethodField()
+    team_members_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -42,12 +46,61 @@ class AssignedEmployeeBriefSerializer(serializers.ModelSerializer):
             'account_status',
             'employment_status',
             'work_type',
+            'role',
+            'team_leader',
+            'assigned_team_members',
+            'team_members_count',
         ]
 
     def get_account_status(self, obj):
         if obj.user and not obj.user.is_active:
             return 'INACTIVE'
         return 'ACTIVE' if obj.status else 'INACTIVE'
+
+    def get_role(self, obj):
+        if obj.user and obj.user.role:
+            return obj.user.role
+        desig = (obj.designation or '').lower()
+        if 'team leader' in desig or 'lead' in desig:
+            return 'TEAM_LEADER'
+        return 'EMPLOYEE'
+
+    def get_team_leader(self, obj):
+        if obj.team_leader:
+            return {
+                'id': obj.team_leader.id,
+                'employee_id': obj.team_leader.employee_id,
+                'full_name': obj.team_leader.full_name,
+                'designation': obj.team_leader.designation,
+                'department': obj.team_leader.department,
+            }
+        return None
+
+    def get_assigned_team_members(self, obj):
+        members = obj.team_members.filter(status=True).select_related('branch')
+        if not members.exists():
+            return []
+        request = self.context.get('request')
+        res = []
+        for m in members:
+            photo_url = None
+            if m.profile_photo:
+                try:
+                    photo_url = request.build_absolute_uri(m.profile_photo.url) if request else m.profile_photo.url
+                except Exception:
+                    photo_url = m.profile_photo.url
+            res.append({
+                'id': m.id,
+                'employee_id': m.employee_id,
+                'full_name': m.full_name,
+                'designation': m.designation,
+                'department': m.department,
+                'profile_photo': photo_url,
+            })
+        return res
+
+    def get_team_members_count(self, obj):
+        return obj.team_members.filter(status=True).count()
 
 
 class ReportingManagerSerializer(serializers.ModelSerializer):

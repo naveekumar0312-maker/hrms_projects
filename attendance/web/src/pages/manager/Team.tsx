@@ -9,9 +9,27 @@ import {
   CheckCircle2,
   AlertCircle,
   User,
+  Shield,
 } from 'lucide-react';
 import api from '../../api';
 import '../ReportingManagers.css';
+
+interface AssignedMemberBrief {
+  id: number;
+  employee_id: string;
+  full_name: string;
+  designation: string;
+  department: string;
+  profile_photo?: string | null;
+}
+
+interface TeamLeaderBrief {
+  id: number;
+  employee_id: string;
+  full_name: string;
+  designation: string;
+  department?: string;
+}
 
 interface TeamEmployee {
   id: number;
@@ -29,6 +47,9 @@ interface TeamEmployee {
   employment_status: string;
   work_type: string;
   role?: string;
+  team_leader?: TeamLeaderBrief | null;
+  assigned_team_members?: AssignedMemberBrief[];
+  team_members_count?: number;
 }
 
 const ManagerTeam: React.FC = () => {
@@ -122,10 +143,20 @@ const ManagerTeam: React.FC = () => {
   };
 
   // Open Team Leader Member Assignment Modal
-  const handleOpenAssign = (leader: TeamEmployee) => {
+  const handleOpenAssign = async (leader: TeamEmployee) => {
     setAssigningLeader(leader);
-    setSelectedMemberIds([]);
     setActionMsg(null);
+    const existingIds = leader.assigned_team_members?.map((m) => m.id) || [];
+    setSelectedMemberIds(existingIds);
+
+    try {
+      const res = await api.get(`/employees/manager/team-leaders/${leader.id}/assign-team/`);
+      if (Array.isArray(res.data?.assigned_employee_ids)) {
+        setSelectedMemberIds(res.data.assigned_employee_ids);
+      }
+    } catch (e) {
+      // quiet fallback
+    }
   };
 
   // Submit Member Assignment
@@ -256,22 +287,89 @@ const ManagerTeam: React.FC = () => {
                     </td>
                     <td>{m.department || 'General'}</td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span>{m.designation}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontWeight: 600, color: '#1e293b' }}>{m.designation}</span>
+                          {isTeamLeader && (
+                            <span style={{
+                              background: '#eff6ff',
+                              color: '#1d4ed8',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '9999px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}>
+                              <Award size={12} /> Team Leader
+                            </span>
+                          )}
+                        </div>
+
+                        {/* If Team Leader, show team member count & members preview */}
                         {isTeamLeader && (
-                          <span style={{
-                            background: '#eff6ff',
-                            color: '#1d4ed8',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            padding: '2px 8px',
-                            borderRadius: '9999px',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px'
-                          }}>
-                            <Award size={12} /> Team Leader
-                          </span>
+                          <div style={{ marginTop: '3px' }}>
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              backgroundColor: (m.team_members_count || 0) > 0 ? '#ecfdf5' : '#f8fafc',
+                              color: (m.team_members_count || 0) > 0 ? '#047857' : '#94a3b8',
+                              border: (m.team_members_count || 0) > 0 ? '1px solid #a7f3d0' : '1px solid #e2e8f0',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}>
+                              <Users size={11} />
+                              {(m.team_members_count || 0) > 0
+                                ? `Team: ${m.team_members_count} member${m.team_members_count! > 1 ? 's' : ''}`
+                                : 'No members assigned'}
+                            </span>
+
+                            {m.assigned_team_members && m.assigned_team_members.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                                {m.assigned_team_members.map((tm) => (
+                                  <span
+                                    key={tm.id}
+                                    style={{
+                                      fontSize: '11px',
+                                      padding: '2px 7px',
+                                      borderRadius: '4px',
+                                      backgroundColor: '#f1f5f9',
+                                      color: '#334155',
+                                      border: '1px solid #e2e8f0',
+                                      fontWeight: 500,
+                                    }}
+                                  >
+                                    {tm.full_name} ({tm.employee_id})
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* If normal employee reporting to a Team Leader */}
+                        {!isTeamLeader && m.team_leader && (
+                          <div style={{ marginTop: '3px' }}>
+                            <span style={{
+                              fontSize: '11px',
+                              fontWeight: 600,
+                              padding: '2px 8px',
+                              borderRadius: '12px',
+                              backgroundColor: '#eff6ff',
+                              color: '#1e40af',
+                              border: '1px solid #bfdbfe',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                            }}>
+                              <Shield size={11} />
+                              <span>TL:</span> <strong>{m.team_leader.full_name}</strong> ({m.team_leader.employee_id})
+                            </span>
+                          </div>
                         )}
                       </div>
                     </td>
@@ -387,36 +485,99 @@ const ManagerTeam: React.FC = () => {
       {/* TEAM ASSIGNMENT MODAL */}
       {assigningLeader && (
         <div className="rm-modal-backdrop" onClick={() => !assignLoading && setAssigningLeader(null)}>
-          <div className="rm-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="rm-modal" style={{ maxWidth: '620px' }} onClick={(e) => e.stopPropagation()}>
             <div className="rm-modal-header">
-              <h2>Assign Employees to Team Leader</h2>
+              <div>
+                <h2>Assign Employees to Team Leader</h2>
+                <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#64748b' }}>
+                  Leader: <strong>{assigningLeader.full_name}</strong> ({assigningLeader.employee_id})
+                </p>
+              </div>
               <button type="button" className="rm-close-btn" onClick={() => setAssigningLeader(null)}>
                 <X size={18} />
               </button>
             </div>
             <div className="rm-modal-body">
-              <p style={{ fontSize: '14px', color: '#334155', margin: 0 }}>
-                Select employees who report to <strong>{assigningLeader.full_name}</strong>:
-              </p>
-              <div style={{ maxHeight: '220px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid #e2e8f0', padding: '10px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <span style={{ fontSize: '13px', color: '#334155' }}>
+                  Check employees who report directly to <strong>{assigningLeader.full_name}</strong>:
+                </span>
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  backgroundColor: '#ecfdf5',
+                  color: '#047857',
+                  padding: '3px 10px',
+                  borderRadius: '12px',
+                  border: '1px solid #a7f3d0'
+                }}>
+                  Selected: {selectedMemberIds.length} members
+                </span>
+              </div>
+
+              {/* Quick Select Buttons */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
+                <button
+                  type="button"
+                  style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                  onClick={() => {
+                    const assignable = team.filter((m) => m.id !== assigningLeader.id).map((m) => m.id);
+                    setSelectedMemberIds(assignable);
+                  }}
+                >
+                  Select All
+                </button>
+                <button
+                  type="button"
+                  style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '4px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}
+                  onClick={() => setSelectedMemberIds([])}
+                >
+                  Clear All
+                </button>
+              </div>
+
+              <div style={{ maxHeight: '280px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid #e2e8f0', padding: '10px', borderRadius: '8px' }}>
                 {team
                   .filter((m) => m.id !== assigningLeader.id)
                   .map((m) => {
                     const isChecked = selectedMemberIds.includes(m.id);
+                    const isOtherTL = m.role === 'TEAM_LEADER' || (m.designation || '').toLowerCase().includes('team leader');
+                    const isAssignedToOther = m.team_leader && m.team_leader.id !== assigningLeader.id;
                     return (
-                      <label key={m.id} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', cursor: 'pointer', padding: '6px', background: isChecked ? '#f0fdf4' : '#fff', borderRadius: '6px' }}>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedMemberIds([...selectedMemberIds, m.id]);
-                            } else {
-                              setSelectedMemberIds(selectedMemberIds.filter((id) => id !== m.id));
-                            }
-                          }}
-                        />
-                        <span>{m.full_name} ({m.employee_id}) — {m.department}</span>
+                      <label key={m.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        padding: '8px 10px',
+                        background: isChecked ? '#f0fdf4' : '#fff',
+                        border: isChecked ? '1px solid #86efac' : '1px solid #f1f5f9',
+                        borderRadius: '6px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedMemberIds([...selectedMemberIds, m.id]);
+                              } else {
+                                setSelectedMemberIds(selectedMemberIds.filter((id) => id !== m.id));
+                              }
+                            }}
+                          />
+                          <div>
+                            <span style={{ fontWeight: 600, color: '#0f172a' }}>{m.full_name}</span>
+                            <span style={{ color: '#64748b', fontSize: '12px', marginLeft: '6px' }}>({m.employee_id})</span>
+                            <span style={{ color: '#94a3b8', fontSize: '11px', marginLeft: '6px' }}>• {m.department}</span>
+                          </div>
+                        </div>
+                        {isOtherTL ? (
+                          <span style={{ fontSize: '11px', color: '#1d4ed8', background: '#eff6ff', padding: '2px 6px', borderRadius: '4px' }}>TL</span>
+                        ) : isAssignedToOther ? (
+                          <span style={{ fontSize: '11px', color: '#b45309', background: '#fef3c7', padding: '2px 6px', borderRadius: '4px' }}>In {m.team_leader?.full_name}'s team</span>
+                        ) : null}
                       </label>
                     );
                   })}
@@ -427,7 +588,7 @@ const ManagerTeam: React.FC = () => {
                 Cancel
               </button>
               <button type="button" className="rm-btn rm-btn-primary" onClick={handleSaveAssignment} disabled={assignLoading}>
-                {assignLoading ? 'Assigning...' : 'Save Assignments'}
+                {assignLoading ? 'Saving...' : `Save Team (${selectedMemberIds.length})`}
               </button>
             </div>
           </div>
@@ -437,7 +598,7 @@ const ManagerTeam: React.FC = () => {
       {/* EMPLOYEE VIEW DETAILS MODAL */}
       {selectedMember && (
         <div className="rm-modal-backdrop" onClick={() => setSelectedMember(null)}>
-          <div className="rm-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="rm-modal" style={{ maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
             <div className="rm-modal-header">
               <h2>Employee Details</h2>
               <button type="button" className="rm-close-btn" onClick={() => setSelectedMember(null)}>
@@ -464,7 +625,7 @@ const ManagerTeam: React.FC = () => {
                 </div>
                 <div className="rm-view-item">
                   <span className="rm-view-label">Branch</span>
-                  <span className="rm-view-val">{selectedMember.branch_name || 'Main HQ'}</span>
+                  <span className="rm-view-val">{selectedMember.branch?.branch_name || selectedMember.branch_name || 'Main HQ'}</span>
                 </div>
                 <div className="rm-view-item">
                   <span className="rm-view-label">Status</span>
@@ -474,6 +635,44 @@ const ManagerTeam: React.FC = () => {
                     </span>
                   </span>
                 </div>
+
+                {/* Team Leader Details */}
+                {selectedMember.team_leader_details && (
+                  <div className="rm-view-item" style={{ gridColumn: 'span 2' }}>
+                    <span className="rm-view-label">Assigned Team Leader</span>
+                    <span className="rm-view-val" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#1e40af', fontWeight: 600 }}>
+                      <Shield size={14} />
+                      {selectedMember.team_leader_details.full_name} ({selectedMember.team_leader_details.employee_id}) — {selectedMember.team_leader_details.designation}
+                    </span>
+                  </div>
+                )}
+
+                {/* Assigned Team Members (If Team Leader) */}
+                {selectedMember.assigned_team_members && selectedMember.assigned_team_members.length > 0 && (
+                  <div className="rm-view-item" style={{ gridColumn: 'span 2' }}>
+                    <span className="rm-view-label">
+                      Assigned Team ({selectedMember.assigned_team_members.length} members)
+                    </span>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                      {selectedMember.assigned_team_members.map((tm: any) => (
+                        <span
+                          key={tm.id}
+                          style={{
+                            fontSize: '12px',
+                            background: '#f8fafc',
+                            color: '#0f172a',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            border: '1px solid #cbd5e1',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {tm.full_name} ({tm.employee_id}) — <span style={{ color: '#64748b', fontWeight: 400 }}>{tm.department}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="rm-modal-footer">
