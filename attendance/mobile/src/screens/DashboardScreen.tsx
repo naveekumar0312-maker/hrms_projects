@@ -30,12 +30,32 @@ const { width } = Dimensions.get('window');
 
 
 
+const TLMemberAvatarItem = ({ photoUrl, name }: { photoUrl: string | null; name: string }) => {
+  const [loadFailed, setLoadFailed] = useState(false);
+  const initial = (name || 'M').charAt(0).toUpperCase();
+
+  return (
+    <View style={styles.tlMemberAvatar}>
+      {photoUrl && !loadFailed ? (
+        <Image
+          source={{ uri: photoUrl }}
+          style={styles.tlMemberAvatarImage}
+          onError={() => setLoadFailed(true)}
+        />
+      ) : (
+        <Text style={styles.tlMemberAvatarText}>{initial}</Text>
+      )}
+    </View>
+  );
+};
+
 export default function DashboardScreen({ navigation }: any) {
   const { employee, user, logout, refreshEmployee } = useContext(AuthContext);
   const insets = useSafeAreaInsets();
   const { showSuccess, showError, showConfirm } = useAppMessage();
   
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingData, setLoadingData] = useState(false);
+  const isFirstFetchRef = useRef(true);
   const [todayAttendance, setTodayAttendance] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const navigateToHistory = () => {
@@ -369,7 +389,9 @@ export default function DashboardScreen({ navigation }: any) {
   };
   const fetchData = async () => {
     try {
-      setLoadingData(true);
+      if (isFirstFetchRef.current && !employee) {
+        setLoadingData(true);
+      }
       const [todayData, historyData, tasksList] = await Promise.all([
         getTodayAttendance(),
         getHistory(1),
@@ -413,6 +435,7 @@ export default function DashboardScreen({ navigation }: any) {
       }
       console.log('Error fetching dashboard data:', error);
     } finally {
+      isFirstFetchRef.current = false;
       setLoadingData(false);
     }
   };
@@ -901,8 +924,8 @@ export default function DashboardScreen({ navigation }: any) {
     approvalText = 'Rejected';
   }
 
-  // Skeleton Loader for data fetching
-  if (loadingData && !todayAttendance) {
+  // Skeleton Loader for data fetching only on cold launch when no data exists
+  if (loadingData && !employee && !todayAttendance) {
     return (
       <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         <View style={styles.skeletonContainer}>
@@ -1182,15 +1205,7 @@ export default function DashboardScreen({ navigation }: any) {
                       }
                     }}
                   >
-                    <View style={styles.tlMemberAvatar}>
-                      {photoUrl ? (
-                        <Image source={{ uri: photoUrl }} style={styles.tlMemberAvatarImage} />
-                      ) : (
-                        <Text style={styles.tlMemberAvatarText}>
-                          {(tm.full_name || 'M').charAt(0).toUpperCase()}
-                        </Text>
-                      )}
-                    </View>
+                    <TLMemberAvatarItem photoUrl={photoUrl} name={tm.full_name} />
                     <View style={{ marginLeft: 9, flex: 1 }}>
                       <Text style={styles.tlMemberName} numberOfLines={1}>
                         {tm.full_name}
