@@ -189,7 +189,7 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={styles.topBadgeRow}>
           <View style={styles.empIdBadge}>
             <Text style={styles.empIdText}>
-              #ID: {employee?.employee_id || (user?.role === 'HR' ? 'HR-PORTAL' : (user?.role === 'SUPER_ADMIN' ? 'SUPER-ADMIN' : (user?.username || '--')))}
+              #ID:{employee?.employee_id || (user?.role === 'HR' ? 'HR-PORTAL' : (user?.role === 'SUPER_ADMIN' ? 'SUPER-ADMIN' : (user?.username || '--')))}
             </Text>
           </View>
         </View>
@@ -571,22 +571,23 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   empIdBadge: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#DCFCE7',
     paddingHorizontal: 14,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#EAD7A5',
-    shadowColor: '#071F49',
+    borderColor: '#BBF7D0',
+    shadowColor: '#15803D',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 2,
   },
   empIdText: {
     fontSize: 13,
     fontFamily: 'Comfortaa_700Bold',
-    color: '#071F49',
+    fontWeight: '700',
+    color: '#15803D',
     letterSpacing: 0.3,
   },
 

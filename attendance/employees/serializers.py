@@ -8,23 +8,59 @@ from django.db import transaction
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-def generate_next_employee_id():
+def get_company_shortform(company=None):
     """
-    Generates the next sequential employee ID in standard EMP-XXX format.
-    Finds the highest existing integer suffix across all employees (e.g. EMP-040 -> 40)
-    and returns EMP-{max + 1:03d}.
+    Returns company shortform code (e.g. 'AH', 'ACF', 'YZ', 'NEO', 'EMP').
+    Uses company.code if set; otherwise generates uppercase abbreviation from company name.
     """
-    numbers = []
-    for eid in Employee.objects.values_list('employee_id', flat=True):
-        m = re.search(r'(\d+)$', str(eid))
+    if not company:
+        return 'EMP'
+    code = getattr(company, 'code', None)
+    if code and str(code).strip():
+        return re.sub(r'[^A-Za-z0-9]', '', str(code).strip()).upper()
+    name = getattr(company, 'name', '') or ''
+    words = [
+        w for w in re.split(r'[^a-zA-Z0-9]+', name)
+        if w and w.lower() not in ('india', 'private', 'limited', 'pvt', 'ltd', 'company', 'co')
+    ]
+    if len(words) >= 2:
+        return ''.join(w[0] for w in words[:4]).upper()
+    elif len(words) == 1:
+        return words[0][:3].upper()
+    return 'EMP'
+
+def generate_next_employee_id(company=None, joining_date=None):
+    """
+    Generates the next sequential employee ID based on company shortform code and Date of Joining (DOJ).
+    Format: {PREFIX}{XXX} (e.g. AH044, AH001, ACF001, YZ001, NEO001, EMP001).
+    Calculates candidate sequential number from joining_date chronological order among company employees,
+    skipping any numbers already taken.
+    """
+    prefix = get_company_shortform(company)
+
+    # Collect existing numeric suffixes for this prefix
+    used_numbers = set()
+    for eid in Employee.objects.filter(employee_id__istartswith=prefix).values_list('employee_id', flat=True):
+        m = re.match(rf'^{re.escape(prefix)}(\d+)$', str(eid).strip(), re.IGNORECASE)
         if m:
-            numbers.append(int(m.group(1)))
-    next_number = max(numbers, default=0) + 1
-    candidate = f"EMP-{next_number:03d}"
-    while Employee.objects.filter(employee_id=candidate).exists():
-        next_number += 1
-        candidate = f"EMP-{next_number:03d}"
-    return candidate
+            used_numbers.add(int(m.group(1)))
+
+    if company:
+        company_emps = Employee.objects.filter(branch__company=company)
+    else:
+        company_emps = Employee.objects.filter(employee_id__istartswith=prefix)
+
+    if joining_date:
+        count_prior = company_emps.filter(joining_date__lt=joining_date).count()
+        count_same = company_emps.filter(joining_date=joining_date).count()
+        candidate_num = count_prior + count_same + 1
+    else:
+        candidate_num = company_emps.count() + 1
+
+    while candidate_num in used_numbers:
+        candidate_num += 1
+
+    return f"{prefix}{candidate_num:03d}"
 
 class EmployeeSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -40,6 +76,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         company_id = data.pop('company', None)
+        self._company_id = company_id
         branch = data.get('branch', self.instance.branch if self.instance else None)
         request = self.context.get('request')
         user = getattr(request, 'user', None)
@@ -140,7 +177,14 @@ class EmployeeSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({"employee_id": f"Employee ID '{provided_id}' is already in use."})
                 validated_data['employee_id'] = provided_id
             else:
-                validated_data['employee_id'] = generate_next_employee_id()
+                branch = validated_data.get('branch')
+                company = None
+                if branch and getattr(branch, 'company', None):
+                    company = branch.company
+                elif getattr(self, '_company_id', None):
+                    from companies.models import Company
+                    company = Company.objects.filter(id=self._company_id).first()
+                validated_data['employee_id'] = generate_next_employee_id(company=company, joining_date=joining_date)
 
             employment_status = validated_data.get('employment_status', 'ACTIVE')
             validated_data['status'] = employment_status == 'ACTIVE'

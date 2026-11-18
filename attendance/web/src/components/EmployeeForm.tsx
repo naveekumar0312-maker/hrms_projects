@@ -112,6 +112,7 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [managerOptions, setManagerOptions] = useState<any[]>([]);
+  const [suggestedEmpId, setSuggestedEmpId] = useState<string>('');
 
   type PendingDocument = {
     document_type: string;
@@ -222,6 +223,31 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
     };
     fetchData();
   }, [isEdit, employeeId]);
+
+  useEffect(() => {
+    if (isEdit) return;
+    let isMounted = true;
+    const fetchNextId = async () => {
+      try {
+        const res = await api.get('/employees/next-id/', {
+          params: {
+            company_id: formData.company || undefined,
+            branch_id: formData.branch || undefined,
+            joining_date: formData.joining_date || undefined,
+          },
+        });
+        if (isMounted && res.data?.next_employee_id) {
+          setSuggestedEmpId(res.data.next_employee_id);
+        }
+      } catch (err) {
+        // quiet fallback
+      }
+    };
+    fetchNextId();
+    return () => {
+      isMounted = false;
+    };
+  }, [isEdit, formData.company, formData.branch, formData.joining_date]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -601,18 +627,41 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
                   </h3>
                   <div className="employee-grid-2">
                     <div className="form-group" style={{ marginBottom: 0 }}>
-                      <label className="form-label" style={{ fontWeight: 600 }}>Employee ID</label>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <label className="form-label" style={{ fontWeight: 600, margin: 0 }}>Employee ID</label>
+                        {suggestedEmpId && !isEdit && (
+                          <span
+                            style={{
+                              fontSize: '0.75rem',
+                              padding: '2px 8px',
+                              borderRadius: 12,
+                              backgroundColor: '#DCFCE7',
+                              color: '#15803D',
+                              border: '1px solid #BBF7D0',
+                              fontWeight: 700,
+                            }}
+                          >
+                            Suggested: #{suggestedEmpId}
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         name="employee_id"
                         className="form-control"
                         value={formData.employee_id}
                         onChange={handleChange}
-                        placeholder={isEdit ? "e.g. EMP-041" : "Auto Generated based on Date of Joining"}
+                        placeholder={
+                          isEdit
+                            ? "e.g. AH044"
+                            : suggestedEmpId
+                              ? `Auto: ${suggestedEmpId} (Company & DOJ sequence)`
+                              : "Auto Generated based on Company & Date of Joining"
+                        }
                         style={{ backgroundColor: 'var(--surface)', color: 'var(--text-primary)', fontWeight: 600 }}
                       />
                       <small style={{ color: 'var(--text-muted)', display: 'block', marginTop: '0.35rem' }}>
-                        Leave blank to auto-generate based on Date of Joining, or enter custom code
+                        Leave blank to auto-generate based on company shortform and Date of Joining sequence (e.g. AH044)
                       </small>
                     </div>
 

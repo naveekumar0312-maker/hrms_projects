@@ -41,7 +41,7 @@ import {
   CalendarDays,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { AuthContext } from '../../context/AuthContext';
+import { AuthContext, api } from '../../context/AuthContext';
 import { AdminHRHeader } from '../../components/AdminHRHeader';
 import { DropdownPicker, DatePicker } from '../../components/pickers';
 import { EmployeeMonthlyAttendanceModal } from '../../components/employee/EmployeeMonthlyAttendanceModal';
@@ -110,6 +110,7 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
   const [submitting, setSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [suggestedEmpId, setSuggestedEmpId] = useState<string>('');
 
   const initialForm = {
     // Basic
@@ -184,6 +185,31 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
   useEffect(() => {
     loadData();
   }, [search]);
+
+  useEffect(() => {
+    if (editingEmployeeId) return;
+    let isMounted = true;
+    const fetchNextId = async () => {
+      try {
+        const res = await api.get('/employees/next-id/', {
+          params: {
+            company_id: formData.company || undefined,
+            branch_id: formData.branch || undefined,
+            joining_date: formData.joining_date || undefined,
+          },
+        });
+        if (isMounted && res.data?.next_employee_id) {
+          setSuggestedEmpId(res.data.next_employee_id);
+        }
+      } catch (e) {
+        // quiet fallback
+      }
+    };
+    fetchNextId();
+    return () => {
+      isMounted = false;
+    };
+  }, [editingEmployeeId, formData.company, formData.branch, formData.joining_date]);
 
   // Open Full Detail Modal (Fetches all details from API)
   const handleOpenDetail = async (emp: EmployeeItem) => {
@@ -881,15 +907,23 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
                     onChangeText={(t) => setFormData({ ...formData, full_name: t })}
                   />
 
-                  <Text style={styles.formLabel}>Employee ID</Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <Text style={styles.formLabel}>Employee ID</Text>
+                    {suggestedEmpId && !editingEmployeeId ? (
+                      <View style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, borderWidth: 1, borderColor: '#BBF7D0' }}>
+                        <Text style={{ fontSize: 11, fontWeight: '700', color: '#15803D' }}>Suggested: #{suggestedEmpId}</Text>
+                      </View>
+                    ) : null}
+                  </View>
                   <TextInput
                     style={styles.formInput}
-                    placeholder="Leave blank for auto-generate (e.g. EMP-041)"
+                    placeholder={editingEmployeeId ? (formData.employee_id || "e.g. AH044") : (suggestedEmpId ? `Auto: ${suggestedEmpId}` : "Auto-generated based on Company & DOJ")}
+                    placeholderTextColor="#999999"
                     value={formData.employee_id}
                     onChangeText={(t) => setFormData({ ...formData, employee_id: t })}
                   />
                   <Text style={{ fontSize: 11, color: '#888888', marginTop: -4, marginBottom: 8 }}>
-                    Auto-generated based on Date of Joining if left blank
+                    Leave blank to auto-generate based on company shortform & DOJ (e.g. AH044)
                   </Text>
 
                   <DatePicker

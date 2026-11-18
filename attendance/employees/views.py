@@ -30,7 +30,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_permissions(self):
-        if self.action in ['me', 'change_password']:
+        if self.action in ['me', 'change_password', 'next_employee_id']:
             return [permissions.IsAuthenticated()]
         return [IsAdminUser()]
 
@@ -549,6 +549,46 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         user.save()
 
         return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'], url_path='next-id')
+    def next_employee_id(self, request):
+        company_id = request.query_params.get('company_id')
+        branch_id = request.query_params.get('branch_id')
+        joining_date_str = request.query_params.get('joining_date')
+
+        company = None
+        if branch_id:
+            from branches.models import Branch
+            b = Branch.objects.filter(id=branch_id).select_related('company').first()
+            if b and b.company:
+                company = b.company
+        if not company and company_id:
+            from companies.models import Company
+            company = Company.objects.filter(id=company_id).first()
+        if not company and getattr(request.user, 'company', None):
+            company = request.user.company
+
+        joining_date = None
+        if joining_date_str:
+            try:
+                from datetime import datetime
+                joining_date = datetime.strptime(str(joining_date_str).strip(), '%Y-%m-%d').date()
+            except Exception:
+                pass
+        if not joining_date:
+            joining_date = timezone.localdate()
+
+        from .serializers import generate_next_employee_id, get_company_shortform
+        next_id = generate_next_employee_id(company=company, joining_date=joining_date)
+        prefix = get_company_shortform(company)
+
+        return Response({
+            'next_employee_id': next_id,
+            'prefix': prefix,
+            'company_id': company.id if company else None,
+            'company_name': company.name if company else None,
+            'joining_date': str(joining_date),
+        })
 
 
 from django.http import FileResponse, Http404

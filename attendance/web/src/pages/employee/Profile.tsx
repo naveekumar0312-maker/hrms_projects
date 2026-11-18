@@ -406,8 +406,21 @@ const EmployeeProfile = () => {
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-              <span className="badge badge-neutral" style={{ fontSize: '0.85rem' }}>
-                ID: {employee.employee_id}
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '0.3rem 0.85rem',
+                  borderRadius: '9999px',
+                  backgroundColor: '#DCFCE7',
+                  color: '#15803D',
+                  border: '1px solid #BBF7D0',
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                #ID:{employee.employee_id}
               </span>
               <span
                 style={{

@@ -137,10 +137,10 @@ class ReportingManagerSerializer(serializers.ModelSerializer):
         return []
 
 
-def generate_manager_employee_id():
-    """Generates the next sequential EMP-XXX employee ID."""
+def generate_manager_employee_id(company=None, joining_date=None):
+    """Generates the next sequential company-based employee ID."""
     from .serializers import generate_next_employee_id
-    return generate_next_employee_id()
+    return generate_next_employee_id(company=company, joining_date=joining_date)
 
 
 class CreateReportingManagerSerializer(serializers.Serializer):
@@ -330,7 +330,8 @@ class CreateReportingManagerSerializer(serializers.Serializer):
                     company=company,
                     is_active=is_active,
                 )
-                generated_id = generate_manager_employee_id()
+                joining_date = timezone.localdate()
+                generated_id = generate_manager_employee_id(company=company, joining_date=joining_date)
                 employee = Employee.objects.create(
                     user=user,
                     employee_id=generated_id,
@@ -340,7 +341,7 @@ class CreateReportingManagerSerializer(serializers.Serializer):
                     branch=branch,
                     status=is_active,
                     employment_status='ACTIVE' if is_active else 'INACTIVE',
-                    joining_date=timezone.localdate(),
+                    joining_date=joining_date,
                 )
 
             # Auto-mapping logic
