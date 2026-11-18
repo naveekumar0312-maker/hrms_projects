@@ -578,10 +578,17 @@ export default function ProfileScreen({ navigation }: any) {
           >
             {employee?.assigned_team_members?.map((m: any) => (
               <View key={m.id} style={styles.teamMemberItem}>
-                <View style={styles.teamMemberAvatar}>
-                  <Text style={styles.teamMemberInitial}>
-                    {(m.full_name || 'M').charAt(0).toUpperCase()}
-                  </Text>
+                <View style={[styles.teamMemberAvatar, { overflow: 'hidden' }]}>
+                  {m.profile_photo ? (
+                    <Image
+                      source={{ uri: resolveMediaUrl(m.profile_photo)! }}
+                      style={{ width: '100%', height: '100%', borderRadius: 21 }}
+                    />
+                  ) : (
+                    <Text style={styles.teamMemberInitial}>
+                      {(m.full_name || 'M').charAt(0).toUpperCase()}
+                    </Text>
+                  )}
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.teamMemberName}>{m.full_name}</Text>

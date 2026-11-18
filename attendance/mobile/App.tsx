@@ -88,9 +88,9 @@ const commonTabScreenOptions = {
   tabBarInactiveTintColor: '#9DA4B9',
   headerShown: false,
   tabBarStyle: {
-    height: 70,
-    paddingTop: 8,
-    paddingBottom: 10,
+    height: 68,
+    paddingTop: 6,
+    paddingBottom: 8,
     backgroundColor: '#FFFFFF',
     borderTopColor: 'rgba(30, 34, 56, 0.05)',
     borderTopWidth: 1,
@@ -100,10 +100,16 @@ const commonTabScreenOptions = {
     shadowRadius: 16,
     elevation: 8,
   },
+  tabBarItemStyle: {
+    paddingHorizontal: 0,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
   tabBarLabelStyle: {
-    fontSize: 11,
-    fontFamily: 'Comfortaa_500Medium',
+    fontSize: 10,
+    fontFamily: 'Comfortaa_700Bold',
     marginTop: 2,
+    letterSpacing: -0.2,
   },
   tabBarIconStyle: {
     marginTop: 2,
@@ -179,7 +185,7 @@ const TeamLeaderTabs = () => {
         component={ManagerTeamScreen} 
         options={{ 
           title: 'My Team',
-          tabBarLabel: 'My Team',
+          tabBarLabel: 'Team',
           tabBarIcon: ({ color }) => <Users color={color} size={21} strokeWidth={2} /> 
         }} 
       />

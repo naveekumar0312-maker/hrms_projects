@@ -106,11 +106,14 @@ export default function ManagerTeamScreen() {
 
   const handleViewDetails = async (member: ManagerTeamEmployee) => {
     try {
+      setSelectedMember(member);
       setLoadingDetails(true);
       const details = await getManagerTeamEmployeeDetail(member.id);
-      setSelectedMember(details);
+      if (details) {
+        setSelectedMember(details);
+      }
     } catch (err) {
-      Alert.alert('Error', 'Unable to load employee details.');
+      console.warn('Failed to load full member details:', err);
     } finally {
       setLoadingDetails(false);
     }

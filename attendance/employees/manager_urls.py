@@ -37,5 +37,6 @@ urlpatterns = [
     # -------------------------------------------------------------------------
     path('team-leader/dashboard-summary/', TeamLeaderDashboardSummaryView.as_view(), name='team-leader-dashboard-summary'),
     path('team-leader/team/', TeamLeaderMyTeamView.as_view(), name='team-leader-my-team'),
+    path('team-leader/team/<int:pk>/', ManagerTeamEmployeeDetailView.as_view(), name='team-leader-team-employee-detail'),
 ]
 

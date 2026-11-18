@@ -417,14 +417,17 @@ export default function DashboardScreen({ navigation }: any) {
     }
   };
 
+  useEffect(() => {
+    refreshEmployee?.();
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
-      refreshEmployee?.();
       updateGreeting();
       fetchData();
       verifyLocation();
       loadSharingStatus();
-    }, [employee, updateGreeting])
+    }, [updateGreeting])
   );
 
   useEffect(() => {
@@ -1164,23 +1167,41 @@ export default function DashboardScreen({ navigation }: any) {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.tlDashScroll}
             >
-              {employee.assigned_team_members.map((tm: any) => (
-                <View key={tm.id} style={styles.tlMemberCard}>
-                  <View style={styles.tlMemberAvatar}>
-                    <Text style={styles.tlMemberAvatarText}>
-                      {(tm.full_name || 'M').charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  <View style={{ marginLeft: 8, flex: 1 }}>
-                    <Text style={styles.tlMemberName} numberOfLines={1}>
-                      {tm.full_name}
-                    </Text>
-                    <Text style={styles.tlMemberRole} numberOfLines={1}>
-                      #{tm.employee_id} • {tm.designation || tm.department || 'Member'}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+              {employee.assigned_team_members.map((tm: any) => {
+                const photoUrl = resolveMediaUrl(tm.profile_photo);
+                return (
+                  <TouchableOpacity
+                    key={tm.id}
+                    style={styles.tlMemberCard}
+                    activeOpacity={0.75}
+                    onPress={() => {
+                      try {
+                        navigation.navigate('TeamLeaderTeamTab' as any);
+                      } catch {
+                        // fallback
+                      }
+                    }}
+                  >
+                    <View style={styles.tlMemberAvatar}>
+                      {photoUrl ? (
+                        <Image source={{ uri: photoUrl }} style={styles.tlMemberAvatarImage} />
+                      ) : (
+                        <Text style={styles.tlMemberAvatarText}>
+                          {(tm.full_name || 'M').charAt(0).toUpperCase()}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={{ marginLeft: 9, flex: 1 }}>
+                      <Text style={styles.tlMemberName} numberOfLines={1}>
+                        {tm.full_name}
+                      </Text>
+                      <Text style={styles.tlMemberRole} numberOfLines={1}>
+                        #{tm.employee_id} • {tm.designation || tm.department || 'Member'}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           </View>
         )}
@@ -1739,8 +1760,9 @@ const styles = StyleSheet.create({
   tlDashContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginHorizontal: 16,
-    marginBottom: 12,
+    marginHorizontal: 20,
+    marginTop: 14,
+    marginBottom: 10,
     paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
@@ -1787,19 +1809,25 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    minWidth: 160,
-    maxWidth: 200,
+    minWidth: 170,
+    maxWidth: 220,
   },
   tlMemberAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  tlMemberAvatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 18,
   },
   tlMemberAvatarText: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Comfortaa_700Bold',
     color: '#2563EB',
   },

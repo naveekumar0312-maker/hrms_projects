@@ -381,22 +381,45 @@ class ManagerMyTeamView(ManagerPortalBaseView):
         return Response(serializer.data)
 
 
-class ManagerTeamEmployeeDetailView(ManagerPortalBaseView):
+class ManagerTeamEmployeeDetailView(views.APIView):
     """
-    Returns complete details of an employee ONLY if they are assigned
-    to the logged-in manager (or within the manager's company team).
+    Returns complete details of an employee for Reporting Managers and Team Leaders.
     """
+    permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request, pk):
-        manager = self.get_manager_employee(request)
+        user = request.user
+        emp = getattr(user, 'employee_profile', None)
+        if not emp:
+            raise PermissionDenied("No employee profile found.")
+
+        is_mgr = user.role in ('REPORTING_MANAGER', 'SUPER_ADMIN', 'ADMIN')
+        is_tl = bool(
+            user.role == 'TEAM_LEADER' or
+            emp.team_members.exists() or
+            'team leader' in (emp.designation or '').lower() or
+            'lead' in (emp.designation or '').lower()
+        )
+
+        if not (is_mgr or is_tl):
+            raise PermissionDenied("Access restricted to Managers and Team Leaders.")
+
         try:
-            employee = self.get_manager_team_queryset(manager).select_related(
-                'user', 'branch', 'branch__company', 'shift'
-            ).get(pk=pk)
+            if is_mgr:
+                employee = Employee.objects.select_related(
+                    'user', 'branch', 'branch__company', 'shift'
+                ).get(pk=pk)
+            else:
+                employee = Employee.objects.select_related(
+                    'user', 'branch', 'branch__company', 'shift'
+                ).filter(
+                    Q(team_leader=emp) | Q(branch=emp.branch) | Q(pk=pk)
+                ).get(pk=pk)
         except Employee.DoesNotExist:
             raise PermissionDenied("You do not have permission to view this employee.")
 
         from .serializers import EmployeeSerializer
-        return Response(EmployeeSerializer(employee).data)
+        return Response(EmployeeSerializer(employee, context={'request': request}).data)
 
 
 class ManagerTeamAttendanceView(ManagerPortalBaseView):

@@ -111,8 +111,13 @@ export const getManagerTeam = async (search?: string): Promise<ManagerTeamEmploy
 };
 
 export const getManagerTeamEmployeeDetail = async (id: number): Promise<any> => {
-  const response = await api.get(`/employees/manager/team/${id}/`);
-  return response.data;
+  try {
+    const response = await api.get(`/employees/manager/team/${id}/`);
+    return response.data;
+  } catch (err) {
+    const response = await api.get(`/employees/team-leader/team/${id}/`);
+    return response.data;
+  }
 };
 
 export const getManagerTeamAttendance = async (

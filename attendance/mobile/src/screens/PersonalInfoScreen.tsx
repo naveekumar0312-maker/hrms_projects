@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, ChevronDown, ChevronUp, Users, Shield } from 'lucide-react-native';
 import { AuthContext } from '../context/AuthContext';
 import { COLORS } from '../constants/theme';
+import { resolveMediaUrl } from '../utils/imageUtils';
 
 interface DetailRowProps {
   label: string;
@@ -240,10 +241,17 @@ export default function PersonalInfoScreen({ navigation }: any) {
                     isLast && { borderBottomWidth: 0, paddingBottom: 0 },
                   ]}
                 >
-                  <View style={styles.memberAvatarCircle}>
-                    <Text style={styles.memberAvatarInitial}>
-                      {(member.full_name || 'M').charAt(0).toUpperCase()}
-                    </Text>
+                  <View style={[styles.memberAvatarCircle, { overflow: 'hidden' }]}>
+                    {member.profile_photo ? (
+                      <Image
+                        source={{ uri: resolveMediaUrl(member.profile_photo)! }}
+                        style={{ width: '100%', height: '100%', borderRadius: 19 }}
+                      />
+                    ) : (
+                      <Text style={styles.memberAvatarInitial}>
+                        {(member.full_name || 'M').charAt(0).toUpperCase()}
+                      </Text>
+                    )}
                   </View>
                   <View style={{ flex: 1, marginLeft: 10 }}>
                     <Text style={styles.memberNameText}>{member.full_name}</Text>
