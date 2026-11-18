@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import EmployeeDocumentsPanel from '../components/EmployeeDocumentsPanel';
 import { employeeService } from '../services/employeeService';
