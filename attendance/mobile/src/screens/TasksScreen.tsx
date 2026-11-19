@@ -940,8 +940,9 @@ export const TasksScreen: React.FC = () => {
                     <Text style={styles.createdDateText}>{formatCreatedDate(item.created_at)}</Text>
                   </View>
                   <View style={styles.badgesCol}>
-                    <View style={[styles.badgePill, { backgroundColor: pBadge.bg, borderColor: pBadge.borderColor }]}>
+                    <View style={[styles.badgePill, { backgroundColor: pBadge.bg, borderColor: pBadge.borderColor, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
                       <Text style={[styles.badgeText, { color: pBadge.color }]}>{item.priority}</Text>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: pBadge.color }} />
                     </View>
                     <View style={[styles.badgePill, { backgroundColor: sBadge.bg, borderColor: sBadge.borderColor }]}>
                       <Text style={[styles.badgeText, { color: sBadge.color }]}>{item.status.replace(/_/g, ' ')}</Text>
@@ -1231,20 +1232,26 @@ export const TasksScreen: React.FC = () => {
                 <View style={{ flex: 1, marginLeft: 6 }}>
                   <Text style={styles.formLabel}>Priority</Text>
                   <View style={styles.pickerSelector}>
-                    {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((pr) => (
-                      <TouchableOpacity
-                        key={pr}
-                        style={[
-                          styles.selectorPill,
-                          priority === pr && styles.selectorPillActive,
-                        ]}
-                        onPress={() => setPriority(pr)}
-                      >
-                        <Text style={[styles.selectorPillText, priority === pr && styles.selectorPillTextActive]}>
-                          {pr.charAt(0) + pr.slice(1).toLowerCase()}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                    {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((pr) => {
+                      const dotColor = pr === 'LOW' ? '#15803d' : pr === 'MEDIUM' ? '#a16207' : pr === 'HIGH' ? '#7e22ce' : '#dc2626';
+                      return (
+                        <TouchableOpacity
+                          key={pr}
+                          style={[
+                            styles.selectorPill,
+                            priority === pr && styles.selectorPillActive,
+                          ]}
+                          onPress={() => setPriority(pr)}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Text style={[styles.selectorPillText, priority === pr && styles.selectorPillTextActive]}>
+                              {pr.charAt(0) + pr.slice(1).toLowerCase()}
+                            </Text>
+                            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: dotColor }} />
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 </View>
               </View>
@@ -1621,20 +1628,26 @@ export const TasksScreen: React.FC = () => {
                 <View style={{ flex: 1, marginLeft: 6 }}>
                   <Text style={styles.formLabel}>Priority</Text>
                   <View style={styles.pickerSelector}>
-                    {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((pr) => (
-                      <TouchableOpacity
-                        key={pr}
-                        style={[
-                          styles.selectorPill,
-                          editPriority === pr && styles.selectorPillActive,
-                        ]}
-                        onPress={() => setEditPriority(pr)}
-                      >
-                        <Text style={[styles.selectorPillText, editPriority === pr && styles.selectorPillTextActive]}>
-                          {pr.charAt(0) + pr.slice(1).toLowerCase()}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                    {(['LOW', 'MEDIUM', 'HIGH', 'URGENT'] as const).map((pr) => {
+                      const dotColor = pr === 'LOW' ? '#15803d' : pr === 'MEDIUM' ? '#a16207' : pr === 'HIGH' ? '#7e22ce' : '#dc2626';
+                      return (
+                        <TouchableOpacity
+                          key={pr}
+                          style={[
+                            styles.selectorPill,
+                            editPriority === pr && styles.selectorPillActive,
+                          ]}
+                          onPress={() => setEditPriority(pr)}
+                        >
+                          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                            <Text style={[styles.selectorPillText, editPriority === pr && styles.selectorPillTextActive]}>
+                              {pr.charAt(0) + pr.slice(1).toLowerCase()}
+                            </Text>
+                            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: dotColor }} />
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 </View>
               </View>
@@ -1715,8 +1728,9 @@ export const TasksScreen: React.FC = () => {
                   {(() => {
                     const pb = getPriorityBadge(selectedTask.priority);
                     return (
-                      <View style={[styles.badgePill, { backgroundColor: pb.bg, borderColor: pb.borderColor }]}>
+                      <View style={[styles.badgePill, { backgroundColor: pb.bg, borderColor: pb.borderColor, flexDirection: 'row', alignItems: 'center', gap: 5 }]}>
                         <Text style={[styles.badgeText, { color: pb.color }]}>{selectedTask.priority}</Text>
+                        <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: pb.color }} />
                       </View>
                     );
                   })()}

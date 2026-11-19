@@ -117,6 +117,9 @@ const EmployeeTasks: React.FC = () => {
     const p = map[priority] || { color: '#334155', bg: '#f1f5f9', border: '#e2e8f0' };
     return (
       <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '5px',
         background: p.bg,
         color: p.color,
         border: `1px solid ${p.border}`,
@@ -125,7 +128,8 @@ const EmployeeTasks: React.FC = () => {
         fontSize: '11px',
         fontWeight: 700,
       }}>
-        {priority}
+        <span>{priority}</span>
+        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: p.color, flexShrink: 0 }} />
       </span>
     );
   };

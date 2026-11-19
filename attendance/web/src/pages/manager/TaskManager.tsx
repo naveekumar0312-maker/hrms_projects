@@ -185,6 +185,7 @@ const TaskManager: React.FC = () => {
       <span style={{
         display: 'inline-flex',
         alignItems: 'center',
+        gap: '5px',
         justifyContent: 'center',
         whiteSpace: 'nowrap',
         background: p.bg,
@@ -196,7 +197,8 @@ const TaskManager: React.FC = () => {
         fontWeight: 700,
         lineHeight: 1.2,
       }}>
-        {priority}
+        <span>{priority}</span>
+        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: p.color, flexShrink: 0 }} />
       </span>
     );
   };
@@ -267,10 +269,10 @@ const TaskManager: React.FC = () => {
               onChange={setPriorityFilter}
               options={[
                 { value: 'ALL', label: 'All Priorities' },
-                { value: 'LOW', label: 'Low' },
-                { value: 'MEDIUM', label: 'Medium' },
-                { value: 'HIGH', label: 'High' },
-                { value: 'URGENT', label: 'Urgent' },
+                { value: 'LOW', label: 'Low', dotColor: '#15803d' },
+                { value: 'MEDIUM', label: 'Medium', dotColor: '#a16207' },
+                { value: 'HIGH', label: 'High', dotColor: '#7e22ce' },
+                { value: 'URGENT', label: 'Urgent', dotColor: '#dc2626' },
               ]}
               placeholder="Priority"
             />

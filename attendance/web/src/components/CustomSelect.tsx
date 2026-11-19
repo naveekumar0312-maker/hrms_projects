@@ -5,6 +5,7 @@ import "./custom-dropdown.css";
 export interface Option {
   value: string;
   label: string;
+  dotColor?: string;
 }
 
 export interface CustomSelectProps {
@@ -97,8 +98,20 @@ export function CustomSelect({
         aria-expanded={isOpen}
       >
         {icon && <div className="custom-select-trigger-icon">{icon}</div>}
-        <span className="custom-select-trigger-text">
-          {selectedOption ? selectedOption.label : placeholder}
+        <span className="custom-select-trigger-text" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <span>{selectedOption ? selectedOption.label : placeholder}</span>
+          {selectedOption?.dotColor && (
+            <span
+              style={{
+                display: 'inline-block',
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                backgroundColor: selectedOption.dotColor,
+                flexShrink: 0,
+              }}
+            />
+          )}
         </span>
         <ChevronDown size={15} className="custom-select-trigger-arrow" />
       </button>
@@ -142,8 +155,20 @@ export function CustomSelect({
                       }}
                       title={opt.label}
                     >
-                      <span className="custom-select-option-text">
-                        {opt.label}
+                      <span className="custom-select-option-text" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span>{opt.label}</span>
+                        {opt.dotColor && (
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              backgroundColor: opt.dotColor,
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
                       </span>
                       {isSelected && (
                         <span className="custom-select-option-check">

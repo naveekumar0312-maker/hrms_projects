@@ -992,6 +992,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                           style={{
                             display: 'inline-flex',
                             alignItems: 'center',
+                            gap: '6px',
                             justifyContent: 'center',
                             background: pStyle.bg,
                             color: pStyle.color,
@@ -1002,7 +1003,8 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                             fontWeight: 700,
                           }}
                         >
-                          {priority}
+                          <span>{priority}</span>
+                          <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: pStyle.color }} />
                         </span>
                       );
                     })()}
@@ -1321,10 +1323,10 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                         disabled={isEmployee}
                         direction="up"
                         options={[
-                          { value: 'LOW', label: 'Low' },
-                          { value: 'MEDIUM', label: 'Medium' },
-                          { value: 'HIGH', label: 'High' },
-                          { value: 'URGENT', label: 'Urgent' },
+                          { value: 'LOW', label: 'Low', dotColor: '#15803d' },
+                          { value: 'MEDIUM', label: 'Medium', dotColor: '#a16207' },
+                          { value: 'HIGH', label: 'High', dotColor: '#7e22ce' },
+                          { value: 'URGENT', label: 'Urgent', dotColor: '#dc2626' },
                         ]}
                         placeholder="Select priority"
                       />
