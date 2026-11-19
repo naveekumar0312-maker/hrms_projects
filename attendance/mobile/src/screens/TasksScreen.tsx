@@ -518,7 +518,7 @@ export const TasksScreen: React.FC = () => {
 
     try {
       setCreating(true);
-      const chosenVoiceUri = titleVoiceAudioUri || descVoiceAudioUri;
+      const chosenVoiceUri = titleVoiceAudioUri || descVoiceAudioUri || (createAttachedFile?.type?.includes('audio') ? createAttachedFile.uri : null);
 
       let created: any = null;
       if (chosenVoiceUri) {
@@ -557,8 +557,9 @@ export const TasksScreen: React.FC = () => {
       }
 
       if (created?.id) {
-        // If additional attachment is present, post as comment
-        if (createAttachedFile || createLinkInput.trim()) {
+        // If additional non-voice attachment is present, post as comment
+        const isVoiceFileAttached = createAttachedFile?.type?.includes('audio');
+        if ((createAttachedFile && !isVoiceFileAttached) || createLinkInput.trim() || instructionComment.trim()) {
           try {
             await addTaskComment(created.id, instructionComment.trim(), {
               comment_type: createCommentType,
@@ -576,6 +577,7 @@ export const TasksScreen: React.FC = () => {
 
       setTitleVoiceAudioUri(null);
       setDescVoiceAudioUri(null);
+      setCreateAttachedFile(null);
       setCreateModalVisible(false);
       showSuccess('Success', `Task "${created.title}" created successfully!`);
       loadTasks();
@@ -954,7 +956,14 @@ export const TasksScreen: React.FC = () => {
                 {/* Row 1: Task Title & Category */}
                 <View style={styles.cardHeaderRow}>
                   <View style={styles.titleCol}>
-                    <Text style={styles.taskTitle}>{item.title}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <Text style={styles.taskTitle}>{item.title}</Text>
+                      {(item.voice_note_url || (item as any).voice_note) ? (
+                        <View style={{ backgroundColor: '#DCFCE7', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 }}>
+                          <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#15803D' }}>🎙️ Voice</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <Text style={styles.createdDateText}>{formatCreatedDate(item.created_at)}</Text>
                   </View>
                   <View style={styles.badgesCol}>

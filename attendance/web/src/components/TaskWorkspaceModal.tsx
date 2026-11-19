@@ -283,6 +283,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
       setEstimatedHours(String(t.estimated_hours || '0.00'));
       setInstructions(t.additional_instructions || '');
       setIsDraft(t.is_draft || false);
+      setVoiceNoteUrl(t.voice_note_url || null);
 
       setComments(t.comments || []);
       setAttachments(t.task_attachments || []);
@@ -355,7 +356,8 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
       };
 
       let resTaskId = taskId;
-      if (voiceNoteBlob) {
+      const effectiveVoiceBlob = voiceNoteBlob || audioBlob;
+      if (effectiveVoiceBlob) {
         const formData = new FormData();
         Object.keys(payload).forEach((key) => {
           if (payload[key] !== null && payload[key] !== undefined) {
@@ -366,21 +368,17 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
             }
           }
         });
-        const ext = voiceNoteBlob.type.includes('mp4') ? 'mp4' : 'webm';
-        formData.append('voice_note', voiceNoteBlob, `voice_note_${Date.now()}.${ext}`);
+        const ext = effectiveVoiceBlob.type.includes('mp4') ? 'mp4' : 'webm';
+        formData.append('voice_note', effectiveVoiceBlob, `voice_note_${Date.now()}.${ext}`);
 
         if (taskId) {
           if (!isEmployee) {
             formData.delete('status');
           }
-          await api.patch(`/tasks-module/tasks/${taskId}/`, formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
+          await api.patch(`/tasks-module/tasks/${taskId}/`, formData);
           setMode('view');
         } else {
-          const createRes = await api.post('/tasks-module/tasks/', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
+          const createRes = await api.post('/tasks-module/tasks/', formData);
           resTaskId = createRes.data?.id;
           if (resTaskId) {
             loadTaskDetails(resTaskId);

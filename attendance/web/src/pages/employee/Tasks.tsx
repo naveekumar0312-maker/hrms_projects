@@ -31,6 +31,7 @@ interface EmployeeTask {
   is_overdue: boolean;
   completion_notes?: string;
   additional_instructions?: string;
+  voice_note_url?: string | null;
   comments?: any[];
   created_at: string;
 }
@@ -181,7 +182,14 @@ const EmployeeTasks: React.FC = () => {
               {tasks.map((t) => (
                 <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => setSelectedTaskId(t.id)}>
                   <td>
-                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{t.title}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontWeight: 600, color: '#0f172a' }}>{t.title}</span>
+                      {t.voice_note_url && (
+                        <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }} title="Has Voice Note">
+                          🎙️ Voice
+                        </span>
+                      )}
+                    </div>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>
                       Created {new Date(t.created_at).toLocaleDateString()}
                     </div>

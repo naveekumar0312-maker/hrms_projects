@@ -46,6 +46,7 @@ interface TaskItem {
   additional_instructions?: string;
   completion_notes?: string;
   completion_attachment?: string;
+  voice_note_url?: string | null;
   is_overdue: boolean;
   comments?: any[];
   created_at: string;
@@ -308,7 +309,14 @@ const TaskManager: React.FC = () => {
               {filteredTasks.map((t) => (
                 <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => handleOpenWorkspace(t.id, 'view')}>
                   <td>
-                    <div style={{ fontWeight: 600, color: '#0f172a' }}>{t.title}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontWeight: 600, color: '#0f172a' }}>{t.title}</span>
+                      {t.voice_note_url && (
+                        <span style={{ fontSize: '11px', background: '#dcfce7', color: '#15803d', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }} title="Has Voice Note">
+                          🎙️ Voice
+                        </span>
+                      )}
+                    </div>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>
                       By {t.assigned_by_name} &bull; {new Date(t.created_at).toLocaleDateString()}
                     </div>
