@@ -4312,9 +4312,9 @@ body {
 }
 
 .sidebar-header {
-  height: 76px;
-  min-height: 76px;
-  padding: 0 1.25rem;
+  min-height: 80px;
+  height: auto;
+  padding: 0.85rem 1.25rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4330,14 +4330,16 @@ body {
   letter-spacing: -0.01em;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
   flex: 1;
 }
 
 .sidebar-company-logo {
+  height: 40px;
   max-height: 48px;
-  max-width: 140px;
+  max-width: 90px;
+  width: auto;
   object-fit: contain;
   border-radius: 6px;
   background: transparent;
@@ -4346,16 +4348,15 @@ body {
 
 .sidebar-brand-name {
   color: #FFFFFF;
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   font-weight: 700;
   white-space: normal;
-  line-height: 1.25;
+  line-height: 1.3;
   word-break: break-word;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
+  overflow: visible;
+  display: block;
+  flex: 1;
+  min-width: 0;
 }
 
 .sidebar-brand span:not(.sidebar-brand-name) {

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import CustomDatePicker from '../../components/CustomDatePicker';
 import { createPermission, getPermissions, updatePermission, deletePermission, getPermissionSummary, type PermissionSummary } from '../../api/permissions';
 import type { PermissionRequest } from '../../api/permissions';
