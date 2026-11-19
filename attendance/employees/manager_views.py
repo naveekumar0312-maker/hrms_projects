@@ -648,7 +648,14 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
     """
     def get(self, request):
         manager = self.get_manager_employee(request)
-        today = timezone.localdate()
+        date_param = request.query_params.get('date')
+        if date_param:
+            try:
+                today = datetime.strptime(date_param, '%Y-%m-%d').date()
+            except ValueError:
+                today = timezone.localdate()
+        else:
+            today = timezone.localdate()
 
         company_id_param = request.query_params.get('company')
         branch_id_param = request.query_params.get('branch')

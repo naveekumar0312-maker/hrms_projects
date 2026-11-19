@@ -19,6 +19,7 @@ import {
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
+import { CustomDatePicker } from '../../components/CustomDatePicker';
 import './ManagerDashboard.css';
 import '../ReportingManagers.css';
 
@@ -76,6 +77,7 @@ const ManagerDashboard: React.FC = () => {
     pending_permissions: number;
     pending_wfh: number;
   }>({ pending_leaves: 0, pending_permissions: 0, pending_wfh: 0 });
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -93,7 +95,7 @@ const ManagerDashboard: React.FC = () => {
     setStatusModalLoading(true);
     try {
       const res = await api.get('/employees/manager/team-attendance/', {
-        params: { status: statusKey }
+        params: { status: statusKey, date: selectedDate }
       });
       setStatusModalItems(res.data.team_attendance || []);
     } catch (err) {
@@ -109,7 +111,9 @@ const ManagerDashboard: React.FC = () => {
       setLoading(true);
       setError('');
       const [sumRes, teamRes, reminderRes] = await Promise.all([
-        api.get('/employees/manager/dashboard-summary/'),
+        api.get('/employees/manager/dashboard-summary/', {
+          params: { date: selectedDate }
+        }),
         api.get('/employees/manager/team/'),
         api.get('/attendance/pending-actions-reminder/').catch(() => ({ data: {} })),
       ]);
@@ -132,7 +136,7 @@ const ManagerDashboard: React.FC = () => {
 
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [selectedDate]);
 
   const filteredStatusModalItems = statusModalItems.filter((item) => {
     // 1. Strict status matching to ensure zero leakage from any un-filtered data
@@ -322,22 +326,31 @@ const ManagerDashboard: React.FC = () => {
       </div>
 
       {/* SECTION 2: ATTENDANCE OVERVIEW (CLICKABLE DRILL-DOWN) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
         <div>
           <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', margin: 0 }}>
-            Today's Team Attendance
+            Team Attendance Overview
           </h3>
           <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
-            Click any card to view detailed employee report for today
+            Click any card to view detailed employee report for the selected date
           </p>
         </div>
-        <Link
-          to="/manager/attendance"
-          className="mgr-link-btn"
-          style={{ fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#22C55E', textDecoration: 'none', fontWeight: 600 }}
-        >
-          Full Attendance Sheet <ArrowRight size={14} />
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ minWidth: '160px' }}>
+            <CustomDatePicker
+              value={selectedDate}
+              onChange={(newDate: string) => setSelectedDate(newDate)}
+              placeholder="Select Date"
+            />
+          </div>
+          <Link
+            to={`/manager/attendance?date=${selectedDate}`}
+            className="mgr-link-btn"
+            style={{ fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#22C55E', textDecoration: 'none', fontWeight: 600 }}
+          >
+            Full Attendance Sheet <ArrowRight size={14} />
+          </Link>
+        </div>
       </div>
 
       <div className="mgr-cards-grid" style={{ marginBottom: '32px' }}>
@@ -502,7 +515,7 @@ const ManagerDashboard: React.FC = () => {
                   </span>
                 </h2>
                 <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
-                  Showing team members with status for today ({summary?.date || new Date().toISOString().split('T')[0]})
+                  Showing team members with status for {selectedDate}
                 </p>
               </div>
               <button
