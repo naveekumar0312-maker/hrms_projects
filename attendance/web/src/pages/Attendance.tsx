@@ -594,22 +594,32 @@ const Attendance = () => {
   }, [records, selectedDate, selectedCompany, selectedBranch, searchEmployee, companies, branches]);
 
   const pendingRecords = useMemo(
-    () => visibleRecords.filter((record) => record.status === 'PENDING'),
+    () => visibleRecords.filter((record) => {
+      const overall = getOverallAttendanceStatus(record);
+      return overall === 'PENDING' || record.status === 'PENDING';
+    }),
     [visibleRecords]
   );
 
   const absentRecords = useMemo(
-    () => visibleRecords.filter((record) => record.status === 'ABSENT'),
+    () => visibleRecords.filter((record) => {
+      const overall = getOverallAttendanceStatus(record);
+      return overall === 'ABSENT' || (record.status === 'ABSENT' && overall !== 'PENDING');
+    }),
     [visibleRecords]
   );
 
   const normalRecords = useMemo(
     () =>
-      visibleRecords.filter(
-        (record) =>
+      visibleRecords.filter((record) => {
+        const overall = getOverallAttendanceStatus(record);
+        return (
+          overall !== 'PENDING' &&
+          overall !== 'ABSENT' &&
           record.status !== 'PENDING' &&
           record.status !== 'ABSENT'
-      ),
+        );
+      }),
     [visibleRecords]
   );
 

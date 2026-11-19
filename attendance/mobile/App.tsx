@@ -225,7 +225,7 @@ const ManagerTabs = () => {
       />
       <Tab.Screen 
         name="ManagerAttendanceTab" 
-        component={AdminAttendanceScreen} 
+        component={ManagerAttendanceScreen} 
         options={{ 
           title: 'Team Attendance',
           tabBarLabel: 'Attendance',

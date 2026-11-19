@@ -228,12 +228,13 @@ export default function ManagerAttendanceScreen({ navigation, route }: any) {
       !selectedBranch ||
       (row.branch_id && Number(row.branch_id) === Number(selectedBranch));
 
+    const recStatus = (row.calculated_status || '').toUpperCase();
     const matchesStatus =
       statusFilter === 'ALL' ||
-      (statusFilter === 'PRESENT' && (row.calculated_status === 'PRESENT' || row.calculated_status === 'HALF_DAY')) ||
-      (statusFilter === 'LATE' && row.calculated_status === 'LATE') ||
-      (statusFilter === 'ABSENT' && row.calculated_status === 'ABSENT') ||
-      (statusFilter === 'ON_LEAVE' && (row.calculated_status === 'ON_LEAVE' || row.calculated_status === 'HOLIDAY'));
+      (statusFilter === 'PRESENT' && (recStatus === 'PRESENT' || recStatus === 'ON_TIME' || recStatus === 'COMPLETED')) ||
+      (statusFilter === 'LATE' && recStatus === 'LATE') ||
+      (statusFilter === 'ABSENT' && recStatus === 'ABSENT') ||
+      (statusFilter === 'ON_LEAVE' && (recStatus === 'ON_LEAVE' || recStatus === 'ON LEAVE' || recStatus === 'HALF DAY' || recStatus === 'HALF_DAY' || recStatus === 'HOLIDAY'));
 
     return matchesSearch && matchesCompany && matchesBranch && matchesStatus;
   });
