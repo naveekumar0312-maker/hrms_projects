@@ -106,13 +106,14 @@ const ManagerDashboard: React.FC = () => {
     }
   };
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (targetDate?: string) => {
+    const dateToQuery = targetDate || selectedDate;
     try {
       setLoading(true);
       setError('');
       const [sumRes, teamRes, reminderRes] = await Promise.all([
         api.get('/employees/manager/dashboard-summary/', {
-          params: { date: selectedDate }
+          params: { date: dateToQuery }
         }),
         api.get('/employees/manager/team/'),
         api.get('/attendance/pending-actions-reminder/').catch(() => ({ data: {} })),
@@ -135,7 +136,7 @@ const ManagerDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    loadDashboardData();
+    loadDashboardData(selectedDate);
   }, [selectedDate]);
 
   const filteredStatusModalItems = statusModalItems.filter((item) => {
@@ -194,9 +195,11 @@ const ManagerDashboard: React.FC = () => {
     },
   ];
 
+  const isToday = selectedDate === new Date().toISOString().split('T')[0];
+
   const attendanceCards = [
     {
-      title: 'Present Today',
+      title: isToday ? 'Present Today' : 'Present',
       statusKey: 'PRESENT_TODAY',
       value: summary?.present_today ?? 0,
       icon: UserCheck,
@@ -205,7 +208,7 @@ const ManagerDashboard: React.FC = () => {
       border: '#bbf7d0',
     },
     {
-      title: 'Late Today',
+      title: isToday ? 'Late Today' : 'Late',
       statusKey: 'LATE_TODAY',
       value: summary?.late_today ?? 0,
       icon: Clock,
@@ -214,7 +217,7 @@ const ManagerDashboard: React.FC = () => {
       border: '#fde68a',
     },
     {
-      title: 'Absent Today',
+      title: isToday ? 'Absent Today' : 'Absent',
       statusKey: 'ABSENT_TODAY',
       value: summary?.absent_today ?? 0,
       icon: UserX,
@@ -223,7 +226,7 @@ const ManagerDashboard: React.FC = () => {
       border: '#fecaca',
     },
     {
-      title: 'On Leave Today',
+      title: isToday ? 'On Leave Today' : 'On Leave',
       statusKey: 'ON_LEAVE_TODAY',
       value: summary?.on_leave_today ?? 0,
       icon: Calendar,
@@ -292,7 +295,7 @@ const ManagerDashboard: React.FC = () => {
           <Link to="/manager/team" className="rm-btn rm-btn-primary" style={{ textDecoration: 'none' }}>
             <Users size={16} /> Manage Team
           </Link>
-          <button className="rm-btn rm-btn-secondary" onClick={loadDashboardData}>
+          <button className="rm-btn rm-btn-secondary" onClick={() => loadDashboardData()}>
             <RefreshCw size={16} /> Refresh
           </button>
         </div>
@@ -339,7 +342,10 @@ const ManagerDashboard: React.FC = () => {
           <div style={{ minWidth: '160px' }}>
             <CustomDatePicker
               value={selectedDate}
-              onChange={(newDate: string) => setSelectedDate(newDate)}
+              onChange={(newDate: string) => {
+                setSelectedDate(newDate);
+                loadDashboardData(newDate);
+              }}
               placeholder="Select Date"
             />
           </div>
