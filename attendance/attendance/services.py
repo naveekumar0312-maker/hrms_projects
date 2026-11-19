@@ -422,12 +422,8 @@ def get_employee_attendance_status(
         if check_in_appr == 'REJECTED' or check_out_appr == 'REJECTED':
             return 'REJECTED'
 
-        # Must have BOTH Check-In and Check-Out approved to be counted as PRESENT or LATE
-        both_approved = (check_in_appr == 'APPROVED' and check_out_appr == 'APPROVED')
-        if not both_approved:
-            return 'PENDING'
-
-        # If employee was late
+        # If employee has checked in:
+        # Check if they were late based on late_minutes or shift start
         late_mins = getattr(record, 'late_minutes', 0) or 0
         rec_status = getattr(record, 'status', None) or ''
         if late_mins > 0 or rec_status == 'LATE':
@@ -453,6 +449,9 @@ def get_employee_attendance_status(
         return 'FUTURE'
 
     if target_date == today:
+        # If check-in or check-out is missing for today:
+        # User requirement: check in check out vaikkathavangala andha day full aa partu aprm absent count kattattum.
+        # So throughout today's working shift/day, if no punch exists yet, keep as PENDING until shift ends.
         shift = getattr(employee, 'shift', None) if employee else None
         if not shift or not shift.end_time:
             return 'PENDING'

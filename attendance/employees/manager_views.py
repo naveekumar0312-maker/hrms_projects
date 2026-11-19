@@ -684,18 +684,13 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
                 holiday += 1
                 continue
 
-            # 3. Check approvals for Present / Late status:
-            # BOTH Check-In and Check-Out must be approved to be counted as PRESENT or LATE.
-            check_in_appr = getattr(att, 'check_in_approval_status', None) if att else None
-            check_out_appr = getattr(att, 'check_out_approval_status', None) if att else None
-            is_check_in_approved = (check_in_appr == 'APPROVED')
-            is_check_out_approved = (check_out_appr == 'APPROVED')
-
-            if att and att.check_in and is_check_in_approved and is_check_out_approved:
-                present += 1
+            # 3. Attendance Record:
+            if att and att.check_in:
                 late_mins = getattr(att, 'late_minutes', 0) or 0
                 if late_mins > 0 or getattr(att, 'status', '') == 'LATE':
                     late += 1
+                else:
+                    present += 1
             else:
                 if is_sunday:
                     continue
@@ -712,20 +707,6 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
                     on_leave += 1
                 elif calc_status == 'HOLIDAY':
                     holiday += 1
-                elif calc_status == 'PENDING':
-                    # If shift start has passed + 30m grace without punch, mark as absent for today
-                    if not att or not att.check_in:
-                        shift = getattr(emp, 'shift', None)
-                        if shift and shift.start_time:
-                            shift_start_dt = timezone.make_aware(
-                                datetime.combine(today, shift.start_time),
-                                timezone.get_current_timezone()
-                            )
-                            if now_dt > (shift_start_dt + timedelta(minutes=30)):
-                                absent += 1
-                        elif now_dt.hour >= 12:
-                            absent += 1
-                    # Note: If punch exists but not yet approved, it stays Pending and NOT absent!
 
         comp_name = manager.branch.company.name if (manager.branch and manager.branch.company) else (request.user.company.name if request.user.company else 'All Companies')
         tl_count = sum(1 for e in assigned_employees if e.user and e.user.role == 'TEAM_LEADER')
@@ -974,16 +955,12 @@ class TeamLeaderDashboardSummaryView(views.APIView):
             if holiday_obj:
                 continue
 
-            check_in_appr = getattr(att, 'check_in_approval_status', None) if att else None
-            check_out_appr = getattr(att, 'check_out_approval_status', None) if att else None
-            is_check_in_approved = (check_in_appr == 'APPROVED')
-            is_check_out_approved = (check_out_appr == 'APPROVED')
-
-            if att and att.check_in and is_check_in_approved and is_check_out_approved:
-                present += 1
+            if att and att.check_in:
                 late_mins = getattr(att, 'late_minutes', 0) or 0
                 if late_mins > 0 or getattr(att, 'status', '') == 'LATE':
                     late += 1
+                else:
+                    present += 1
             else:
                 if is_sunday:
                     continue
@@ -998,18 +975,6 @@ class TeamLeaderDashboardSummaryView(views.APIView):
                     absent += 1
                 elif calc_status in ('ON_LEAVE', 'HALF DAY', 'HALF_DAY'):
                     on_leave += 1
-                elif calc_status == 'PENDING':
-                    if not att or not att.check_in:
-                        shift = getattr(member, 'shift', None)
-                        if shift and shift.start_time:
-                            shift_start_dt = timezone.make_aware(
-                                datetime.combine(today, shift.start_time),
-                                timezone.get_current_timezone()
-                            )
-                            if now_dt > (shift_start_dt + timedelta(minutes=30)):
-                                absent += 1
-                        elif now_dt.hour >= 12:
-                            absent += 1
 
         # Task metrics
         from task_tracking.models import Task
