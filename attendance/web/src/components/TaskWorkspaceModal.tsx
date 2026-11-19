@@ -144,58 +144,19 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<any>(null);
 
-  // Speech-to-text voice recognition for Title & Description
-  const [voiceTarget, setVoiceTarget] = useState<'title' | 'description' | null>(null);
-  const [isTranscribingVoice, setIsTranscribingVoice] = useState(false);
-  const [titleVoiceAudioUrl, setTitleVoiceAudioUrl] = useState<string | null>(null);
-  const [descVoiceAudioUrl, setDescVoiceAudioUrl] = useState<string | null>(null);
-  const speechRecognizerRef = useRef<any>(null);
+  // Speech-to-text / Audio voice note recording
+  const [isRecordingVoiceNote, setIsRecordingVoiceNote] = useState(false);
+  const [voiceNoteBlob, setVoiceNoteBlob] = useState<Blob | null>(null);
+  const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
   const fieldMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const fieldAudioChunksRef = useRef<Blob[]>([]);
-  const targetForSpeechRef = useRef<'title' | 'description' | null>(null);
-  const speechTextAccumulatedRef = useRef<string>('');
 
-  // Transcribe recorded audio with the backend Google Speech API fallback
-  const transcribeBlob = async (blob: Blob, target: 'title' | 'description') => {
-    try {
-      setIsTranscribingVoice(true);
-      const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
-      const file = new File([blob], `voice_input.${ext}`, { type: blob.type || 'audio/webm' });
-      const formData = new FormData();
-      formData.append('audio', file);
-
-      const res = await api.post('/tasks-module/tasks/transcribe-audio/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      const serverText = res.data?.text;
-      if (serverText && serverText.trim()) {
-        const textToAppend = serverText.trim();
-        if (target === 'title') {
-          setTitle((prev) => (prev ? prev.trim() + ' ' + textToAppend : textToAppend));
-        } else {
-          setDescription((prev) => (prev ? prev.trim() + ' ' + textToAppend : textToAppend));
-        }
-      }
-    } catch (err) {
-      console.warn('Backend transcription error:', err);
-    } finally {
-      setIsTranscribingVoice(false);
-    }
-  };
-
-  const startVoiceInput = async (target: 'title' | 'description') => {
-    if (voiceTarget === target) {
+  const startVoiceInput = async () => {
+    if (isRecordingVoiceNote) {
       stopVoiceInput();
       return;
     }
 
-    // Stop any existing session
-    stopVoiceInput();
-    targetForSpeechRef.current = target;
-    speechTextAccumulatedRef.current = '';
-
-    // 1. Start audio recording via MediaRecorder for playback box & server transcription fallback
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -215,89 +176,26 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
           }
         };
 
-        recorder.onstop = async () => {
+        recorder.onstop = () => {
           const blob = new Blob(fieldAudioChunksRef.current, { type: mimeType || 'audio/webm' });
           const url = URL.createObjectURL(blob);
-          if (target === 'title') {
-            setTitleVoiceAudioUrl(url);
-          } else {
-            setDescVoiceAudioUrl(url);
-          }
+          setVoiceNoteBlob(blob);
+          setVoiceNoteUrl(url);
           stream.getTracks().forEach((track) => track.stop());
-
-          // If web browser SpeechRecognition didn't produce text, transcribe via server
-          if (!speechTextAccumulatedRef.current.trim() && blob.size > 1000) {
-            await transcribeBlob(blob, target);
-          }
+          setIsRecordingVoiceNote(false);
         };
 
         recorder.start(100);
+        setIsRecordingVoiceNote(true);
       }
     } catch (micErr) {
       console.warn('Audio recorder stream could not be started:', micErr);
-    }
-
-    // 2. Start SpeechRecognition for real-time speech typing
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = 'en-US';
-
-        let initialText = target === 'title' ? title : description;
-
-        recognition.onstart = () => {
-          setVoiceTarget(target);
-        };
-
-        recognition.onresult = (event: any) => {
-          let transcript = '';
-          for (let i = 0; i < event.results.length; i++) {
-            transcript += event.results[i][0].transcript;
-          }
-          speechTextAccumulatedRef.current = transcript;
-          if (target === 'title') {
-            setTitle((initialText ? initialText + ' ' : '') + transcript);
-          } else {
-            setDescription((initialText ? initialText + ' ' : '') + transcript);
-          }
-        };
-
-        recognition.onerror = (event: any) => {
-          console.warn('Speech recognition warning/error:', event.error);
-          // Don't kill voiceTarget immediately if network error; MediaRecorder will fallback on stop
-          if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-            setVoiceTarget(null);
-          }
-        };
-
-        recognition.onend = () => {
-          // If stopped externally or completed
-        };
-
-        speechRecognizerRef.current = recognition;
-        recognition.start();
-        setVoiceTarget(target);
-      } catch (err: any) {
-        console.error('Failed to start speech recognition:', err);
-        setVoiceTarget(target);
-      }
-    } else {
-      setVoiceTarget(target);
+      alert('Could not access microphone.');
+      setIsRecordingVoiceNote(false);
     }
   };
 
   const stopVoiceInput = () => {
-    if (speechRecognizerRef.current) {
-      try {
-        speechRecognizerRef.current.stop();
-      } catch (e) {
-        // ignore
-      }
-      speechRecognizerRef.current = null;
-    }
     if (fieldMediaRecorderRef.current && fieldMediaRecorderRef.current.state !== 'inactive') {
       try {
         fieldMediaRecorderRef.current.stop();
@@ -306,7 +204,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
       }
       fieldMediaRecorderRef.current = null;
     }
-    setVoiceTarget(null);
+    setIsRecordingVoiceNote(false);
   };
 
   // Time log entry state
@@ -456,17 +354,52 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
         additional_instructions: instructions.trim(),
       };
 
-      if (taskId) {
-        if (!isEmployee) {
-          // Managers cannot alter task status on published tasks
-          delete payload.status;
+      let resTaskId = taskId;
+      if (voiceNoteBlob) {
+        const formData = new FormData();
+        Object.keys(payload).forEach((key) => {
+          if (payload[key] !== null && payload[key] !== undefined) {
+            if (Array.isArray(payload[key])) {
+              payload[key].forEach((val: any) => formData.append(key, val));
+            } else {
+              formData.append(key, payload[key]);
+            }
+          }
+        });
+        const ext = voiceNoteBlob.type.includes('mp4') ? 'mp4' : 'webm';
+        formData.append('voice_note', voiceNoteBlob, `voice_note_${Date.now()}.${ext}`);
+
+        if (taskId) {
+          if (!isEmployee) {
+            formData.delete('status');
+          }
+          await api.patch(`/tasks-module/tasks/${taskId}/`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          setMode('view');
+        } else {
+          const createRes = await api.post('/tasks-module/tasks/', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
+          resTaskId = createRes.data?.id;
+          if (resTaskId) {
+            loadTaskDetails(resTaskId);
+          }
         }
-        await api.patch(`/tasks-module/tasks/${taskId}/`, payload);
-        setMode('view');
       } else {
-        const createRes = await api.post('/tasks-module/tasks/', payload);
-        if (createRes.data?.id) {
-          loadTaskDetails(createRes.data.id);
+        if (taskId) {
+          if (!isEmployee) {
+            // Managers cannot alter task status on published tasks
+            delete payload.status;
+          }
+          await api.patch(`/tasks-module/tasks/${taskId}/`, payload);
+          setMode('view');
+        } else {
+          const createRes = await api.post('/tasks-module/tasks/', payload);
+          resTaskId = createRes.data?.id;
+          if (resTaskId) {
+            loadTaskDetails(resTaskId);
+          }
         }
       }
       onSaved();
@@ -861,10 +794,12 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0f172a', lineHeight: 1.4 }}>
                     {title || 'Untitled Task'}
                   </h3>
-                  {titleVoiceAudioUrl && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '8px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Title Audio:</span>
-                      <audio controls src={titleVoiceAudioUrl} style={{ height: '28px' }} />
+                  {(taskData?.voice_note_url || voiceNoteUrl) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0', marginTop: '12px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        🎙️ Voice Note from Manager:
+                      </span>
+                      <audio controls src={taskData?.voice_note_url || voiceNoteUrl || undefined} style={{ height: '32px', flex: 1 }} />
                     </div>
                   )}
                 </div>
@@ -887,12 +822,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                   }}>
                     {description || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No description provided.</span>}
                   </div>
-                  {descVoiceAudioUrl && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '8px' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Description Audio:</span>
-                      <audio controls src={descVoiceAudioUrl} style={{ height: '28px' }} />
-                    </div>
-                  )}
                 </div>
 
                 {/* 3. ASSIGNED EMPLOYEES */}
@@ -1109,25 +1038,19 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                       {!isEmployee && (
                         <button
                           type="button"
-                          className={`task-voice-btn ${voiceTarget === 'title' ? 'recording' : ''}`}
-                          onClick={() => startVoiceInput('title')}
-                          disabled={isTranscribingVoice}
-                          title="Voice typing for Title"
+                          className={`task-voice-btn ${isRecordingVoiceNote ? 'recording' : ''}`}
+                          onClick={startVoiceInput}
+                          title="Record Voice Note"
                         >
-                          {isTranscribingVoice && targetForSpeechRef.current === 'title' ? (
-                            <>
-                              <Loader2 size={12} className="spin" />
-                              <span>Transcribing...</span>
-                            </>
-                          ) : voiceTarget === 'title' ? (
+                          {isRecordingVoiceNote ? (
                             <>
                               <span className="task-voice-dot" />
-                              <span>Listening...</span>
+                              <span>Recording Voice Note... (Click to stop)</span>
                             </>
                           ) : (
                             <>
                               <Mic size={12} />
-                              <span>Voice</span>
+                              <span>Record Voice Note</span>
                             </>
                           )}
                         </button>
@@ -1136,74 +1059,44 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                     <input
                       type="text"
                       className="task-input-title-modern"
-                      placeholder="Enter task title (or use voice)..."
+                      placeholder="Enter task title..."
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       disabled={isEmployee}
                       required
                     />
-                    {titleVoiceAudioUrl && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Title Audio:</span>
-                          <audio controls src={titleVoiceAudioUrl} style={{ height: '28px' }} />
+                    {(voiceNoteUrl || taskData?.voice_note_url) && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0fdf4', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', marginTop: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534' }}>🎙️ Voice Note:</span>
+                          <audio controls src={voiceNoteUrl || taskData?.voice_note_url} style={{ height: '30px', flex: 1 }} />
                         </div>
-                        <button type="button" className="task-tool-btn" title="Remove Audio" onClick={() => setTitleVoiceAudioUrl(null)}>
-                          <X size={13} />
+                        <button
+                          type="button"
+                          className="task-tool-btn"
+                          title="Remove Voice Note"
+                          style={{ marginLeft: '10px' }}
+                          onClick={() => {
+                            setVoiceNoteBlob(null);
+                            setVoiceNoteUrl(null);
+                          }}
+                        >
+                          <X size={14} color="#ef4444" />
                         </button>
                       </div>
                     )}
                   </div>
 
                   <div className="task-field-group">
-                    <div className="task-field-label-row">
-                      <label className="task-field-label">Description</label>
-                      {!isEmployee && (
-                        <button
-                          type="button"
-                          className={`task-voice-btn ${voiceTarget === 'description' ? 'recording' : ''}`}
-                          onClick={() => startVoiceInput('description')}
-                          disabled={isTranscribingVoice}
-                          title="Voice typing for Description"
-                        >
-                          {isTranscribingVoice && targetForSpeechRef.current === 'description' ? (
-                            <>
-                              <Loader2 size={12} className="spin" />
-                              <span>Transcribing...</span>
-                            </>
-                          ) : voiceTarget === 'description' ? (
-                            <>
-                              <span className="task-voice-dot" />
-                              <span>Listening...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Mic size={12} />
-                              <span>Voice</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    <label className="task-field-label">Description</label>
                     <textarea
                       className="task-textarea-modern"
                       rows={4}
-                      placeholder="Provide full context, technical specifications, and expected deliverables (or use voice)..."
+                      placeholder="Provide full context, technical specifications, and expected deliverables..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       disabled={isEmployee}
                     />
-                    {descVoiceAudioUrl && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '6px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Description Audio:</span>
-                          <audio controls src={descVoiceAudioUrl} style={{ height: '28px' }} />
-                        </div>
-                        <button type="button" className="task-tool-btn" title="Remove Audio" onClick={() => setDescVoiceAudioUrl(null)}>
-                          <X size={13} />
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   {/* ASSIGNED EMPLOYEES SELECTION WITH COMPANY FILTER */}

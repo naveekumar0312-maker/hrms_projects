@@ -77,6 +77,7 @@ class Task(models.Model):
     estimated_hours = models.DecimalField(max_digits=6, decimal_places=2, default=0.00)
     
     attachment = models.FileField(upload_to='tasks/attachments/', null=True, blank=True)
+    voice_note = models.FileField(upload_to='tasks/voice_notes/', null=True, blank=True)
     additional_instructions = models.TextField(blank=True, default='')
     
     completion_attachment = models.FileField(upload_to='tasks/completions/', null=True, blank=True)

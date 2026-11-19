@@ -336,18 +336,9 @@ export const TasksScreen: React.FC = () => {
           } else {
             setDescVoiceAudioUri(uri);
           }
-
-          const text = await transcribeAudio(uri, 'audio/m4a', 'voice_speech.m4a');
-          if (text && text.trim()) {
-            if (target === 'title') {
-              setTitle((prev) => (prev ? prev.trim() + ' ' + text.trim() : text.trim()));
-            } else {
-              setDescription((prev) => (prev ? prev.trim() + ' ' + text.trim() : text.trim()));
-            }
-          }
         }
       } catch (err: any) {
-        console.error('Failed to transcribe voice:', err);
+        console.error('Failed to stop voice recording:', err);
       } finally {
         setTranscribing(false);
         setVoiceTypingTarget(null);
@@ -527,22 +518,47 @@ export const TasksScreen: React.FC = () => {
 
     try {
       setCreating(true);
-      const payload: any = {
-        title: title.trim(),
-        description: description.trim(),
-        priority,
-        status: isDraft ? 'DRAFT' : statusVal,
-        start_date: startDate || undefined,
-        due_date: dueDate || undefined,
-        estimated_hours: Number(createEstimatedHours) || 0,
-        assigned_employee_ids: assignedEmployeeIds,
-        additional_instructions: instructionComment.trim() || undefined,
-      };
+      const chosenVoiceUri = titleVoiceAudioUri || descVoiceAudioUri;
 
-      const created = await createTask(payload);
+      let created: any = null;
+      if (chosenVoiceUri) {
+        const formData = new FormData();
+        formData.append('title', title.trim());
+        if (description.trim()) formData.append('description', description.trim());
+        formData.append('priority', priority);
+        formData.append('status', isDraft ? 'DRAFT' : statusVal);
+        if (startDate) formData.append('start_date', startDate);
+        if (dueDate) formData.append('due_date', dueDate);
+        formData.append('estimated_hours', String(Number(createEstimatedHours) || 0));
+        assignedEmployeeIds.forEach((id) => formData.append('assigned_employee_ids', String(id)));
+        if (instructionComment.trim()) formData.append('additional_instructions', instructionComment.trim());
+
+        const filename = chosenVoiceUri.split('/').pop() || 'voice_note.m4a';
+        formData.append('voice_note', {
+          uri: chosenVoiceUri,
+          name: filename,
+          type: 'audio/m4a',
+        } as any);
+
+        created = await createTask(formData);
+      } else {
+        const payload: any = {
+          title: title.trim(),
+          description: description.trim(),
+          priority,
+          status: isDraft ? 'DRAFT' : statusVal,
+          start_date: startDate || undefined,
+          due_date: dueDate || undefined,
+          estimated_hours: Number(createEstimatedHours) || 0,
+          assigned_employee_ids: assignedEmployeeIds,
+          additional_instructions: instructionComment.trim() || undefined,
+        };
+        created = await createTask(payload);
+      }
+
       if (created?.id) {
-        // If voice / image / file / link is present, post as comment
-        if (createAttachedFile || createLinkInput.trim() || instructionComment.trim()) {
+        // If additional attachment is present, post as comment
+        if (createAttachedFile || createLinkInput.trim()) {
           try {
             await addTaskComment(created.id, instructionComment.trim(), {
               comment_type: createCommentType,
@@ -558,6 +574,8 @@ export const TasksScreen: React.FC = () => {
         }
       }
 
+      setTitleVoiceAudioUri(null);
+      setDescVoiceAudioUri(null);
       setCreateModalVisible(false);
       showSuccess('Success', `Task "${created.title}" created successfully!`);
       loadTasks();
@@ -1743,6 +1761,45 @@ export const TasksScreen: React.FC = () => {
                     );
                   })()}
                 </View>
+
+                {/* Voice Note from Manager */}
+                {(selectedTask.voice_note_url || (selectedTask as any).voice_note) ? (
+                  <View style={{
+                    backgroundColor: '#F0FDF4',
+                    borderWidth: 1,
+                    borderColor: '#BBF7D0',
+                    borderRadius: 12,
+                    padding: 12,
+                    marginBottom: 16,
+                  }}>
+                    <Text style={{ fontSize: 13, fontWeight: '700', color: '#166534', marginBottom: 8, flexDirection: 'row', alignItems: 'center' }}>
+                      🎙️ Voice Note from Manager
+                    </Text>
+                    <TouchableOpacity
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#16A34A',
+                        paddingVertical: 8,
+                        paddingHorizontal: 14,
+                        borderRadius: 8,
+                        alignSelf: 'flex-start',
+                        gap: 8,
+                      }}
+                      onPress={() => playAudio(selectedTask.voice_note_url || (selectedTask as any).voice_note, `task_voice_${selectedTask.id}`)}
+                      activeOpacity={0.8}
+                    >
+                      {playingAudioId === `task_voice_${selectedTask.id}` ? (
+                        <Pause size={16} color="#FFFFFF" />
+                      ) : (
+                        <Play size={16} color="#FFFFFF" />
+                      )}
+                      <Text style={{ color: '#FFFFFF', fontWeight: '700', fontSize: 13 }}>
+                        {playingAudioId === `task_voice_${selectedTask.id}` ? 'Pause Voice Note' : 'Play Voice Note'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
 
                 {/* Full Description */}
                 <Text style={styles.sectionHeading}>Task Scope & Deliverables</Text>

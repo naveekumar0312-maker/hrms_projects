@@ -147,6 +147,7 @@ class TaskSerializer(serializers.ModelSerializer):
     )
     assigned_by_name = serializers.SerializerMethodField()
     assigned_by_role = serializers.CharField(source='assigned_by.role', read_only=True, default='')
+    voice_note_url = serializers.SerializerMethodField()
     company_name = serializers.CharField(source='company.name', read_only=True)
     reporting_manager_name = serializers.CharField(source='reporting_manager.full_name', read_only=True, default='')
     team_leader_name = serializers.CharField(source='team_leader.full_name', read_only=True, default='')
@@ -170,7 +171,7 @@ class TaskSerializer(serializers.ModelSerializer):
             'team_leader', 'team_leader_name',
             'priority', 'status', 'is_draft',
             'start_date', 'due_date', 'start_time', 'end_time', 'estimated_hours',
-            'attachment', 'additional_instructions',
+            'attachment', 'voice_note', 'voice_note_url', 'additional_instructions',
             'completion_attachment', 'completion_notes',
             'total_logged_hours', 'is_overdue',
             'comments', 'task_attachments', 'activities', 'time_logs',
@@ -180,6 +181,14 @@ class TaskSerializer(serializers.ModelSerializer):
             'id', 'company', 'company_name', 'assigned_by', 'assigned_by_role',
             'reporting_manager', 'team_leader', 'created_at', 'updated_at'
         ]
+
+    def get_voice_note_url(self, obj):
+        if obj.voice_note:
+            try:
+                return obj.voice_note.url
+            except Exception:
+                return None
+        return None
 
     def get_assigned_to_avatar(self, obj):
         if obj.assigned_to and obj.assigned_to.profile_photo:
@@ -220,7 +229,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
             'id', 'title', 'description', 'category',
             'assigned_to', 'assigned_employee_ids', 'priority', 'status', 'is_draft',
             'start_date', 'due_date', 'start_time', 'end_time', 'estimated_hours',
-            'attachment', 'additional_instructions'
+            'attachment', 'voice_note', 'additional_instructions'
         ]
 
     def validate(self, attrs):

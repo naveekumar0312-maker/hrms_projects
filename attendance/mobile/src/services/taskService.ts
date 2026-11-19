@@ -47,6 +47,8 @@ export interface TaskItem {
   activities?: any[];
   time_logs?: any[];
   attachment?: string | null;
+  voice_note?: string | null;
+  voice_note_url?: string | null;
   created_at: string;
 }
 
@@ -85,11 +87,33 @@ export const getTaskDetail = async (id: number): Promise<TaskItem> => {
 };
 
 export const createTask = async (data: any): Promise<TaskItem> => {
+  if (data instanceof FormData) {
+    const response = await api.post('/tasks-module/tasks/', data, {
+      transformRequest: (d: any, headers: any) => {
+        if (headers) {
+          delete headers['Content-Type'];
+        }
+        return d;
+      },
+    });
+    return response.data;
+  }
   const response = await api.post('/tasks-module/tasks/', data);
   return response.data;
 };
 
 export const updateTask = async (id: number, data: any): Promise<TaskItem> => {
+  if (data instanceof FormData) {
+    const response = await api.patch(`/tasks-module/tasks/${id}/`, data, {
+      transformRequest: (d: any, headers: any) => {
+        if (headers) {
+          delete headers['Content-Type'];
+        }
+        return d;
+      },
+    });
+    return response.data;
+  }
   const response = await api.patch(`/tasks-module/tasks/${id}/`, data);
   return response.data;
 };
