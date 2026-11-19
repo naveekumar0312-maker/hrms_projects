@@ -506,21 +506,56 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
             att = attendances.get(emp.id)
             holiday_obj = holidays_map.get(date_str)
             leave_obj = leaves_map.get(emp.id)
-            calculated_status = get_employee_attendance_status(
-                record=att,
-                employee=emp,
-                target_date=selected_date,
-                holiday=holiday_obj,
-                approved_leave=leave_obj,
-            )
+
+            # Check explicit rejections
+            is_rejected = False
+            if att:
+                ci_appr = getattr(att, 'check_in_approval_status', None)
+                co_appr = getattr(att, 'check_out_approval_status', None)
+                if ci_appr == 'REJECTED' or co_appr == 'REJECTED':
+                    is_rejected = True
+
+            # Manager-specific attendance calculation:
+            # 1. Approved Leave -> ON_LEAVE
+            # 2. Holiday -> HOLIDAY
+            # 3. Rejected -> REJECTED
+            # 4. If Checked In:
+            #    - Late check-in (late_minutes > 0 or status == 'LATE') -> 'LATE'
+            #    - Has BOTH check_in and check_out -> 'PRESENT'
+            #    - Has check_in but NO check_out yet -> 'PENDING'
+            # 5. If No Check-In:
+            #    - Absent
+            if leave_obj:
+                calculated_status = 'HALF DAY' if getattr(leave_obj, 'leave_type', None) == 'HALF_DAY' else 'ON_LEAVE'
+            elif holiday_obj:
+                calculated_status = 'HOLIDAY'
+            elif is_rejected:
+                calculated_status = 'REJECTED'
+            elif att and att.check_in:
+                late_mins = getattr(att, 'late_minutes', 0) or 0
+                is_late = (late_mins > 0) or (getattr(att, 'status', '') == 'LATE')
+                if is_late:
+                    calculated_status = 'LATE'
+                elif att.check_out:
+                    calculated_status = 'PRESENT'
+                else:
+                    calculated_status = 'PENDING'
+            else:
+                # No punch
+                if selected_date.weekday() == 6:
+                    calculated_status = 'WEEKLY_OFF'
+                else:
+                    calculated_status = 'ABSENT'
+
             reason = ''
             if calculated_status == 'HOLIDAY' and holiday_obj:
                 reason = holiday_obj.name
-            elif calculated_status == 'ON_LEAVE' and leave_obj:
+            elif calculated_status in ('ON_LEAVE', 'HALF DAY') and leave_obj:
                 reason = f"{leave_obj.leave_type} Leave"
             elif calculated_status == 'LATE' and att:
-                h = att.late_minutes // 60
-                m = att.late_minutes % 60
+                late_mins = getattr(att, 'late_minutes', 0) or 0
+                h = late_mins // 60
+                m = late_mins % 60
                 if h > 0 and m > 0:
                     late_str = f"{h}h {m}m"
                 elif h > 0:
@@ -687,26 +722,16 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
             # 3. Attendance Record:
             if att and att.check_in:
                 late_mins = getattr(att, 'late_minutes', 0) or 0
-                if late_mins > 0 or getattr(att, 'status', '') == 'LATE':
+                is_late = (late_mins > 0) or (getattr(att, 'status', '') == 'LATE')
+                if is_late:
                     late += 1
-                else:
+                elif att.check_out:
+                    # An employee is counted as Present ONLY after both check-in and check-out
                     present += 1
             else:
                 if is_sunday:
                     continue
-                calc_status = get_employee_attendance_status(
-                    record=att,
-                    employee=emp,
-                    target_date=today,
-                    holiday=holiday_obj,
-                    approved_leave=leave_obj,
-                )
-                if calc_status == 'ABSENT':
-                    absent += 1
-                elif calc_status in ('ON_LEAVE', 'HALF DAY', 'HALF_DAY'):
-                    on_leave += 1
-                elif calc_status == 'HOLIDAY':
-                    holiday += 1
+                absent += 1
 
         comp_name = manager.branch.company.name if (manager.branch and manager.branch.company) else (request.user.company.name if request.user.company else 'All Companies')
         tl_count = sum(1 for e in assigned_employees if e.user and e.user.role == 'TEAM_LEADER')
