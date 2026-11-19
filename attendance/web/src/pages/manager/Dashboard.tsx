@@ -134,6 +134,31 @@ const ManagerDashboard: React.FC = () => {
     loadDashboardData();
   }, []);
 
+  const filteredStatusModalItems = statusModalItems.filter((item) => {
+    // 1. First ensure item strictly matches active card status
+    if (activeStatusModal === 'PRESENT_TODAY') {
+      if (item.calculated_status !== 'PRESENT') return false;
+    } else if (activeStatusModal === 'LATE_TODAY') {
+      if (item.calculated_status !== 'LATE') return false;
+    } else if (activeStatusModal === 'ABSENT_TODAY') {
+      if (item.calculated_status !== 'ABSENT') return false;
+    } else if (activeStatusModal === 'ON_LEAVE_TODAY') {
+      if (!['ON_LEAVE', 'ON LEAVE', 'HALF DAY', 'HALF_DAY'].includes(item.calculated_status)) return false;
+    } else if (activeStatusModal === 'PENDING_TODAY') {
+      if (item.calculated_status !== 'PENDING') return false;
+    }
+
+    // 2. Search query filter
+    if (!statusModalSearch.trim()) return true;
+    const q = statusModalSearch.toLowerCase();
+    return (
+      item.full_name.toLowerCase().includes(q) ||
+      item.employee_code.toLowerCase().includes(q) ||
+      (item.department && item.department.toLowerCase().includes(q)) ||
+      (item.branch_name && item.branch_name.toLowerCase().includes(q))
+    );
+  });
+
   const employeeCards = [
     {
       title: 'Total Employees',
@@ -466,7 +491,7 @@ const ManagerDashboard: React.FC = () => {
                 <h2 style={{ fontSize: '18px', margin: 0, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>{statusModalTitle}</span>
                   <span style={{ fontSize: '13px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px', background: '#f1f5f9', color: '#475569' }}>
-                    {statusModalItems.length} {statusModalItems.length === 1 ? 'Employee' : 'Employees'}
+                    {filteredStatusModalItems.length} {filteredStatusModalItems.length === 1 ? 'Employee' : 'Employees'}
                   </span>
                 </h2>
                 <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
@@ -501,7 +526,7 @@ const ManagerDashboard: React.FC = () => {
                   <RefreshCw size={24} className="rm-spinner-icon" style={{ margin: '0 auto 8px' }} />
                   <p>Loading employee attendance records...</p>
                 </div>
-              ) : statusModalItems.length === 0 ? (
+              ) : filteredStatusModalItems.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>
                   <Users size={36} color="#cbd5e1" style={{ margin: '0 auto 8px' }} />
                   <p style={{ fontWeight: 500, fontSize: '15px' }}>No employees found for this status today.</p>
@@ -519,17 +544,7 @@ const ManagerDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {statusModalItems
-                        .filter((item) => {
-                          if (!statusModalSearch.trim()) return true;
-                          const q = statusModalSearch.toLowerCase();
-                          return (
-                            item.full_name.toLowerCase().includes(q) ||
-                            item.employee_code.toLowerCase().includes(q) ||
-                            (item.department && item.department.toLowerCase().includes(q)) ||
-                            (item.branch_name && item.branch_name.toLowerCase().includes(q))
-                          );
-                        })
+                      {filteredStatusModalItems
                         .map((item) => (
                           <tr key={item.employee_id}>
                             <td>
@@ -573,11 +588,15 @@ const ManagerDashboard: React.FC = () => {
                                       ? 'rm-badge-active'
                                       : item.calculated_status === 'LATE'
                                       ? 'rm-badge'
+                                      : item.calculated_status === 'PENDING'
+                                      ? 'rm-badge'
                                       : 'rm-badge-inactive'
                                   }`}
                                   style={
                                     item.calculated_status === 'LATE'
                                       ? { background: '#fef3c7', color: '#b45309' }
+                                      : item.calculated_status === 'PENDING'
+                                      ? { background: '#ffedd5', color: '#c2410c' }
                                       : item.calculated_status === 'ON_LEAVE' || item.calculated_status === 'ON LEAVE'
                                       ? { background: '#f5f3ff', color: '#7c3aed' }
                                       : undefined

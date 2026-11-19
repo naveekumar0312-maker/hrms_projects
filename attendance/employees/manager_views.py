@@ -1008,12 +1008,8 @@ class TeamLeaderDashboardSummaryView(views.APIView):
                             )
                             if now_dt > (shift_start_dt + timedelta(minutes=30)):
                                 absent += 1
-                            timezone.get_current_timezone()
-                        )
-                        if now_dt > (shift_start_dt + timedelta(minutes=30)):
+                        elif now_dt.hour >= 12:
                             absent += 1
-                    elif now_dt.hour >= 12:
-                        absent += 1
 
         # Task metrics
         from task_tracking.models import Task

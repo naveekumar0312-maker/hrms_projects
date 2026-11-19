@@ -58,7 +58,7 @@ export default function ManagerAttendanceScreen({ navigation, route }: any) {
   const [attendanceList, setAttendanceList] = useState<ManagerAttendanceRow[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'ABSENT' | 'ON_LEAVE'>(initialStatus);
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'ABSENT' | 'ON_LEAVE' | 'PENDING'>(initialStatus);
 
   // Company & Branch Filter State
   const [companies, setCompanies] = useState<any[]>([]);
@@ -234,7 +234,8 @@ export default function ManagerAttendanceScreen({ navigation, route }: any) {
       (statusFilter === 'PRESENT' && (recStatus === 'PRESENT' || recStatus === 'ON_TIME' || recStatus === 'COMPLETED')) ||
       (statusFilter === 'LATE' && recStatus === 'LATE') ||
       (statusFilter === 'ABSENT' && recStatus === 'ABSENT') ||
-      (statusFilter === 'ON_LEAVE' && (recStatus === 'ON_LEAVE' || recStatus === 'ON LEAVE' || recStatus === 'HALF DAY' || recStatus === 'HALF_DAY' || recStatus === 'HOLIDAY'));
+      (statusFilter === 'ON_LEAVE' && (recStatus === 'ON_LEAVE' || recStatus === 'ON LEAVE' || recStatus === 'HALF DAY' || recStatus === 'HALF_DAY' || recStatus === 'HOLIDAY')) ||
+      (statusFilter === 'PENDING' && recStatus === 'PENDING');
 
     return matchesSearch && matchesCompany && matchesBranch && matchesStatus;
   });
@@ -671,7 +672,7 @@ export default function ManagerAttendanceScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.filterChipsRow}>
-          {(['ALL', 'PRESENT', 'LATE', 'ABSENT', 'ON_LEAVE'] as const).map((filter) => (
+          {(['ALL', 'PRESENT', 'LATE', 'ABSENT', 'ON_LEAVE', 'PENDING'] as const).map((filter) => (
             <TouchableOpacity
               key={filter}
               style={[
