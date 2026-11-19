@@ -76,3 +76,27 @@ export const deletePermission = async (id: number) => {
   return api.delete(`/attendance/permissions/${id}/`);
 };
 
+export interface PermissionSummary {
+  date: string;
+  daily: {
+    limit_minutes: number;
+    used_minutes: number;
+    remaining_minutes: number;
+  };
+  cycle: {
+    start_date: string;
+    end_date: string;
+    limit_minutes: number;
+    used_minutes: number;
+    remaining_minutes: number;
+  };
+}
+
+export const getPermissionSummary = async (date?: string): Promise<PermissionSummary> => {
+  const response = await api.get('/attendance/permissions/summary/', {
+    params: date ? { date } : undefined,
+  });
+  return response.data;
+};
+
+

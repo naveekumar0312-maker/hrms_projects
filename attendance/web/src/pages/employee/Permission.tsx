@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from 'react';
 import CustomDatePicker from '../../components/CustomDatePicker';
-import { createPermission, getPermissions, updatePermission, deletePermission } from '../../api/permissions';
+import { createPermission, getPermissions, updatePermission, deletePermission, getPermissionSummary, type PermissionSummary } from '../../api/permissions';
 import type { PermissionRequest } from '../../api/permissions';
 
 type TimePicker12HourProps = {
@@ -135,6 +135,7 @@ const getStatusClass = (status: PermissionRequest['status']) => {
 
 const Permission: React.FC = () => {
   const [permissions, setPermissions] = useState<PermissionRequest[]>([]);
+  const [summary, setSummary] = useState<PermissionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -160,12 +161,24 @@ const Permission: React.FC = () => {
     return (eh * 60 + em) - (sh * 60 + sm);
   })();
 
+  const loadSummary = async (targetDate?: string) => {
+    try {
+      const sum = await getPermissionSummary(targetDate);
+      setSummary(sum);
+    } catch (err) {
+      console.error('Failed to load permission summary:', err);
+    }
+  };
+
   const loadPermissions = async () => {
     try {
       setLoading(true);
       setError('');
 
-      const response = await getPermissions();
+      const [response] = await Promise.all([
+        getPermissions(),
+        loadSummary(date || undefined),
+      ]);
 
       const data = Array.isArray(response)
         ? response
@@ -187,26 +200,45 @@ const Permission: React.FC = () => {
     loadPermissions();
   }, []);
 
-  const currentMonthMinutes = useMemo(() => {
-    const now = new Date();
+  useEffect(() => {
+    if (date) {
+      loadSummary(date);
+    }
+  }, [date]);
+
+  // If backend cycle summary is available, strictly use it; otherwise fallback to 26th-25th calculation
+  const currentCycleUsedMinutes = useMemo(() => {
+    if (summary?.cycle?.used_minutes !== undefined) {
+      return summary.cycle.used_minutes;
+    }
+
+    const refDate = date ? new Date(`${date}T00:00:00`) : new Date();
+    const day = refDate.getDate();
+    let cycleStart: Date;
+    let cycleEnd: Date;
+
+    if (day >= 26) {
+      cycleStart = new Date(refDate.getFullYear(), refDate.getMonth(), 26);
+      cycleEnd = new Date(refDate.getFullYear(), refDate.getMonth() + 1, 25);
+    } else {
+      cycleStart = new Date(refDate.getFullYear(), refDate.getMonth() - 1, 26);
+      cycleEnd = new Date(refDate.getFullYear(), refDate.getMonth(), 25);
+    }
 
     return permissions
       .filter((item) => {
         const itemDate = new Date(`${item.date}T00:00:00`);
-
         return (
-          itemDate.getMonth() === now.getMonth() &&
-          itemDate.getFullYear() === now.getFullYear() &&
+          itemDate >= cycleStart &&
+          itemDate <= cycleEnd &&
           ['PENDING', 'APPROVED'].includes(item.status)
         );
       })
-      .reduce(
-        (total, item) => total + Number(item.duration_minutes || 0),
-        0
-      );
-  }, [permissions]);
+      .reduce((total, item) => total + Number(item.duration_minutes || 0), 0);
+  }, [summary, permissions, date]);
 
-  const remainingMinutes = Math.max(180 - currentMonthMinutes, 0);
+  const cycleLimit = summary?.cycle?.limit_minutes ?? 180;
+  const remainingMinutes = Math.max(cycleLimit - currentCycleUsedMinutes, 0);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -943,15 +975,16 @@ const Permission: React.FC = () => {
 
             <div className="usage-box">
               <div className="usage-label">
-                Current Month Usage
+                Attendance Cycle Usage (26th - 25th)
               </div>
 
               <div className="usage-value">
-                {currentMonthMinutes} / 180 min
+                {currentCycleUsedMinutes} / {cycleLimit} min
               </div>
 
               <div className="usage-note">
                 Remaining: {remainingMinutes} minutes
+                {summary?.cycle ? ` • Cycle: ${summary.cycle.start_date} to ${summary.cycle.end_date}` : ''}
               </div>
             </div>
 
