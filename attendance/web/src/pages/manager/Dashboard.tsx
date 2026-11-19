@@ -135,20 +135,7 @@ const ManagerDashboard: React.FC = () => {
   }, []);
 
   const filteredStatusModalItems = statusModalItems.filter((item) => {
-    // 1. First ensure item strictly matches active card status
-    if (activeStatusModal === 'PRESENT_TODAY') {
-      if (item.calculated_status !== 'PRESENT') return false;
-    } else if (activeStatusModal === 'LATE_TODAY') {
-      if (item.calculated_status !== 'LATE') return false;
-    } else if (activeStatusModal === 'ABSENT_TODAY') {
-      if (item.calculated_status !== 'ABSENT') return false;
-    } else if (activeStatusModal === 'ON_LEAVE_TODAY') {
-      if (!['ON_LEAVE', 'ON LEAVE', 'HALF DAY', 'HALF_DAY'].includes(item.calculated_status)) return false;
-    } else if (activeStatusModal === 'PENDING_TODAY') {
-      if (item.calculated_status !== 'PENDING') return false;
-    }
-
-    // 2. Search query filter
+    // Search query filter
     if (!statusModalSearch.trim()) return true;
     const q = statusModalSearch.toLowerCase();
     return (
