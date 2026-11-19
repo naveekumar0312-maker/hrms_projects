@@ -44,18 +44,21 @@ import { useAppMessage } from '../../context/MessageContext';
 import { COLORS } from '../../constants/theme';
 import { colors } from '../../theme/colors';
 
-export default function ManagerAttendanceScreen({ navigation }: any) {
+export default function ManagerAttendanceScreen({ navigation, route }: any) {
   const insets = useSafeAreaInsets();
   const { user, employee } = useContext(AuthContext);
   const { showSuccess, showError, showWarning, showConfirm } = useAppMessage();
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const initialStatus = route?.params?.status || 'ALL';
+  const initialDate = route?.params?.date || new Date().toISOString().split('T')[0];
+
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [attendanceList, setAttendanceList] = useState<ManagerAttendanceRow[]>([]);
   const [summary, setSummary] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'ABSENT' | 'ON_LEAVE'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PRESENT' | 'LATE' | 'ABSENT' | 'ON_LEAVE'>(initialStatus);
 
   // Company & Branch Filter State
   const [companies, setCompanies] = useState<any[]>([]);
@@ -103,6 +106,15 @@ export default function ManagerAttendanceScreen({ navigation }: any) {
       setRefreshing(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (route?.params?.status) {
+      setStatusFilter(route.params.status);
+    }
+    if (route?.params?.date) {
+      setSelectedDate(route.params.date);
+    }
+  }, [route?.params]);
 
   useEffect(() => {
     loadAttendance(selectedDate, selectedCompany, selectedBranch);

@@ -123,11 +123,13 @@ export const getManagerTeamEmployeeDetail = async (id: number): Promise<any> => 
 export const getManagerTeamAttendance = async (
   dateStr: string,
   companyId?: number | null,
-  branchId?: number | null
+  branchId?: number | null,
+  status?: string | null
 ): Promise<ManagerAttendanceResponse> => {
   const params: any = { date: dateStr };
   if (companyId) params.company = companyId;
   if (branchId) params.branch = branchId;
+  if (status) params.status = status;
   const response = await api.get('/employees/manager/team-attendance/', { params });
   return response.data;
 };

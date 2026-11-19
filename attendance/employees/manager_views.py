@@ -308,14 +308,21 @@ class ManagerPortalBaseView(views.APIView):
     def get_manager_team_queryset(self, manager, status_filter=None):
         """
         Returns employees assigned to this manager according to the strict scope:
-        1. If manager is assigned to a specific branch:
+        1. If manager is assigned multiple managed_branches:
+           Strictly returns employees belonging to those managed branches!
+        2. Else if manager is assigned to a specific branch:
            Strictly returns employees belonging to that branch only!
-        2. Else if manager is assigned to a specific company (no branch):
+        3. Else if manager is assigned to a specific company (no branch):
            Strictly returns employees belonging to that company only!
-        3. Else (Global Access Manager - All Companies / no branch & no company):
+        4. Else (Global Access Manager - All Companies / no branch & no company):
            Returns employees across all companies/branches!
         """
-        if manager.branch:
+        managed_branches = manager.managed_branches.all()
+        if managed_branches.exists():
+            qs = Employee.objects.filter(
+                branch__in=managed_branches
+            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by('employee_id')
+        elif manager.branch:
             # Strictly scoped to this branch only
             qs = Employee.objects.filter(
                 branch=manager.branch
@@ -570,6 +577,20 @@ class ManagerTeamAttendanceView(ManagerPortalBaseView):
                 "check_out_rejection_reason": att.check_out_rejection_reason if att else None,
                 "check_out_location_name": (att.check_out_location_name or (emp.branch.branch_name if emp.branch else None)) if att else None,
             })
+
+        status_filter_param = (request.query_params.get('status') or '').strip().upper()
+        if status_filter_param:
+            # Map friendly status names
+            if status_filter_param in ('PRESENT_TODAY', 'PRESENT'):
+                team_rows = [r for r in team_rows if r['calculated_status'] in ('PRESENT', 'LATE', 'HALF DAY', 'HALF_DAY')]
+            elif status_filter_param in ('LATE_TODAY', 'LATE'):
+                team_rows = [r for r in team_rows if r['calculated_status'] == 'LATE' or (r['late_minutes'] and r['late_minutes'] > 0)]
+            elif status_filter_param in ('ABSENT_TODAY', 'ABSENT'):
+                team_rows = [r for r in team_rows if r['calculated_status'] == 'ABSENT']
+            elif status_filter_param in ('ON_LEAVE_TODAY', 'ON_LEAVE', 'LEAVE'):
+                team_rows = [r for r in team_rows if r['calculated_status'] in ('ON_LEAVE', 'ON LEAVE')]
+            elif status_filter_param in ('HOLIDAY_TODAY', 'HOLIDAY'):
+                team_rows = [r for r in team_rows if r['calculated_status'] == 'HOLIDAY']
 
         return Response({
             "date": selected_date.isoformat(),

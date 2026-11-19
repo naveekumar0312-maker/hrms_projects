@@ -17,6 +17,7 @@ class Employee(models.Model):
     profile_photo = models.ImageField(upload_to='employees/profile/', null=True, blank=True)
     office_address = models.TextField(blank=True, null=True)
     branch = models.ForeignKey(Branch, on_delete=models.SET_NULL, null=True, related_name='employees')
+    managed_branches = models.ManyToManyField(Branch, blank=True, related_name='managing_employees')
     department = models.CharField(max_length=100)
     designation = models.CharField(max_length=100)
     work_type = models.CharField(max_length=20, choices=WORK_TYPE_CHOICES, default='OFFICE')

@@ -31,6 +31,8 @@ interface ReportingManager {
   phone_number?: string;
   branch?: number;
   branch_name?: string;
+  branch_ids?: number[];
+  branch_names?: string[];
   company_id?: number;
   company_name?: string;
   is_all_companies?: boolean;
@@ -80,6 +82,7 @@ const ReportingManagers: React.FC = () => {
     status: 'ACTIVE',
     companyId: 'ALL',
     branchId: '',
+    branchIds: [] as number[],
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -161,6 +164,7 @@ const ReportingManagers: React.FC = () => {
       status: 'ACTIVE',
       companyId: defaultCompany,
       branchId: '',
+      branchIds: [],
     });
     setShowPassword(false);
     setFormError(null);
@@ -197,8 +201,14 @@ const ReportingManagers: React.FC = () => {
         status: formData.status,
         company_id: formData.companyId,
       };
-      if (formData.companyId !== 'ALL' && formData.branchId) {
-        payload.branch_id = parseInt(formData.branchId, 10);
+      if (formData.companyId !== 'ALL') {
+        if (formData.branchIds && formData.branchIds.length > 0) {
+          payload.branch_ids = formData.branchIds;
+          payload.branch_id = formData.branchIds[0];
+        } else if (formData.branchId) {
+          payload.branch_id = parseInt(formData.branchId, 10);
+          payload.branch_ids = [parseInt(formData.branchId, 10)];
+        }
       }
 
       await api.post('/employees/hr/managers/', payload);
@@ -243,6 +253,10 @@ const ReportingManagers: React.FC = () => {
   const handleOpenEdit = (manager: ReportingManager) => {
     setSelectedManager(manager);
     const mgrCompany = manager.company_id ? String(manager.company_id) : 'ALL';
+    const initBranchIds = manager.branch_ids && manager.branch_ids.length > 0
+      ? manager.branch_ids
+      : (manager.branch ? [manager.branch] : []);
+
     setFormData({
       fullName: manager.full_name || '',
       username: manager.username || '',
@@ -250,6 +264,7 @@ const ReportingManagers: React.FC = () => {
       status: (manager.status && manager.is_active) ? 'ACTIVE' : 'INACTIVE',
       companyId: mgrCompany,
       branchId: manager.branch ? String(manager.branch) : '',
+      branchIds: initBranchIds,
     });
     setShowPassword(false);
     setFormError(null);
@@ -291,8 +306,16 @@ const ReportingManagers: React.FC = () => {
       }
       if (formData.companyId === 'ALL') {
         payload.branch_id = 0; // Clear branch
+        payload.branch_ids = [];
+      } else if (formData.branchIds && formData.branchIds.length > 0) {
+        payload.branch_ids = formData.branchIds;
+        payload.branch_id = formData.branchIds[0];
       } else if (formData.branchId) {
         payload.branch_id = parseInt(formData.branchId, 10);
+        payload.branch_ids = [parseInt(formData.branchId, 10)];
+      } else {
+        payload.branch_id = 0;
+        payload.branch_ids = [];
       }
 
       await api.patch(`/employees/hr/managers/${selectedManager.id}/`, payload);
@@ -574,10 +597,10 @@ const ReportingManagers: React.FC = () => {
                   )}
                 </div>
 
-                {/* BRANCH SELECTION */}
+                {/* BRANCH SELECTION (ALLOW MULTIPLE BRANCHES) */}
                 <div className="rm-form-group">
                   <label>
-                    Branch {formData.companyId === 'ALL' ? '(All Branches Covered)' : '*'}
+                    Branch(es) {formData.companyId === 'ALL' ? '(All Branches Covered)' : '*'}
                   </label>
                   {formData.companyId === 'ALL' ? (
                     <input
@@ -588,21 +611,77 @@ const ReportingManagers: React.FC = () => {
                       style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
                     />
                   ) : (
-                    <CustomSelect
-                      value={formData.branchId}
-                      onChange={(val) => setFormData({ ...formData, branchId: val })}
-                      options={branches
-                        .filter(
-                          (b) =>
-                            !b.company_id ||
-                            String(b.company_id) === formData.companyId
-                        )
-                        .map((b) => ({
-                          value: String(b.id),
-                          label: b.branch_name,
-                        }))}
-                      placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{
+                        maxHeight: '140px',
+                        overflowY: 'auto',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        background: '#ffffff',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}>
+                        {branches
+                          .filter(
+                            (b) =>
+                              !b.company_id ||
+                              String(b.company_id) === formData.companyId
+                          )
+                          .map((b) => {
+                            const isChecked = formData.branchIds.includes(b.id);
+                            return (
+                              <label
+                                key={b.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  fontSize: '13px',
+                                  color: '#334155',
+                                  cursor: 'pointer',
+                                  userSelect: 'none'
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      const next = [...formData.branchIds, b.id];
+                                      setFormData({
+                                        ...formData,
+                                        branchIds: next,
+                                        branchId: String(next[0] || ''),
+                                      });
+                                    } else {
+                                      const next = formData.branchIds.filter((id) => id !== b.id);
+                                      setFormData({
+                                        ...formData,
+                                        branchIds: next,
+                                        branchId: String(next[0] || ''),
+                                      });
+                                    }
+                                  }}
+                                  style={{ accentColor: '#22C55E', width: 16, height: 16 }}
+                                />
+                                <span>{b.branch_name}</span>
+                              </label>
+                            );
+                          })}
+                        {branches.filter((b) => !b.company_id || String(b.company_id) === formData.companyId).length === 0 && (
+                          <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+                            {branchesLoading ? 'Loading branches...' : 'No branches available for this company.'}
+                          </span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>
+                        {formData.branchIds.length > 0
+                          ? `Selected: ${formData.branchIds.length} branch(es)`
+                          : 'Select one or more branches for this manager.'}
+                      </span>
+                    </div>
                   )}
                 </div>
 
@@ -745,16 +824,18 @@ const ReportingManagers: React.FC = () => {
 
                 <div className="rm-view-item">
                   <span className="rm-view-label">
-                    <Building size={14} /> Branch
+                    <Building size={14} /> Branch / Managed Branches
                   </span>
                   <span className="rm-view-val">
-                    {selectedManager.branch_name && selectedManager.branch_name !== '—'
-                      ? selectedManager.branch_name
-                      : (selectedManager.is_all_companies ||
-                         selectedManager.company_name === 'All Companies' ||
-                         !selectedManager.company_id
-                          ? 'All Branches'
-                          : 'Main Branch')}
+                    {selectedManager.branch_names && selectedManager.branch_names.length > 0
+                      ? selectedManager.branch_names.join(', ')
+                      : (selectedManager.branch_name && selectedManager.branch_name !== '—'
+                          ? selectedManager.branch_name
+                          : (selectedManager.is_all_companies ||
+                             selectedManager.company_name === 'All Companies' ||
+                             !selectedManager.company_id
+                              ? 'All Branches'
+                              : 'Main Branch'))}
                   </span>
                 </div>
 
@@ -863,10 +944,10 @@ const ReportingManagers: React.FC = () => {
                   )}
                 </div>
 
-                {/* BRANCH SELECTION */}
+                {/* BRANCH SELECTION (ALLOW MULTIPLE BRANCHES) */}
                 <div className="rm-form-group">
                   <label>
-                    Branch {formData.companyId === 'ALL' ? '(All Branches Covered)' : '*'}
+                    Branch(es) {formData.companyId === 'ALL' ? '(All Branches Covered)' : '*'}
                   </label>
                   {formData.companyId === 'ALL' ? (
                     <input
@@ -877,21 +958,77 @@ const ReportingManagers: React.FC = () => {
                       style={{ background: '#f8fafc', color: '#64748b', cursor: 'not-allowed' }}
                     />
                   ) : (
-                    <CustomSelect
-                      value={formData.branchId}
-                      onChange={(val) => setFormData({ ...formData, branchId: val })}
-                      options={branches
-                        .filter(
-                          (b) =>
-                            !b.company_id ||
-                            String(b.company_id) === formData.companyId
-                        )
-                        .map((b) => ({
-                          value: String(b.id),
-                          label: b.branch_name,
-                        }))}
-                      placeholder={branchesLoading ? 'Loading branches...' : 'Select branch'}
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{
+                        maxHeight: '140px',
+                        overflowY: 'auto',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        background: '#ffffff',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}>
+                        {branches
+                          .filter(
+                            (b) =>
+                              !b.company_id ||
+                              String(b.company_id) === formData.companyId
+                          )
+                          .map((b) => {
+                            const isChecked = formData.branchIds.includes(b.id);
+                            return (
+                              <label
+                                key={b.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  fontSize: '13px',
+                                  color: '#334155',
+                                  cursor: 'pointer',
+                                  userSelect: 'none'
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      const next = [...formData.branchIds, b.id];
+                                      setFormData({
+                                        ...formData,
+                                        branchIds: next,
+                                        branchId: String(next[0] || ''),
+                                      });
+                                    } else {
+                                      const next = formData.branchIds.filter((id) => id !== b.id);
+                                      setFormData({
+                                        ...formData,
+                                        branchIds: next,
+                                        branchId: String(next[0] || ''),
+                                      });
+                                    }
+                                  }}
+                                  style={{ accentColor: '#22C55E', width: 16, height: 16 }}
+                                />
+                                <span>{b.branch_name}</span>
+                              </label>
+                            );
+                          })}
+                        {branches.filter((b) => !b.company_id || String(b.company_id) === formData.companyId).length === 0 && (
+                          <span style={{ fontSize: '13px', color: '#94a3b8' }}>
+                            {branchesLoading ? 'Loading branches...' : 'No branches available for this company.'}
+                          </span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>
+                        {formData.branchIds.length > 0
+                          ? `Selected: ${formData.branchIds.length} branch(es)`
+                          : 'Select one or more branches for this manager.'}
+                      </span>
+                    </div>
                   )}
                 </div>
 

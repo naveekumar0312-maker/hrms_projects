@@ -229,34 +229,67 @@ export default function ManagerDashboardScreen({ navigation }: any) {
 
             {/* TODAY'S ATTENDANCE SECTION */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Today's Attendance Status</Text>
+              <View>
+                <Text style={styles.sectionTitle}>Today's Attendance Status</Text>
+                <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_500Medium', color: '#666666', marginTop: 2 }}>
+                  Tap card to view filtered attendance list
+                </Text>
+              </View>
               <Text style={styles.dateLabel}>{summary?.date || new Date().toISOString().split('T')[0]}</Text>
             </View>
 
             <View style={styles.attendanceGrid}>
-              <View style={[styles.attendBox, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
+              <TouchableOpacity
+                style={[styles.attendBox, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('ManagerAttendance', {
+                  status: 'PRESENT',
+                  date: summary?.date || new Date().toISOString().split('T')[0],
+                })}
+              >
                 <UserCheck size={22} color="#16A34A" strokeWidth={2.2} />
                 <Text style={[styles.attendVal, { color: '#16A34A' }]}>{summary?.present_today ?? 0}</Text>
-                <Text style={styles.attendLabel}>Present</Text>
-              </View>
+                <Text style={styles.attendLabel}>Present Today</Text>
+              </TouchableOpacity>
 
-              <View style={[styles.attendBox, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}>
+              <TouchableOpacity
+                style={[styles.attendBox, { backgroundColor: '#FFFBEB', borderColor: '#FDE68A' }]}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('ManagerAttendance', {
+                  status: 'LATE',
+                  date: summary?.date || new Date().toISOString().split('T')[0],
+                })}
+              >
                 <Clock size={22} color="#D97706" strokeWidth={2.2} />
                 <Text style={[styles.attendVal, { color: '#D97706' }]}>{summary?.late_today ?? 0}</Text>
-                <Text style={styles.attendLabel}>Late</Text>
-              </View>
+                <Text style={styles.attendLabel}>Late Today</Text>
+              </TouchableOpacity>
 
-              <View style={[styles.attendBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}>
+              <TouchableOpacity
+                style={[styles.attendBox, { backgroundColor: '#FEF2F2', borderColor: '#FECACA' }]}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('ManagerAttendance', {
+                  status: 'ABSENT',
+                  date: summary?.date || new Date().toISOString().split('T')[0],
+                })}
+              >
                 <UserX size={22} color="#DC2626" strokeWidth={2.2} />
                 <Text style={[styles.attendVal, { color: '#DC2626' }]}>{summary?.absent_today ?? 0}</Text>
-                <Text style={styles.attendLabel}>Absent</Text>
-              </View>
+                <Text style={styles.attendLabel}>Absent Today</Text>
+              </TouchableOpacity>
 
-              <View style={[styles.attendBox, { backgroundColor: '#EFF6FF', borderColor: '#BFDBFE' }]}>
-                <CalendarCheck size={22} color="#22C55E" strokeWidth={2.2} />
-                <Text style={[styles.attendVal, { color: '#22C55E' }]}>{summary?.pending_approvals ?? 0}</Text>
-                <Text style={styles.attendLabel}>Pending</Text>
-              </View>
+              <TouchableOpacity
+                style={[styles.attendBox, { backgroundColor: '#FAF5FF', borderColor: '#E9D5FF' }]}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('ManagerAttendance', {
+                  status: 'ON_LEAVE',
+                  date: summary?.date || new Date().toISOString().split('T')[0],
+                })}
+              >
+                <Calendar size={22} color="#7E22CE" strokeWidth={2.2} />
+                <Text style={[styles.attendVal, { color: '#7E22CE' }]}>{summary?.on_leave_today ?? 0}</Text>
+                <Text style={styles.attendLabel}>On Leave Today</Text>
+              </TouchableOpacity>
             </View>
 
             {/* RECENT NAVIGATION LINKS */}
