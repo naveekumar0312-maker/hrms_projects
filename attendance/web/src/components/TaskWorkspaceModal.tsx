@@ -17,6 +17,10 @@ import {
   Loader2,
   Building2,
   Trash2,
+  Edit3,
+  Eye,
+  Calendar,
+  User,
 } from 'lucide-react';
 import api from '../api';
 import { AuthContext } from '../context/AuthContext';
@@ -28,17 +32,63 @@ import './TaskWorkspaceModal.css';
 
 interface TaskWorkspaceModalProps {
   taskId?: number | null; // null if creating a new task
+  initialMode?: 'view' | 'edit';
   onClose: () => void;
   onSaved: () => void;
 }
 
+const getPriorityBadgeStyle = (p: string) => {
+  switch (p) {
+    case 'LOW':
+      return { color: '#15803d', bg: '#dcfce7', border: '#bbf7d0', label: 'Low' }; // Green
+    case 'MEDIUM':
+      return { color: '#a16207', bg: '#fef9c3', border: '#fef08a', label: 'Medium' }; // Yellow
+    case 'HIGH':
+      return { color: '#7e22ce', bg: '#f3e8ff', border: '#e9d5ff', label: 'High' }; // Purple
+    case 'URGENT':
+      return { color: '#dc2626', bg: '#fee2e2', border: '#fca5a5', label: 'Urgent' }; // Red
+    default:
+      return { color: '#334155', bg: '#f1f5f9', border: '#e2e8f0', label: p };
+  }
+};
+
+const getStatusBadgeStyle = (s: string) => {
+  switch (s) {
+    case 'PENDING':
+    case 'TODO':
+      return { color: '#d97706', bg: '#fef3c7', border: '#fde68a', label: 'To Do (Pending)' };
+    case 'IN_PROGRESS':
+      return { color: '#0284c7', bg: '#e0f2fe', border: '#bae6fd', label: 'In Progress' };
+    case 'COMPLETED':
+      return { color: '#16a34a', bg: '#dcfce7', border: '#bbf7d0', label: 'Completed' };
+    case 'ON_HOLD':
+      return { color: '#64748b', bg: '#f1f5f9', border: '#e2e8f0', label: 'On Hold' };
+    case 'CANCELLED':
+      return { color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', label: 'Cancelled' };
+    case 'OVERDUE':
+      return { color: '#dc2626', bg: '#fee2e2', border: '#fca5a5', label: 'Overdue' };
+    default:
+      return { color: '#475569', bg: '#f1f5f9', border: '#cbd5e1', label: s?.replace(/_/g, ' ') || 'Pending' };
+  }
+};
+
 export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   taskId,
+  initialMode,
   onClose,
   onSaved,
 }) => {
   const { user } = useContext(AuthContext);
   const isEmployee = user?.role === 'EMPLOYEE';
+  const [mode, setMode] = useState<'view' | 'edit'>(initialMode || (taskId ? 'view' : 'edit'));
+
+  useEffect(() => {
+    if (initialMode) {
+      setMode(initialMode);
+    } else if (!taskId) {
+      setMode('edit');
+    }
+  }, [initialMode, taskId]);
 
   // Active Tab in Right Panel: 'comment' | 'attachment' | 'activity' | 'timelog'
   const [activeTab, setActiveTab] = useState<'comment' | 'attachment' | 'activity' | 'timelog'>('comment');
@@ -407,7 +457,12 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
       };
 
       if (taskId) {
+        if (!isEmployee) {
+          // Managers cannot alter task status on published tasks
+          delete payload.status;
+        }
         await api.patch(`/tasks-module/tasks/${taskId}/`, payload);
+        setMode('view');
       } else {
         const createRes = await api.post('/tasks-module/tasks/', payload);
         if (createRes.data?.id) {
@@ -721,12 +776,38 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                 color: isDraft ? '#64748b' : '#22C55E',
               }}
             >
-              {isDraft ? 'Draft' : (taskId ? 'Published' : 'New Task')}
+              {isDraft ? 'Draft' : (taskId ? (mode === 'view' ? 'View Mode' : 'Editing') : 'New Task')}
             </span>
           </div>
-          <button type="button" className="rm-close-btn" onClick={onClose} title="Close">
-            <X size={18} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {taskId && !isEmployee && mode === 'view' && (
+              <button
+                type="button"
+                className="rm-btn rm-btn-secondary"
+                style={{ padding: '5px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                onClick={() => setMode('edit')}
+                title="Edit Task Details"
+              >
+                <Edit3 size={13} color="#16a34a" />
+                <span>Edit</span>
+              </button>
+            )}
+            {taskId && !isEmployee && mode === 'edit' && (
+              <button
+                type="button"
+                className="rm-btn rm-btn-secondary"
+                style={{ padding: '5px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
+                onClick={() => setMode('view')}
+                title="Switch to View Mode"
+              >
+                <Eye size={13} color="#0284c7" />
+                <span>View</span>
+              </button>
+            )}
+            <button type="button" className="rm-close-btn" onClick={onClose} title="Close">
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* MOBILE VIEW SEGMENT SWITCHER (Only shown when taskId exists) */}
@@ -755,267 +836,554 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
               LEFT PANEL: TASK DETAILS & CONFIGURATION
              ================================================================= */}
           <div className={`task-panel-left ${taskId && mobileView === 'discussion' ? 'mobile-panel-hidden' : ''}`}>
-            <div className="task-panel-left-scroll">
-              {errorMsg && (
-                <div className="rm-modal-error">
-                  <AlertCircle size={16} />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              {/* A. TASK INFORMATION */}
-              <div className="task-form-section">
-                <div className="task-field-group">
-                  <div className="task-field-label-row">
-                    <label className="task-field-label">
-                      Task Title <span className="task-required">*</span>
-                    </label>
-                    {!isEmployee && (
-                      <button
-                        type="button"
-                        className={`task-voice-btn ${voiceTarget === 'title' ? 'recording' : ''}`}
-                        onClick={() => startVoiceInput('title')}
-                        disabled={isTranscribingVoice}
-                        title="Voice typing for Title"
-                      >
-                        {isTranscribingVoice && targetForSpeechRef.current === 'title' ? (
-                          <>
-                            <Loader2 size={12} className="spin" />
-                            <span>Transcribing...</span>
-                          </>
-                        ) : voiceTarget === 'title' ? (
-                          <>
-                            <span className="task-voice-dot" />
-                            <span>Listening...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Mic size={12} />
-                            <span>Voice</span>
-                          </>
-                        )}
-                      </button>
-                    )}
+            {mode === 'view' && taskId ? (
+              /* =============================================================
+                 VIEW MODE: CLEAN READ-ONLY INFORMATION
+                 ============================================================= */
+              <div className="task-panel-left-scroll">
+                {errorMsg && (
+                  <div className="rm-modal-error">
+                    <AlertCircle size={16} />
+                    <span>{errorMsg}</span>
                   </div>
-                  <input
-                    type="text"
-                    className="task-input-title-modern"
-                    placeholder="Enter task title (or use voice)..."
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    disabled={isEmployee}
-                    required
-                  />
+                )}
+
+                {/* 1. TASK TITLE & CATEGORY */}
+                <div style={{ marginBottom: '18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                      Task Title
+                    </span>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569', background: '#f1f5f9', padding: '2px 8px', borderRadius: '4px' }}>
+                      {category || 'General'}
+                    </span>
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0f172a', lineHeight: 1.4 }}>
+                    {title || 'Untitled Task'}
+                  </h3>
                   {titleVoiceAudioUrl && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Title Audio:</span>
-                        <audio controls src={titleVoiceAudioUrl} style={{ height: '28px' }} />
-                      </div>
-                      <button type="button" className="task-tool-btn" title="Remove Audio" onClick={() => setTitleVoiceAudioUrl(null)}>
-                        <X size={13} />
-                      </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Title Audio:</span>
+                      <audio controls src={titleVoiceAudioUrl} style={{ height: '28px' }} />
                     </div>
                   )}
                 </div>
 
-                <div className="task-field-group">
-                  <div className="task-field-label-row">
-                    <label className="task-field-label">Description</label>
-                    {!isEmployee && (
-                      <button
-                        type="button"
-                        className={`task-voice-btn ${voiceTarget === 'description' ? 'recording' : ''}`}
-                        onClick={() => startVoiceInput('description')}
-                        disabled={isTranscribingVoice}
-                        title="Voice typing for Description"
-                      >
-                        {isTranscribingVoice && targetForSpeechRef.current === 'description' ? (
-                          <>
-                            <Loader2 size={12} className="spin" />
-                            <span>Transcribing...</span>
-                          </>
-                        ) : voiceTarget === 'description' ? (
-                          <>
-                            <span className="task-voice-dot" />
-                            <span>Listening...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Mic size={12} />
-                            <span>Voice</span>
-                          </>
-                        )}
-                      </button>
-                    )}
+                {/* 2. DESCRIPTION */}
+                <div style={{ marginBottom: '18px' }}>
+                  <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '6px' }}>
+                    Description
+                  </span>
+                  <div style={{
+                    background: '#f8fafc',
+                    padding: '12px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '13px',
+                    color: '#334155',
+                    lineHeight: 1.6,
+                    whiteSpace: 'pre-wrap',
+                    minHeight: '60px'
+                  }}>
+                    {description || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No description provided.</span>}
                   </div>
-                  <textarea
-                    className="task-textarea-modern"
-                    rows={4}
-                    placeholder="Provide full context, technical specifications, and expected deliverables (or use voice)..."
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    disabled={isEmployee}
-                  />
                   {descVoiceAudioUrl && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Description Audio:</span>
-                        <audio controls src={descVoiceAudioUrl} style={{ height: '28px' }} />
-                      </div>
-                      <button type="button" className="task-tool-btn" title="Remove Audio" onClick={() => setDescVoiceAudioUrl(null)}>
-                        <X size={13} />
-                      </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '8px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Description Audio:</span>
+                      <audio controls src={descVoiceAudioUrl} style={{ height: '28px' }} />
                     </div>
                   )}
                 </div>
 
-                {/* ASSIGNED EMPLOYEES SELECTION WITH COMPANY FILTER */}
-                <div className="task-field-group">
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                    <label className="task-field-label" style={{ margin: 0 }}>
-                      Assign Employees <span className="task-required">*</span>
-                    </label>
-                    {/* Show Company filter when there are multiple companies available */}
-                    {Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).length > 1 && (
-                      <div style={{ width: '260px' }}>
+                {/* 3. ASSIGNED EMPLOYEES */}
+                <div style={{ marginBottom: '18px' }}>
+                  <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: '8px' }}>
+                    Assigned Employees ({taskData?.assigned_employees?.length || assignedEmployeeIds.length})
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {taskData?.assigned_employees && taskData.assigned_employees.length > 0 ? (
+                      taskData.assigned_employees.map((emp: any) => (
+                        <div
+                          key={emp.id}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            background: '#f0fdf4',
+                            border: '1px solid #bbf7d0',
+                            padding: '5px 12px',
+                            borderRadius: '20px',
+                            fontSize: '12px',
+                            color: '#166534',
+                            fontWeight: 600,
+                          }}
+                        >
+                          <User size={13} color="#16a34a" />
+                          <span>{emp.full_name}</span>
+                          {emp.employee_id && <span style={{ opacity: 0.7, fontSize: '11px' }}>({emp.employee_id})</span>}
+                          {emp.branch_name && <span style={{ opacity: 0.6, fontSize: '10px', background: '#dcfce7', padding: '1px 5px', borderRadius: '4px' }}>{emp.branch_name}</span>}
+                        </div>
+                      ))
+                    ) : assignedEmployeeIds.length > 0 ? (
+                      assignedEmployeeIds.map((empId) => {
+                        const m = teamMembers.find((tm) => tm.id === empId);
+                        return (
+                          <div
+                            key={empId}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              background: '#f0fdf4',
+                              border: '1px solid #bbf7d0',
+                              padding: '5px 12px',
+                              borderRadius: '20px',
+                              fontSize: '12px',
+                              color: '#166534',
+                              fontWeight: 600,
+                            }}
+                          >
+                            <User size={13} color="#16a34a" />
+                            <span>{m?.full_name || `Employee #${empId}`}</span>
+                            {m?.employee_id && <span style={{ opacity: 0.7, fontSize: '11px' }}>({m.employee_id})</span>}
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>No employees assigned yet.</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* 4. DATES GRID */}
+                <div style={{ marginBottom: '18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                      Started Date
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#1e293b', fontWeight: 600 }}>
+                      <Calendar size={14} color="#64748b" />
+                      <span>{startDate || 'Not specified'}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                      Ended Date (Due Date)
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: taskData?.is_overdue ? '#dc2626' : '#1e293b', fontWeight: 600 }}>
+                      <Calendar size={14} color={taskData?.is_overdue ? '#dc2626' : '#64748b'} />
+                      <span>{dueDate || 'Not specified'} {taskData?.is_overdue && '(Overdue)'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. PRIORITY & STATUS */}
+                <div style={{ marginBottom: '18px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  {/* Priority Badge */}
+                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                      Priority
+                    </span>
+                    {(() => {
+                      const pStyle = getPriorityBadgeStyle(priority);
+                      return (
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: pStyle.bg,
+                            color: pStyle.color,
+                            border: `1px solid ${pStyle.border}`,
+                            padding: '4px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {priority}
+                        </span>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Status Badge & Control */}
+                  <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                      Status
+                    </span>
+                    {isEmployee ? (
+                      /* Assigned employee can update their task status */
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <CustomSelect
-                          value={selectedCompanyFilter}
-                          onChange={(val) => setSelectedCompanyFilter(val)}
-                          placeholder="Filter by Company"
-                          icon={<Building2 size={15} color="#22C55E" />}
-                          alignRight={true}
-                          direction="down"
+                          value={status}
+                          onChange={(val) => setStatus(val)}
+                          direction="up"
                           options={[
-                            { value: 'ALL', label: `All Companies (${teamMembers.length})` },
-                            ...Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).map((compName) => {
-                              const count = teamMembers.filter((m) => m.company_name === compName).length;
-                              return {
-                                value: compName,
-                                label: `${compName} (${count})`,
-                              };
-                            })
+                            { value: 'PENDING', label: 'To Do (Pending)' },
+                            { value: 'IN_PROGRESS', label: 'In Progress' },
+                            { value: 'COMPLETED', label: 'Completed' },
+                            { value: 'ON_HOLD', label: 'On Hold' },
+                            { value: 'CANCELLED', label: 'Cancelled' },
                           ]}
+                          placeholder="Select status"
                         />
+                        <button
+                          type="button"
+                          className="rm-btn rm-btn-primary"
+                          style={{ padding: '6px 12px', fontSize: '12px' }}
+                          onClick={() => handleSaveTask(false)}
+                          disabled={submitting}
+                        >
+                          {submitting ? 'Updating...' : 'Update Status'}
+                        </button>
+                      </div>
+                    ) : (
+                      /* Managers cannot change active status - only view */
+                      <div>
+                        {(() => {
+                          const sStyle = getStatusBadgeStyle(status);
+                          return (
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                background: sStyle.bg,
+                                color: sStyle.color,
+                                border: `1px solid ${sStyle.border}`,
+                                padding: '4px 12px',
+                                borderRadius: '6px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                              }}
+                            >
+                              {sStyle.label}
+                            </span>
+                          );
+                        })()}
+                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
+                          Updated by assigned employee
+                        </div>
                       </div>
                     )}
                   </div>
-                  <EmployeeMultiSelect
-                    members={
-                      selectedCompanyFilter === 'ALL'
-                        ? teamMembers
-                        : teamMembers.filter((m) => m.company_name === selectedCompanyFilter)
-                    }
-                    selectedIds={assignedEmployeeIds}
-                    onChange={(ids) => {
-                      setAssignedEmployeeIds(ids);
-                      setAssignedTo(ids.length > 0 ? String(ids[0]) : '');
-                    }}
-                    disabled={isEmployee}
-                    placeholder={
-                      selectedCompanyFilter === 'ALL'
-                        ? "Search and select employees across companies..."
-                        : `Select employees from ${selectedCompanyFilter}...`
-                    }
-                  />
                 </div>
-              </div>
 
-              {/* B. DATE CONFIGURATION: Started Date & Ended Date with CustomDatePicker */}
-              <div className="task-form-section">
-                <div className="task-dates-grid">
+                {/* 6. READ-ONLY METRICS */}
+                {taskData && (
+                  <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                    <div>
+                      <strong>Assigned By:</strong> {taskData.assigned_by_name || 'System'} ({taskData.assigned_by_role || 'Manager'})
+                    </div>
+                    <div>
+                      <strong>Total Logged:</strong> {taskData.total_logged_hours || 0} hrs
+                    </div>
+                    <div>
+                      <strong>Created:</strong> {new Date(taskData.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* =============================================================
+                 EDIT MODE: FORM INPUTS FOR CREATE OR EDIT
+                 ============================================================= */
+              <div className="task-panel-left-scroll">
+                {errorMsg && (
+                  <div className="rm-modal-error">
+                    <AlertCircle size={16} />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                {/* A. TASK INFORMATION */}
+                <div className="task-form-section">
                   <div className="task-field-group">
-                    <label className="task-field-label">Started Date</label>
-                    <CustomDatePicker
-                      value={startDate}
-                      onChange={(d) => setStartDate(d)}
-                      placeholder="Select started date"
+                    <div className="task-field-label-row">
+                      <label className="task-field-label">
+                        Task Title <span className="task-required">*</span>
+                      </label>
+                      {!isEmployee && (
+                        <button
+                          type="button"
+                          className={`task-voice-btn ${voiceTarget === 'title' ? 'recording' : ''}`}
+                          onClick={() => startVoiceInput('title')}
+                          disabled={isTranscribingVoice}
+                          title="Voice typing for Title"
+                        >
+                          {isTranscribingVoice && targetForSpeechRef.current === 'title' ? (
+                            <>
+                              <Loader2 size={12} className="spin" />
+                              <span>Transcribing...</span>
+                            </>
+                          ) : voiceTarget === 'title' ? (
+                            <>
+                              <span className="task-voice-dot" />
+                              <span>Listening...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mic size={12} />
+                              <span>Voice</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      className="task-input-title-modern"
+                      placeholder="Enter task title (or use voice)..."
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      disabled={isEmployee}
+                      required
+                    />
+                    {titleVoiceAudioUrl && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Title Audio:</span>
+                          <audio controls src={titleVoiceAudioUrl} style={{ height: '28px' }} />
+                        </div>
+                        <button type="button" className="task-tool-btn" title="Remove Audio" onClick={() => setTitleVoiceAudioUrl(null)}>
+                          <X size={13} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="task-field-group">
+                    <div className="task-field-label-row">
+                      <label className="task-field-label">Description</label>
+                      {!isEmployee && (
+                        <button
+                          type="button"
+                          className={`task-voice-btn ${voiceTarget === 'description' ? 'recording' : ''}`}
+                          onClick={() => startVoiceInput('description')}
+                          disabled={isTranscribingVoice}
+                          title="Voice typing for Description"
+                        >
+                          {isTranscribingVoice && targetForSpeechRef.current === 'description' ? (
+                            <>
+                              <Loader2 size={12} className="spin" />
+                              <span>Transcribing...</span>
+                            </>
+                          ) : voiceTarget === 'description' ? (
+                            <>
+                              <span className="task-voice-dot" />
+                              <span>Listening...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mic size={12} />
+                              <span>Voice</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    <textarea
+                      className="task-textarea-modern"
+                      rows={4}
+                      placeholder="Provide full context, technical specifications, and expected deliverables (or use voice)..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                       disabled={isEmployee}
                     />
+                    {descVoiceAudioUrl && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#334155' }}>🎙️ Description Audio:</span>
+                          <audio controls src={descVoiceAudioUrl} style={{ height: '28px' }} />
+                        </div>
+                        <button type="button" className="task-tool-btn" title="Remove Audio" onClick={() => setDescVoiceAudioUrl(null)}>
+                          <X size={13} />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
+                  {/* ASSIGNED EMPLOYEES SELECTION WITH COMPANY FILTER */}
                   <div className="task-field-group">
-                    <label className="task-field-label">Ended Date <span className="task-required">*</span></label>
-                    <CustomDatePicker
-                      value={dueDate}
-                      minDate={startDate || undefined}
-                      onChange={(d) => setDueDate(d)}
-                      placeholder="Select ended date"
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                      <label className="task-field-label" style={{ margin: 0 }}>
+                        Assign Employees <span className="task-required">*</span>
+                      </label>
+                      {Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).length > 1 && (
+                        <div style={{ width: '260px' }}>
+                          <CustomSelect
+                            value={selectedCompanyFilter}
+                            onChange={(val) => setSelectedCompanyFilter(val)}
+                            placeholder="Filter by Company"
+                            icon={<Building2 size={15} color="#22C55E" />}
+                            alignRight={true}
+                            direction="down"
+                            options={[
+                              { value: 'ALL', label: `All Companies (${teamMembers.length})` },
+                              ...Array.from(new Set(teamMembers.map((m) => m.company_name).filter(Boolean))).map((compName) => {
+                                const count = teamMembers.filter((m) => m.company_name === compName).length;
+                                return {
+                                  value: compName,
+                                  label: `${compName} (${count})`,
+                                };
+                              })
+                            ]}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <EmployeeMultiSelect
+                      members={
+                        selectedCompanyFilter === 'ALL'
+                          ? teamMembers
+                          : teamMembers.filter((m) => m.company_name === selectedCompanyFilter)
+                      }
+                      selectedIds={assignedEmployeeIds}
+                      onChange={(ids) => {
+                        setAssignedEmployeeIds(ids);
+                        setAssignedTo(ids.length > 0 ? String(ids[0]) : '');
+                      }}
                       disabled={isEmployee}
+                      placeholder={
+                        selectedCompanyFilter === 'ALL'
+                          ? "Search and select employees across companies..."
+                          : `Select employees from ${selectedCompanyFilter}...`
+                      }
                     />
                   </div>
                 </div>
+
+                {/* B. DATE CONFIGURATION: Started Date & Ended Date with CustomDatePicker */}
+                <div className="task-form-section">
+                  <div className="task-dates-grid">
+                    <div className="task-field-group">
+                      <label className="task-field-label">Started Date</label>
+                      <CustomDatePicker
+                        value={startDate}
+                        onChange={(d) => setStartDate(d)}
+                        placeholder="Select started date"
+                        disabled={isEmployee}
+                      />
+                    </div>
+
+                    <div className="task-field-group">
+                      <label className="task-field-label">Ended Date <span className="task-required">*</span></label>
+                      <CustomDatePicker
+                        value={dueDate}
+                        minDate={startDate || undefined}
+                        onChange={(d) => setDueDate(d)}
+                        placeholder="Select ended date"
+                        disabled={isEmployee}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* C. STATUS & PRIORITY DROPDOWNS */}
+                <div className="task-form-section">
+                  <div className="task-controls-grid">
+                    {/* Status Dropdown: Restricted for Manager */}
+                    <div className="task-field-group">
+                      <label className="task-field-label">Status</label>
+                      {!isEmployee && taskId ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+                            {status.replace(/_/g, ' ')}
+                          </span>
+                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                            (Updated by employee)
+                          </span>
+                        </div>
+                      ) : (
+                        <CustomSelect
+                          value={status}
+                          onChange={(val) => setStatus(val)}
+                          direction="up"
+                          options={[
+                            { value: 'PENDING', label: 'To Do (Pending)' },
+                            { value: 'IN_PROGRESS', label: 'In Progress' },
+                            { value: 'COMPLETED', label: 'Completed' },
+                            { value: 'ON_HOLD', label: 'On Hold' },
+                            { value: 'CANCELLED', label: 'Cancelled' },
+                          ]}
+                          placeholder="Select status"
+                        />
+                      )}
+                    </div>
+
+                    {/* Modern Priority Dropdown with Low: Green, Medium: Yellow, High: Purple, Urgent: Red */}
+                    <div className="task-field-group">
+                      <label className="task-field-label">Priority</label>
+                      <CustomSelect
+                        value={priority}
+                        onChange={(val) => setPriority(val as any)}
+                        disabled={isEmployee}
+                        direction="up"
+                        options={[
+                          { value: 'LOW', label: 'Low' },
+                          { value: 'MEDIUM', label: 'Medium' },
+                          { value: 'HIGH', label: 'High' },
+                          { value: 'URGENT', label: 'Urgent' },
+                        ]}
+                        placeholder="Select priority"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* READ-ONLY METRICS IF SAVED */}
+                {taskData && (
+                  <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
+                    <div>
+                      <strong>Assigned By:</strong> {taskData.assigned_by_name || 'System'} ({taskData.assigned_by_role || 'Manager'})
+                    </div>
+                    <div>
+                      <strong>Total Logged:</strong> {taskData.total_logged_hours || 0} hrs
+                    </div>
+                    <div>
+                      <strong>Created:</strong> {new Date(taskData.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                )}
               </div>
+            )}
 
-              {/* C. STATUS & PRIORITY DROPDOWNS */}
-              <div className="task-form-section">
-                <div className="task-controls-grid">
-                  {/* Modern Status Dropdown */}
-                  <div className="task-field-group">
-                    <label className="task-field-label">Status</label>
-                    <CustomSelect
-                      value={status}
-                      onChange={(val) => setStatus(val)}
-                      direction="up"
-                      options={[
-                        { value: 'PENDING', label: 'To Do (Pending)' },
-                        { value: 'IN_PROGRESS', label: 'In Progress' },
-                        { value: 'COMPLETED', label: 'Completed' },
-                        { value: 'ON_HOLD', label: 'On Hold' },
-                        { value: 'CANCELLED', label: 'Cancelled' },
-                      ]}
-                      placeholder="Select status"
-                    />
-                  </div>
+            {/* THREE PERSISTENT BOTTOM BUTTONS: CLOSE, DRAFT, SUBMIT / VIEW MODE ACTIONS */}
+            <div className="task-panel-left-actions">
+              <button
+                type="button"
+                className="rm-btn rm-btn-secondary"
+                onClick={onClose}
+                disabled={submitting}
+              >
+                Close
+              </button>
 
-                  {/* Modern Priority Dropdown */}
-                  <div className="task-field-group">
-                    <label className="task-field-label">Priority</label>
-                    <CustomSelect
-                      value={priority}
-                      onChange={(val) => setPriority(val as any)}
-                      disabled={isEmployee}
-                      direction="up"
-                      options={[
-                        { value: 'LOW', label: 'Low' },
-                        { value: 'MEDIUM', label: 'Medium' },
-                        { value: 'HIGH', label: 'High' },
-                        { value: 'URGENT', label: 'Urgent' },
-                      ]}
-                      placeholder="Select priority"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* READ-ONLY METRICS IF SAVED */}
-              {taskData && (
-                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', fontSize: '12px', color: '#64748b', display: 'flex', justifyContent: 'space-between' }}>
-                  <div>
-                    <strong>Assigned By:</strong> {taskData.assigned_by_name || 'System'} ({taskData.assigned_by_role || 'Manager'})
-                  </div>
-                  <div>
-                    <strong>Total Logged:</strong> {taskData.total_logged_hours || 0} hrs
-                  </div>
-                  <div>
-                    <strong>Created:</strong> {new Date(taskData.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-              )}
-            </div>
-
-              {/* THREE PERSISTENT BOTTOM BUTTONS: CLOSE, DRAFT, SUBMIT */}
-              <div className="task-panel-left-actions">
-                <button
-                  type="button"
-                  className="rm-btn rm-btn-secondary"
-                  onClick={onClose}
-                  disabled={submitting}
-                >
-                  Close
-                </button>
-
+              {mode === 'view' && taskId ? (
+                !isEmployee && (
+                  <button
+                    type="button"
+                    className="rm-btn rm-btn-primary"
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                    onClick={() => setMode('edit')}
+                  >
+                    <Edit3 size={14} />
+                    <span>Edit Task</span>
+                  </button>
+                )
+              ) : (
                 <div style={{ display: 'flex', gap: '10px' }}>
+                  {taskId && !isEmployee && (
+                    <button
+                      type="button"
+                      className="rm-btn rm-btn-secondary"
+                      onClick={() => setMode('view')}
+                      disabled={submitting}
+                    >
+                      Cancel
+                    </button>
+                  )}
                   {taskId && !isEmployee && (
                     <button
                       type="button"
@@ -1046,10 +1414,11 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                     onClick={() => handleSaveTask(false)}
                     disabled={submitting}
                   >
-                    {submitting ? 'Saving...' : (isEmployee ? 'Update Status' : 'Submit')}
+                    {submitting ? 'Saving...' : (isEmployee ? 'Update Status' : (taskId ? 'Save Changes' : 'Submit'))}
                   </button>
                 </div>
-              </div>
+              )}
+            </div>
           </div>
 
           {/* =================================================================

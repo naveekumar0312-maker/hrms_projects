@@ -61,6 +61,7 @@ const TaskManager: React.FC = () => {
   // Workspace Modal state
   const [showWorkspace, setShowWorkspace] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
+  const [workspaceMode, setWorkspaceMode] = useState<'view' | 'edit'>('view');
 
   const loadTasks = useCallback(async () => {
     try {
@@ -81,12 +82,14 @@ const TaskManager: React.FC = () => {
   // Open Workspace for Creating a New Task
   const handleOpenCreate = () => {
     setSelectedTaskId(null);
+    setWorkspaceMode('edit');
     setShowWorkspace(true);
   };
 
   // Open Workspace for Viewing / Editing existing Task
-  const handleOpenEdit = (taskId: number) => {
+  const handleOpenWorkspace = (taskId: number, mode: 'view' | 'edit') => {
     setSelectedTaskId(taskId);
+    setWorkspaceMode(mode);
     setShowWorkspace(true);
   };
 
@@ -169,15 +172,15 @@ const TaskManager: React.FC = () => {
     );
   };
 
-  // Priority badge styling
+  // Priority badge styling (Low: Green, Medium: Yellow, High: Purple, Urgent: Red)
   const renderPriorityBadge = (priority: string) => {
-    const map: Record<string, { color: string; bg: string }> = {
-      LOW: { color: '#64748b', bg: '#f1f5f9' },
-      MEDIUM: { color: '#0284c7', bg: '#e0f2fe' },
-      HIGH: { color: '#d97706', bg: '#fef3c7' },
-      URGENT: { color: '#dc2626', bg: '#fee2e2' },
+    const map: Record<string, { color: string; bg: string; border: string }> = {
+      LOW: { color: '#15803d', bg: '#dcfce7', border: '#bbf7d0' }, // Green
+      MEDIUM: { color: '#a16207', bg: '#fef9c3', border: '#fef08a' }, // Yellow
+      HIGH: { color: '#7e22ce', bg: '#f3e8ff', border: '#e9d5ff' }, // Purple
+      URGENT: { color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }, // Red
     };
-    const p = map[priority] || { color: '#334155', bg: '#f1f5f9' };
+    const p = map[priority] || { color: '#334155', bg: '#f1f5f9', border: '#e2e8f0' };
     return (
       <span style={{
         display: 'inline-flex',
@@ -186,6 +189,7 @@ const TaskManager: React.FC = () => {
         whiteSpace: 'nowrap',
         background: p.bg,
         color: p.color,
+        border: `1px solid ${p.border}`,
         padding: '3px 8px',
         borderRadius: '4px',
         fontSize: '11px',
@@ -300,7 +304,7 @@ const TaskManager: React.FC = () => {
             </thead>
             <tbody>
               {filteredTasks.map((t) => (
-                <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => handleOpenEdit(t.id)}>
+                <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => handleOpenWorkspace(t.id, 'view')}>
                   <td>
                     <div style={{ fontWeight: 600, color: '#0f172a' }}>{t.title}</div>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>
@@ -416,7 +420,7 @@ const TaskManager: React.FC = () => {
                         type="button"
                         className="rm-btn rm-btn-secondary"
                         style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                        onClick={() => handleOpenEdit(t.id)}
+                        onClick={() => handleOpenWorkspace(t.id, 'view')}
                         title="View Workspace"
                       >
                         <Eye size={13} color="#0284c7" />
@@ -427,7 +431,7 @@ const TaskManager: React.FC = () => {
                         type="button"
                         className="rm-btn rm-btn-secondary"
                         style={{ padding: '6px 10px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                        onClick={() => handleOpenEdit(t.id)}
+                        onClick={() => handleOpenWorkspace(t.id, 'edit')}
                         title="Edit Task"
                       >
                         <Edit3 size={13} color="#16a34a" />
@@ -459,6 +463,7 @@ const TaskManager: React.FC = () => {
       {showWorkspace && (
         <TaskWorkspaceModal
           taskId={selectedTaskId}
+          initialMode={workspaceMode}
           onClose={() => setShowWorkspace(false)}
           onSaved={() => {
             loadTasks();

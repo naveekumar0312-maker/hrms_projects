@@ -108,17 +108,18 @@ const EmployeeTasks: React.FC = () => {
   };
 
   const renderPriorityBadge = (priority: string) => {
-    const map: Record<string, { color: string; bg: string }> = {
-      LOW: { color: '#64748b', bg: '#f1f5f9' },
-      MEDIUM: { color: '#0284c7', bg: '#e0f2fe' },
-      HIGH: { color: '#d97706', bg: '#fef3c7' },
-      URGENT: { color: '#dc2626', bg: '#fee2e2' },
+    const map: Record<string, { color: string; bg: string; border: string }> = {
+      LOW: { color: '#15803d', bg: '#dcfce7', border: '#bbf7d0' }, // Green
+      MEDIUM: { color: '#a16207', bg: '#fef9c3', border: '#fef08a' }, // Yellow
+      HIGH: { color: '#7e22ce', bg: '#f3e8ff', border: '#e9d5ff' }, // Purple
+      URGENT: { color: '#dc2626', bg: '#fee2e2', border: '#fca5a5' }, // Red
     };
-    const p = map[priority] || { color: '#334155', bg: '#f1f5f9' };
+    const p = map[priority] || { color: '#334155', bg: '#f1f5f9', border: '#e2e8f0' };
     return (
       <span style={{
         background: p.bg,
         color: p.color,
+        border: `1px solid ${p.border}`,
         padding: '3px 8px',
         borderRadius: '4px',
         fontSize: '11px',
@@ -275,6 +276,7 @@ const EmployeeTasks: React.FC = () => {
       {selectedTaskId && (
         <TaskWorkspaceModal
           taskId={selectedTaskId}
+          initialMode="view"
           onClose={() => setSelectedTaskId(null)}
           onSaved={() => {
             loadTasks();

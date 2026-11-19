@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status, views, viewsets, permissions
@@ -643,27 +643,58 @@ class ManagerDashboardSummaryView(ManagerPortalBaseView):
         holiday = 0
 
         today_str = str(today)
+        now_dt = timezone.localtime()
+        is_sunday = (today.weekday() == 6)
+
         for emp in assigned_employees:
             att = attendances.get(emp.id)
             holiday_obj = holidays_map.get(today_str)
             leave_obj = leaves_map.get(emp.id)
-            calc_status = get_employee_attendance_status(
-                record=att,
-                employee=emp,
-                target_date=today,
-                holiday=holiday_obj,
-                approved_leave=leave_obj,
-            )
-            if calc_status == 'PRESENT':
-                present += 1
-            elif calc_status == 'LATE':
-                late += 1
-            elif calc_status == 'ABSENT':
-                absent += 1
-            elif calc_status in ('ON_LEAVE', 'HALF DAY', 'HALF_DAY'):
+
+            # 1. Approved Leave
+            if leave_obj:
                 on_leave += 1
-            elif calc_status == 'HOLIDAY':
+                continue
+
+            # 2. Holiday
+            if holiday_obj:
                 holiday += 1
+                continue
+
+            # 3. Punched in today (Present / Late)
+            if att and att.check_in and getattr(att, 'check_in_approval_status', '') != 'REJECTED':
+                present += 1
+                late_mins = getattr(att, 'late_minutes', 0) or 0
+                if late_mins > 0 or getattr(att, 'status', '') == 'LATE':
+                    late += 1
+            else:
+                if is_sunday:
+                    continue
+                calc_status = get_employee_attendance_status(
+                    record=att,
+                    employee=emp,
+                    target_date=today,
+                    holiday=holiday_obj,
+                    approved_leave=leave_obj,
+                )
+                if calc_status == 'ABSENT':
+                    absent += 1
+                elif calc_status in ('ON_LEAVE', 'HALF DAY', 'HALF_DAY'):
+                    on_leave += 1
+                elif calc_status == 'HOLIDAY':
+                    holiday += 1
+                else:
+                    # If shift start has passed + 30m grace without punch, mark as absent for today
+                    shift = getattr(emp, 'shift', None)
+                    if shift and shift.start_time:
+                        shift_start_dt = timezone.make_aware(
+                            datetime.combine(today, shift.start_time),
+                            timezone.get_current_timezone()
+                        )
+                        if now_dt > (shift_start_dt + timedelta(minutes=30)):
+                            absent += 1
+                    elif now_dt.hour >= 12:
+                        absent += 1
 
         comp_name = manager.branch.company.name if (manager.branch and manager.branch.company) else (request.user.company.name if request.user.company else 'All Companies')
         tl_count = sum(1 for e in assigned_employees if e.user and e.user.role == 'TEAM_LEADER')
@@ -896,25 +927,52 @@ class TeamLeaderDashboardSummaryView(views.APIView):
         absent = 0
         on_leave = 0
 
+        today_str = str(today)
+        now_dt = timezone.localtime()
+        is_sunday = (today.weekday() == 6)
+
         for member in team_members:
             att = attendances.get(member.id)
-            holiday_obj = holidays_map.get(str(today))
+            holiday_obj = holidays_map.get(today_str)
             leave_obj = leaves_map.get(member.id)
-            calc_status = get_employee_attendance_status(
-                record=att,
-                employee=member,
-                target_date=today,
-                holiday=holiday_obj,
-                approved_leave=leave_obj,
-            )
-            if calc_status == 'PRESENT':
-                present += 1
-            elif calc_status == 'LATE':
-                late += 1
-            elif calc_status == 'ABSENT':
-                absent += 1
-            elif calc_status == 'ON_LEAVE':
+
+            if leave_obj:
                 on_leave += 1
+                continue
+
+            if holiday_obj:
+                continue
+
+            if att and att.check_in and getattr(att, 'check_in_approval_status', '') != 'REJECTED':
+                present += 1
+                late_mins = getattr(att, 'late_minutes', 0) or 0
+                if late_mins > 0 or getattr(att, 'status', '') == 'LATE':
+                    late += 1
+            else:
+                if is_sunday:
+                    continue
+                calc_status = get_employee_attendance_status(
+                    record=att,
+                    employee=member,
+                    target_date=today,
+                    holiday=holiday_obj,
+                    approved_leave=leave_obj,
+                )
+                if calc_status == 'ABSENT':
+                    absent += 1
+                elif calc_status in ('ON_LEAVE', 'HALF DAY', 'HALF_DAY'):
+                    on_leave += 1
+                else:
+                    shift = getattr(member, 'shift', None)
+                    if shift and shift.start_time:
+                        shift_start_dt = timezone.make_aware(
+                            datetime.combine(today, shift.start_time),
+                            timezone.get_current_timezone()
+                        )
+                        if now_dt > (shift_start_dt + timedelta(minutes=30)):
+                            absent += 1
+                    elif now_dt.hour >= 12:
+                        absent += 1
 
         # Task metrics
         from task_tracking.models import Task

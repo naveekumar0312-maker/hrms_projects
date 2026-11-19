@@ -23,6 +23,16 @@ from .serializers import (
 from employees.models import Employee
 
 
+def get_user_display_name(user):
+    """Returns the employee full name, user full name, or username/phone."""
+    if not user:
+        return 'System'
+    emp = getattr(user, 'employee_profile', None)
+    if emp and emp.full_name:
+        return emp.full_name
+    return user.get_full_name() or user.username or getattr(user, 'phone_number', None) or 'User'
+
+
 def check_user_task_access(task, user):
     """Enforces strict multi-tenant and role-based task read access."""
     emp = getattr(user, 'employee_profile', None)
@@ -287,10 +297,11 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         # Log Activity with clearly identified assigning role
         action_name = "Task Drafted" if is_draft else "Task Created & Assigned"
+        user_name = get_user_display_name(user)
         desc = (
-            f"Task drafted by {user.username} ({role_display})."
+            f"Task drafted by {user_name} ({role_display})."
             if is_draft
-            else f"Task created and assigned to {assignee_name} by {user.username} ({role_display})."
+            else f"Task created and assigned to {assignee_name} by {user_name} ({role_display})."
         )
         TaskActivity.objects.create(
             task=task,
@@ -343,6 +354,11 @@ class TaskViewSet(viewsets.ModelViewSet):
                     new_val = new_val.pk
                 if current_val != new_val:
                     raise PermissionDenied("Employees can only update task status.")
+        elif user.role in ('REPORTING_MANAGER', 'MANAGER', 'TEAM_LEADER'):
+            # Managers and Team Leaders cannot change the execution status of active (published) tasks.
+            # Only assigned employees update task status as they work.
+            if not task.is_draft and 'status' in serializer.validated_data:
+                serializer.validated_data.pop('status', None)
 
         old_status = task.status
         old_is_draft = task.is_draft
@@ -365,11 +381,12 @@ class TaskViewSet(viewsets.ModelViewSet):
         # Log Status Change or Publish
         if old_is_draft and not updated_task.is_draft:
             role_display = "Reporting Manager" if user.role == 'REPORTING_MANAGER' else ("Team Leader" if user.role == 'TEAM_LEADER' else user.role)
+            user_name = get_user_display_name(user)
             TaskActivity.objects.create(
                 task=updated_task,
                 user=user,
                 action="Task Submitted",
-                description=f"Task published from draft and assigned to {updated_task.assigned_to.full_name if updated_task.assigned_to else 'team'} by {user.username} ({role_display})."
+                description=f"Task published from draft and assigned to {updated_task.assigned_to.full_name if updated_task.assigned_to else 'team'} by {user_name} ({role_display})."
             )
             try:
                 from notifications.models import Notification
@@ -423,11 +440,12 @@ class TaskViewSet(viewsets.ModelViewSet):
             except Exception as notif_err:
                 logger.error(f"Error sending task update assign notification: {notif_err}")
         elif old_status != updated_task.status:
+            user_name = get_user_display_name(user)
             TaskActivity.objects.create(
                 task=updated_task,
                 user=user,
                 action="Status Changed",
-                description=f"Status changed from {old_status} to {updated_task.status} by {user.username}."
+                description=f"Status changed from {old_status} to {updated_task.status} by {user_name}."
             )
 
 

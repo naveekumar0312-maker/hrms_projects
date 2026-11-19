@@ -800,21 +800,21 @@ export const TasksScreen: React.FC = () => {
   });
 
   const getPriorityBadge = (p: string) => {
-    let color = '#22c55e';
-    let bg = '#F0F9FF';
-    let borderColor = '#BAE6FD';
+    let color = '#15803d'; // Green
+    let bg = '#dcfce7';
+    let borderColor = '#bbf7d0';
     if (p === 'MEDIUM') {
-      color = '#22C55E';
-      bg = '#F0F9FF';
-      borderColor = '#BAE6FD';
+      color = '#a16207'; // Yellow
+      bg = '#fef9c3';
+      borderColor = '#fef08a';
     } else if (p === 'HIGH') {
-      color = '#B45309';
-      bg = '#FFFBEB';
-      borderColor = '#FDE68A';
+      color = '#7e22ce'; // Purple
+      bg = '#f3e8ff';
+      borderColor = '#e9d5ff';
     } else if (p === 'URGENT') {
-      color = '#DC2626';
-      bg = '#FEF2F2';
-      borderColor = '#FECACA';
+      color = '#dc2626'; // Red
+      bg = '#fee2e2';
+      borderColor = '#fca5a5';
     }
     return { color, bg, borderColor };
   };
@@ -1712,12 +1712,22 @@ export const TasksScreen: React.FC = () => {
 
                 {/* Priority & Status Bar */}
                 <View style={styles.modalBadgeRow}>
-                  <View style={[styles.badgePill, { backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }]}>
-                    <Text style={[styles.badgeText, { color: '#22C55E' }]}>{selectedTask.priority}</Text>
-                  </View>
-                  <View style={[styles.badgePill, { backgroundColor: '#EBF3FC', borderColor: '#BAE6FD' }]}>
-                    <Text style={[styles.badgeText, { color: '#22C55E' }]}>{selectedTask.status.replace(/_/g, ' ')}</Text>
-                  </View>
+                  {(() => {
+                    const pb = getPriorityBadge(selectedTask.priority);
+                    return (
+                      <View style={[styles.badgePill, { backgroundColor: pb.bg, borderColor: pb.borderColor }]}>
+                        <Text style={[styles.badgeText, { color: pb.color }]}>{selectedTask.priority}</Text>
+                      </View>
+                    );
+                  })()}
+                  {(() => {
+                    const sb = getStatusBadge(selectedTask.status);
+                    return (
+                      <View style={[styles.badgePill, { backgroundColor: sb.bg, borderColor: sb.borderColor }]}>
+                        <Text style={[styles.badgeText, { color: sb.color }]}>{selectedTask.status.replace(/_/g, ' ')}</Text>
+                      </View>
+                    );
+                  })()}
                 </View>
 
                 {/* Full Description */}

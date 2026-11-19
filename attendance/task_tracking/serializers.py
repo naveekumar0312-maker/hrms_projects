@@ -46,7 +46,7 @@ class TaskCommentSerializer(serializers.ModelSerializer):
         emp = getattr(obj.author, 'employee_profile', None)
         if emp and emp.full_name:
             return emp.full_name
-        return obj.author.get_full_name() or obj.author.username
+        return obj.author.get_full_name() or obj.author.username or getattr(obj.author, 'phone_number', None) or 'User'
 
     def get_author_avatar(self, obj):
         if not obj.author:
@@ -86,7 +86,7 @@ class TaskAttachmentSerializer(serializers.ModelSerializer):
         emp = getattr(obj.uploaded_by, 'employee_profile', None)
         if emp and emp.full_name:
             return emp.full_name
-        return obj.uploaded_by.get_full_name() or obj.uploaded_by.username
+        return obj.uploaded_by.get_full_name() or obj.uploaded_by.username or getattr(obj.uploaded_by, 'phone_number', None) or 'User'
 
     def get_file_url(self, obj):
         if obj.file:
@@ -111,7 +111,7 @@ class TaskActivitySerializer(serializers.ModelSerializer):
         emp = getattr(obj.user, 'employee_profile', None)
         if emp and emp.full_name:
             return emp.full_name
-        return obj.user.get_full_name() or obj.user.username
+        return obj.user.get_full_name() or obj.user.username or getattr(obj.user, 'phone_number', None) or 'User'
 
 
 class TaskTimeLogSerializer(serializers.ModelSerializer):
@@ -131,7 +131,7 @@ class TaskTimeLogSerializer(serializers.ModelSerializer):
         emp = getattr(obj.user, 'employee_profile', None)
         if emp and emp.full_name:
             return emp.full_name
-        return obj.user.get_full_name() or obj.user.username
+        return obj.user.get_full_name() or obj.user.username or getattr(obj.user, 'phone_number', None) or 'User'
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -195,7 +195,7 @@ class TaskSerializer(serializers.ModelSerializer):
         emp = getattr(obj.assigned_by, 'employee_profile', None)
         if emp and emp.full_name:
             return emp.full_name
-        return obj.assigned_by.get_full_name() or obj.assigned_by.username
+        return obj.assigned_by.get_full_name() or obj.assigned_by.username or getattr(obj.assigned_by, 'phone_number', None) or 'User'
 
     def get_total_logged_hours(self, obj):
         total = sum(tl.hours for tl in obj.time_logs.all())
