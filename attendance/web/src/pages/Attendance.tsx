@@ -6,21 +6,14 @@
     if (record.check_in_approval_status === 'REJECTED' || record.check_out_approval_status === 'REJECTED') return 'REJECTED';
     if (recStatus === 'ABSENT') return 'ABSENT';
 
-    // Must have BOTH check-in and check-out approved to be PRESENT or LATE
-    const inApproved = record.check_in_approval_status === 'APPROVED';
-    const outApproved = record.check_out_approval_status === 'APPROVED';
-    if (record.check_in_time || record.check_out_time) {
-      if (inApproved && outApproved) {
-        if (recStatus === 'LATE' || (record.late_minutes && record.late_minutes > 0)) return 'LATE';
-        return 'PRESENT';
-      }
-      return 'PENDING';
+    // If check-in exists:
+    if (record.check_in_time || (record as any).check_in) {
+      if (recStatus === 'LATE' || (record.late_minutes && record.late_minutes > 0)) return 'LATE';
+      return 'PRESENT';
     }
 
-    if (inApproved && outApproved) {
-      if (recStatus === 'LATE' || (record.late_minutes && record.late_minutes > 0)) return 'LATE';
-      if (recStatus === 'PRESENT' || recStatus === 'ON_TIME' || recStatus === 'COMPLETED' || recStatus === 'WORKING') return 'PRESENT';
-    }
+    if (recStatus === 'PRESENT' || recStatus === 'ON_TIME' || recStatus === 'COMPLETED' || recStatus === 'WORKING') return 'PRESENT';
+    if (recStatus === 'LATE' || (record.late_minutes && record.late_minutes > 0)) return 'LATE';
 
     return 'PENDING';
   };
