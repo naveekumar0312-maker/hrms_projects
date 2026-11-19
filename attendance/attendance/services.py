@@ -450,18 +450,21 @@ def get_employee_attendance_status(
 
     if target_date == today:
         # If check-in or check-out is missing for today:
-        # User requirement: check in check out vaikkathavangala andha day full aa partu aprm absent count kattattum.
-        # So throughout today's working shift/day, if no punch exists yet, keep as PENDING until shift ends.
+        # If employee has not punched by 12:00 PM or after shift start, mark as ABSENT
         shift = getattr(employee, 'shift', None) if employee else None
-        if not shift or not shift.end_time:
+        if shift and shift.start_time:
+            shift_start_dt = timezone.make_aware(
+                datetime.combine(target_date, shift.start_time),
+                timezone.get_current_timezone()
+            )
+            if now > (shift_start_dt + timedelta(minutes=30)):
+                return 'ABSENT'
             return 'PENDING'
 
-        shift_end_datetime = timezone.make_aware(
-            datetime.combine(target_date, shift.end_time)
-        )
-        if now < shift_end_datetime:
-            return 'PENDING'
-        return 'ABSENT'
+        # If no shift assigned or standard shift, after 12 PM mark as ABSENT
+        if now.hour >= 12:
+            return 'ABSENT'
+        return 'PENDING'
 
     # Past date with no attendance, no leave, no holiday
     return 'ABSENT'
