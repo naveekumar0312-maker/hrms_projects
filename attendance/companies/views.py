@@ -90,6 +90,8 @@ def update_company_branding(request, pk):
         )
 
     company = get_object_or_404(Company, pk=pk)
+    if not company.slug and company.name:
+        company.save()  # Auto-generate slug via model save()
 
     if request.method == "GET":
         serializer = PublicCompanyBrandingSerializer(

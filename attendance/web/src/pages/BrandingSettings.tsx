@@ -282,6 +282,9 @@ const BrandingSettings = () => {
     try {
       const form = new FormData()
       form.append('name', branding.name.trim())
+      if (effectiveSlug) {
+        form.append('slug', effectiveSlug)
+      }
       form.append('tagline', branding.tagline || '')
       form.append('primary_color', branding.primary_color || DEFAULT_BUTTON_COLOR)
       form.append('left_panel_heading', branding.left_panel_heading || '')
@@ -329,8 +332,19 @@ const BrandingSettings = () => {
     }
   }
 
-  const loginUrl = branding?.slug
-    ? `${window.location.origin}/${branding.slug}/login`
+  const toSlug = (text: string) => {
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+  }
+
+  const effectiveSlug = branding?.slug || (branding?.name ? toSlug(branding.name) : '')
+
+  const loginUrl = effectiveSlug
+    ? `${window.location.origin}/${effectiveSlug}/login`
     : ''
 
   const copyLoginUrl = async () => {
