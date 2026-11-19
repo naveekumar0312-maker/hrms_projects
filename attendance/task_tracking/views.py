@@ -233,7 +233,10 @@ class TaskViewSet(viewsets.ModelViewSet):
 
         elif user.role in ('SUPER_ADMIN', 'ADMIN', 'HR'):
             company_id = user.company_id or request.query_params.get('company')
-            qs = Employee.objects.filter(branch__company_id=company_id).select_related('user').order_by('full_name')
+            qs = Employee.objects.filter(status=True).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN'])
+            if company_id:
+                qs = qs.filter(Q(branch__company_id=company_id) | Q(user__company_id=company_id))
+            qs = qs.select_related('user', 'team_leader', 'branch', 'branch__company').order_by('full_name')
             return Response([_format_emp(e) for e in qs])
 
         return Response([])

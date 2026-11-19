@@ -287,32 +287,36 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(employee__branch_id=branch_id)
 
         elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
-            # Managers and Team Leaders see attendance for their direct reporting employees
+            # Managers and Team Leaders see attendance for their direct reporting employees or their own attendance
             emp = getattr(user, 'employee_profile', None)
             if not emp:
                 return queryset.none()
-            is_global = (user.role == 'REPORTING_MANAGER' and emp.branch is None and user.company_id is None)
-            if is_global:
-                # Global Access Manager: access attendance of all employees across all companies
-                queryset = queryset.filter(employee__status=True)
-                company_id = self.request.query_params.get('company')
-                branch_id = self.request.query_params.get('branch')
-                if company_id:
-                    queryset = queryset.filter(employee__branch__company_id=company_id)
-                if branch_id:
-                    queryset = queryset.filter(employee__branch_id=branch_id)
-            elif user.company_id:
-                # Company-level Manager
-                queryset = queryset.filter(employee__branch__company_id=user.company_id, employee__status=True)
-                branch_id = self.request.query_params.get('branch')
-                if branch_id:
-                    queryset = queryset.filter(employee__branch_id=branch_id)
-            elif emp.branch_id:
-                # Branch-level Manager: all employees in this branch or direct reports
-                queryset = queryset.filter(employee__branch_id=emp.branch_id, employee__status=True)
+            scope_param = self.request.query_params.get('scope')
+            if scope_param == 'my':
+                queryset = queryset.filter(employee=emp)
             else:
-                rep_ids = list(emp.direct_reports.filter(status=True).values_list('id', flat=True))
-                queryset = queryset.filter(employee_id__in=rep_ids)
+                is_global = (user.role == 'REPORTING_MANAGER' and emp.branch is None and user.company_id is None)
+                if is_global:
+                    # Global Access Manager: access attendance of all employees across all companies
+                    queryset = queryset.filter(employee__status=True)
+                    company_id = self.request.query_params.get('company')
+                    branch_id = self.request.query_params.get('branch')
+                    if company_id:
+                        queryset = queryset.filter(employee__branch__company_id=company_id)
+                    if branch_id:
+                        queryset = queryset.filter(employee__branch_id=branch_id)
+                elif user.company_id:
+                    # Company-level Manager
+                    queryset = queryset.filter(employee__branch__company_id=user.company_id, employee__status=True)
+                    branch_id = self.request.query_params.get('branch')
+                    if branch_id:
+                        queryset = queryset.filter(employee__branch_id=branch_id)
+                elif emp.branch_id:
+                    # Branch-level Manager: all employees in this branch or direct reports
+                    queryset = queryset.filter(employee__branch_id=emp.branch_id, employee__status=True)
+                else:
+                    rep_ids = list(emp.direct_reports.filter(status=True).values_list('id', flat=True))
+                    queryset = queryset.filter(employee_id__in=rep_ids)
 
         elif hasattr(user, 'employee_profile'):
             # Regular employees can only access their own attendance
@@ -1000,7 +1004,17 @@ class AttendanceViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'])
     def history(self, request):
-        queryset = self.get_queryset()
+        user = request.user
+        emp = getattr(user, 'employee_profile', None)
+        # If user is a manager/team leader without explicit scope, viewing their personal history should default to themselves
+        if user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
+            scope_param = request.query_params.get('scope')
+            if scope_param == 'my' or not request.query_params.get('employee'):
+                queryset = Attendance.objects.filter(employee=emp) if emp else Attendance.objects.none()
+            else:
+                queryset = self.get_queryset()
+        else:
+            queryset = self.get_queryset()
         
         month_param = request.query_params.get('month')
         year_param = request.query_params.get('year')
@@ -2551,7 +2565,10 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
         elif user.role == 'HR':
             if not user.company_id:
                 return queryset.none()
-            queryset = queryset.filter(employee__branch__company_id=user.company_id)
+            queryset = queryset.filter(
+                Q(employee__branch__company_id=user.company_id) |
+                Q(employee__user__company_id=user.company_id)
+            )
         elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             scope_param = self.request.query_params.get('scope')
             if scope_param == 'my':
@@ -2888,7 +2905,10 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         elif user.role == 'HR':
             if not user.company_id:
                 return queryset.none()
-            queryset = queryset.filter(employee__branch__company_id=user.company_id)
+            queryset = queryset.filter(
+                Q(employee__branch__company_id=user.company_id) |
+                Q(employee__user__company_id=user.company_id)
+            )
         elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             scope_param = self.request.query_params.get('scope')
             if scope_param == 'my':
@@ -3109,7 +3129,10 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
         elif user.role == 'HR':
             if not user.company_id:
                 return queryset.none()
-            queryset = queryset.filter(employee__branch__company_id=user.company_id)
+            queryset = queryset.filter(
+                Q(employee__branch__company_id=user.company_id) |
+                Q(employee__user__company_id=user.company_id)
+            )
         elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             scope_param = self.request.query_params.get('scope')
             if scope_param == 'my':

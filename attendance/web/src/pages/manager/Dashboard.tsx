@@ -15,11 +15,20 @@ import {
   X,
   Search,
   ExternalLink,
+  LogIn,
+  LogOut,
+  CalendarDays,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
 import { CustomDatePicker } from '../../components/CustomDatePicker';
+import CameraCapture from '../../components/CameraCapture';
+import { useLocation } from '../../hooks/useLocation';
+import type { LocationData } from '../../hooks/useLocation';
+import { checkIn, checkOut } from '../../api/attendance';
 import './ManagerDashboard.css';
 import '../ReportingManagers.css';
 
@@ -81,6 +90,94 @@ const ManagerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Manager Self Attendance State
+  const { getLocation } = useLocation();
+  const [myAttendance, setMyAttendance] = useState<any>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [actionType, setActionType] = useState<'CHECK_IN' | 'CHECK_OUT' | null>(null);
+  const [loadingAction, setLoadingAction] = useState(false);
+  const [showLateModal, setShowLateModal] = useState(false);
+  const [lateReason, setLateReason] = useState('');
+  const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
+  const [pendingLocation, setPendingLocation] = useState<LocationData | null>(null);
+  const [punchMsg, setPunchMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const fetchMyAttendance = async () => {
+    try {
+      const res = await api.get('/attendance/today/');
+      setMyAttendance(res.data);
+    } catch (err) {
+      console.error('Failed to fetch manager personal attendance:', err);
+    }
+  };
+
+  const handleStartPunch = (type: 'CHECK_IN' | 'CHECK_OUT') => {
+    setActionType(type);
+    setShowCamera(true);
+    setPunchMsg(null);
+  };
+
+  const handleCameraCapture = async (photoUri: string) => {
+    setShowCamera(false);
+    if (!actionType) return;
+
+    setLoadingAction(true);
+    try {
+      const loc = await getLocation();
+      if (actionType === 'CHECK_IN') {
+        await checkIn(loc, photoUri);
+        setPunchMsg({ type: 'success', text: 'Punch In successful!' });
+      } else {
+        await checkOut(loc, photoUri);
+        setPunchMsg({ type: 'success', text: 'Punch Out successful!' });
+      }
+      await fetchMyAttendance();
+    } catch (err: any) {
+      const resData = err?.response?.data;
+      if (resData?.code === 'LATE_REASON_REQUIRED') {
+        setPendingPhoto(photoUri);
+        try {
+          const loc = await getLocation();
+          setPendingLocation(loc);
+        } catch {}
+        setShowLateModal(true);
+      } else {
+        const msg = resData?.detail || resData?.error || err?.message || 'Attendance submission failed.';
+        setPunchMsg({ type: 'error', text: String(msg) });
+      }
+    } finally {
+      setLoadingAction(false);
+      setActionType(null);
+    }
+  };
+
+  const submitLateCheckIn = async () => {
+    if (!lateReason.trim()) {
+      alert('Please enter a reason for late check-in.');
+      return;
+    }
+    if (!pendingPhoto) {
+      alert('Photo expired. Please capture your photo again.');
+      setShowLateModal(false);
+      return;
+    }
+    setLoadingAction(true);
+    try {
+      const loc = pendingLocation || (await getLocation());
+      await checkIn(loc, pendingPhoto, lateReason.trim());
+      setShowLateModal(false);
+      setLateReason('');
+      setPendingPhoto(null);
+      setPunchMsg({ type: 'success', text: 'Punch In recorded with reason!' });
+      await fetchMyAttendance();
+    } catch (err: any) {
+      const msg = err?.response?.data?.detail || err?.response?.data?.error || err?.message || 'Check-in failed.';
+      setPunchMsg({ type: 'error', text: String(msg) });
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
   // Attendance drill-down modal state
   const [activeStatusModal, setActiveStatusModal] = useState<string | null>(null);
   const [statusModalTitle, setStatusModalTitle] = useState('');
@@ -137,6 +234,7 @@ const ManagerDashboard: React.FC = () => {
 
   useEffect(() => {
     loadDashboardData(selectedDate);
+    fetchMyAttendance();
   }, [selectedDate]);
 
   const filteredStatusModalItems = statusModalItems.filter((item) => {
@@ -298,6 +396,249 @@ const ManagerDashboard: React.FC = () => {
           <button className="rm-btn rm-btn-secondary" onClick={() => loadDashboardData()}>
             <RefreshCw size={16} /> Refresh
           </button>
+        </div>
+      </div>
+
+      {punchMsg && (
+        <div style={{
+          background: punchMsg.type === 'success' ? '#f0fdf4' : '#fee2e2',
+          color: punchMsg.type === 'success' ? '#166534' : '#991b1b',
+          border: `1px solid ${punchMsg.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+          padding: '12px 18px',
+          borderRadius: '10px',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          fontWeight: 600,
+          fontSize: '14px',
+        }}>
+          {punchMsg.type === 'success' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+          <span>{punchMsg.text}</span>
+        </div>
+      )}
+
+      {/* MANAGER PERSONAL ATTENDANCE CARD */}
+      <div style={{
+        background: '#ffffff',
+        border: '1px solid #e2e8f0',
+        borderRadius: '14px',
+        padding: '20px 24px',
+        marginBottom: '26px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
+          marginBottom: '16px',
+          borderBottom: '1px solid #f1f5f9',
+          paddingBottom: '14px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '10px',
+              background: '#ecfdf5',
+              color: '#059669',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              <Clock size={22} />
+            </div>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>
+                My Attendance & Self Punch
+              </h2>
+              <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#64748b' }}>
+                Mark your daily personal check-in / check-out with GPS & photo
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <Link
+              to="/manager/my-attendance"
+              style={{
+                textDecoration: 'none',
+                color: '#2563eb',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: '#eff6ff',
+              }}
+            >
+              <CalendarDays size={14} /> My Punch History
+            </Link>
+            <Link
+              to="/manager/my-leaves"
+              style={{
+                textDecoration: 'none',
+                color: '#ea580c',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: '#fff7ed',
+              }}
+            >
+              <Calendar size={14} /> Apply Leave
+            </Link>
+            <Link
+              to="/manager/my-permissions"
+              style={{
+                textDecoration: 'none',
+                color: '#7c3aed',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: '#faf5ff',
+              }}
+            >
+              <Clock size={14} /> Apply Permission
+            </Link>
+            <Link
+              to="/manager/my-wfh"
+              style={{
+                textDecoration: 'none',
+                color: '#0d9488',
+                fontSize: '13px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                padding: '6px 12px',
+                borderRadius: '8px',
+                background: '#f0fdfa',
+              }}
+            >
+              <Building2 size={14} /> Apply WFH
+            </Link>
+          </div>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: '16px',
+          alignItems: 'center',
+        }}>
+          <div style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            padding: '14px 18px',
+          }}>
+            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+              Punch In Status
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+              {myAttendance?.check_in_time ? (
+                <span style={{ color: '#16a34a' }}>
+                  {new Date(myAttendance.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              ) : (
+                <span style={{ color: '#94a3b8' }}>Not Punched In</span>
+              )}
+            </div>
+          </div>
+
+          <div style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            padding: '14px 18px',
+          }}>
+            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+              Punch Out Status
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+              {myAttendance?.check_out_time ? (
+                <span style={{ color: '#2563eb' }}>
+                  {new Date(myAttendance.check_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              ) : (
+                <span style={{ color: '#94a3b8' }}>Not Punched Out</span>
+              )}
+            </div>
+          </div>
+
+          <div style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            padding: '14px 18px',
+          }}>
+            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
+              Today's Duration
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+              {myAttendance?.working_hours || '00:00'} hrs
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => handleStartPunch('CHECK_IN')}
+              disabled={Boolean(myAttendance?.check_in_time) || loadingAction}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 22px',
+                borderRadius: '10px',
+                border: 'none',
+                background: myAttendance?.check_in_time ? '#e2e8f0' : '#16a34a',
+                color: myAttendance?.check_in_time ? '#94a3b8' : '#ffffff',
+                fontWeight: 700,
+                fontSize: '14px',
+                cursor: myAttendance?.check_in_time ? 'not-allowed' : 'pointer',
+                boxShadow: myAttendance?.check_in_time ? 'none' : '0 2px 6px rgba(22, 163, 74, 0.25)',
+              }}
+            >
+              <LogIn size={18} />
+              <span>Check In</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleStartPunch('CHECK_OUT')}
+              disabled={!myAttendance?.check_in_time || Boolean(myAttendance?.check_out_time) || loadingAction}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '12px 22px',
+                borderRadius: '10px',
+                border: 'none',
+                background: (!myAttendance?.check_in_time || myAttendance?.check_out_time) ? '#e2e8f0' : '#dc2626',
+                color: (!myAttendance?.check_in_time || myAttendance?.check_out_time) ? '#94a3b8' : '#ffffff',
+                fontWeight: 700,
+                fontSize: '14px',
+                cursor: (!myAttendance?.check_in_time || myAttendance?.check_out_time) ? 'not-allowed' : 'pointer',
+                boxShadow: (!myAttendance?.check_in_time || myAttendance?.check_out_time) ? 'none' : '0 2px 6px rgba(220, 38, 38, 0.25)',
+              }}
+            >
+              <LogOut size={18} />
+              <span>Check Out</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -505,6 +846,80 @@ const ManagerDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Late Check-in Reason Modal */}
+      {showLateModal && (
+        <div className="rm-modal-backdrop" style={{ zIndex: 1000 }}>
+          <div className="rm-modal" style={{ maxWidth: '440px', width: '90%' }}>
+            <div className="rm-modal-header">
+              <h2 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#b45309' }}>
+                Late Check-In Reason Required
+              </h2>
+              <button
+                type="button"
+                className="rm-modal-close"
+                onClick={() => {
+                  setShowLateModal(false);
+                  setPendingPhoto(null);
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="rm-modal-body" style={{ padding: '16px 20px' }}>
+              <p style={{ fontSize: '13px', color: '#64748b', marginTop: 0 }}>
+                You are checking in past the shift start time. Please provide a brief reason:
+              </p>
+              <textarea
+                value={lateReason}
+                onChange={(e) => setLateReason(e.target.value)}
+                rows={3}
+                placeholder="E.g., Client meeting delayed, Traffic delay..."
+                style={{
+                  width: '100%',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  padding: '10px',
+                  fontSize: '13px',
+                  fontFamily: 'inherit',
+                  resize: 'vertical',
+                }}
+              />
+            </div>
+            <div className="rm-modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '12px 20px' }}>
+              <button
+                type="button"
+                className="rm-btn rm-btn-secondary"
+                onClick={() => {
+                  setShowLateModal(false);
+                  setPendingPhoto(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rm-btn rm-btn-primary"
+                onClick={submitLateCheckIn}
+                disabled={loadingAction}
+              >
+                {loadingAction ? 'Submitting...' : 'Submit & Check In'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Camera Capture Modal */}
+      {showCamera && (
+        <CameraCapture
+          onCapture={handleCameraCapture}
+          onCancel={() => {
+            setShowCamera(false);
+            setActionType(null);
+          }}
+        />
+      )}
 
       {/* ==================================================================== */}
       {/* ATTENDANCE DRILL-DOWN MODAL                                          */}

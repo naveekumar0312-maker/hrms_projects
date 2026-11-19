@@ -8,7 +8,8 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Plus } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { ArrowLeft, Plus } from 'lucide-react-native';
 import { AuthContext } from '../context/AuthContext';
 import { colors } from '../theme/colors';
 
@@ -16,6 +17,7 @@ type EmployeeHeaderProps = {
   onApply: () => void;
   title?: string;
   subtitle?: string;
+  showBack?: boolean;
 };
 
 const getImageUrl = (url: string | null | undefined) => {
@@ -24,10 +26,12 @@ const getImageUrl = (url: string | null | undefined) => {
   return `${process.env.EXPO_PUBLIC_API_URL?.replace('/api', '') || ''}${url}`;
 };
 
-const EmployeeHeader = ({ onApply, title, subtitle }: EmployeeHeaderProps) => {
+const EmployeeHeader = ({ onApply, title, subtitle, showBack }: EmployeeHeaderProps) => {
   const { employee } = useContext(AuthContext);
+  const navigation = useNavigation<any>();
   const insets = useSafeAreaInsets();
   const profilePhoto = getImageUrl(employee?.profile_photo);
+  const canGoBack = showBack !== false && navigation.canGoBack();
 
   return (
     <>
@@ -35,6 +39,22 @@ const EmployeeHeader = ({ onApply, title, subtitle }: EmployeeHeaderProps) => {
       <View style={[styles.headerArea, { paddingTop: insets.top + 12 }]}>
         <View style={styles.headerContent}>
           <View style={styles.identity}>
+            {canGoBack && (
+              <Pressable
+                onPress={() => navigation.goBack()}
+                style={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 19,
+                  backgroundColor: '#f1f5f9',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 4,
+                }}
+              >
+                <ArrowLeft size={20} color="#0f172a" strokeWidth={2.2} />
+              </Pressable>
+            )}
             {profilePhoto ? (
               <Image
                 source={{ uri: profilePhoto }}

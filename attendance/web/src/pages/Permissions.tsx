@@ -1,6 +1,8 @@
 import { resolveMediaUrl } from '../utils/imageUtils';
-import React, { useEffect, useState, useMemo } from 'react';
-import { Search, RotateCcw, X } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useContext } from 'react';
+import { Search, RotateCcw, X, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 import {
   getPermissions,
@@ -26,6 +28,7 @@ function formatPermissionTime(time?: string | null): string {
 }
 
 const Permissions: React.FC = () => {
+  const { user } = useContext(AuthContext);
   const [permissions, setPermissions] = useState<PermissionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -196,15 +199,36 @@ const Permissions: React.FC = () => {
           </p>
         </div>
 
-        <div className="permission-summary">
-          <div className="summary-number">
-            {permissions.filter(
-              item => item.status === 'PENDING'
-            ).length}
-          </div>
+        <div className="permission-summary" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {user?.role === 'REPORTING_MANAGER' && (
+            <Link
+              to="/manager/my-permissions"
+              style={{
+                textDecoration: 'none',
+                background: '#16a34a',
+                color: '#ffffff',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontWeight: 600,
+                fontSize: '13px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Plus size={16} /> Apply for Myself
+            </Link>
+          )}
+          <div>
+            <div className="summary-number">
+              {permissions.filter(
+                item => item.status === 'PENDING'
+              ).length}
+            </div>
 
-          <div className="summary-label">
-            Pending Requests
+            <div className="summary-label">
+              Pending Requests
+            </div>
           </div>
         </div>
       </div>

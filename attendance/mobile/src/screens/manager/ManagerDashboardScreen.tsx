@@ -23,10 +23,15 @@ import {
   ListTodo,
   CalendarCheck,
   LogOut,
+  LogIn,
+  MapPin,
+  CalendarDays,
+  FileText,
 } from 'lucide-react-native';
 import { AuthContext } from '../../context/AuthContext';
 import { getManagerDashboardSummary, ManagerSummary } from '../../services/managerService';
 import { fetchPendingActionsReminder } from '../../services/adminHRService';
+import { getTodayAttendance } from '../../services/attendanceService';
 import {
   MobileRolePendingActionsModal,
   MobilePendingActionItem,
@@ -98,11 +103,17 @@ export default function ManagerDashboardScreen({ navigation }: any) {
     };
   }, [user]);
 
+  const [todayAttendance, setTodayAttendance] = useState<any>(null);
+
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getManagerDashboardSummary();
+      const [data, todayData] = await Promise.all([
+        getManagerDashboardSummary(),
+        getTodayAttendance().catch(() => null),
+      ]);
       setSummary(data);
+      setTodayAttendance(todayData);
     } catch (err) {
       console.error('Failed to load manager dashboard summary:', err);
     } finally {
@@ -169,6 +180,154 @@ export default function ManagerDashboardScreen({ navigation }: any) {
           </View>
         ) : (
           <>
+            {/* MANAGER PERSONAL ATTENDANCE CARD */}
+            <View style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: '#E2E8F0',
+              padding: 16,
+              marginHorizontal: 16,
+              marginTop: 14,
+              marginBottom: 10,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.05,
+              shadowRadius: 3,
+              elevation: 2,
+            }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 10,
+                    backgroundColor: '#ECFDF5',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Clock size={20} color="#059669" strokeWidth={2.2} />
+                  </View>
+                  <View>
+                    <Text style={{ fontSize: 15, fontFamily: 'Comfortaa_700Bold', color: '#0F172A' }}>
+                      My Attendance
+                    </Text>
+                    <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_500Medium', color: '#64748B', marginTop: 1 }}>
+                      Check-In & Self Requests
+                    </Text>
+                  </View>
+                </View>
+
+                {todayAttendance?.check_in_time ? (
+                  <View style={{ backgroundColor: '#F0FDF4', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#BBF7D0' }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#16A34A' }}>Checked In</Text>
+                  </View>
+                ) : (
+                  <View style={{ backgroundColor: '#F8FAFC', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                    <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_500Medium', color: '#64748B' }}>Not Marked</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+                <View style={{ flex: 1, backgroundColor: '#F8FAFC', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                  <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_600SemiBold', color: '#64748B', textTransform: 'uppercase' }}>Check In</Text>
+                  <Text style={{ fontSize: 14, fontFamily: 'Comfortaa_700Bold', color: todayAttendance?.check_in_time ? '#16A34A' : '#94A3B8', marginTop: 3 }}>
+                    {todayAttendance?.check_in_time ? new Date(todayAttendance.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  </Text>
+                </View>
+
+                <View style={{ flex: 1, backgroundColor: '#F8FAFC', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                  <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_600SemiBold', color: '#64748B', textTransform: 'uppercase' }}>Check Out</Text>
+                  <Text style={{ fontSize: 14, fontFamily: 'Comfortaa_700Bold', color: todayAttendance?.check_out_time ? '#2563EB' : '#94A3B8', marginTop: 3 }}>
+                    {todayAttendance?.check_out_time ? new Date(todayAttendance.check_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}
+                  </Text>
+                </View>
+
+                <View style={{ flex: 1, backgroundColor: '#F8FAFC', padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#E2E8F0' }}>
+                  <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_600SemiBold', color: '#64748B', textTransform: 'uppercase' }}>Hours</Text>
+                  <Text style={{ fontSize: 14, fontFamily: 'Comfortaa_700Bold', color: '#0F172A', marginTop: 3 }}>
+                    {todayAttendance?.working_hours || '00:00'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Self-Service Action Pills */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    backgroundColor: '#EFF6FF',
+                    paddingHorizontal: 12,
+                    paddingVertical: 7,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: '#BFDBFE',
+                  }}
+                  onPress={() => navigation.navigate('AttendanceHistory')}
+                >
+                  <CalendarDays size={14} color="#2563EB" strokeWidth={2.2} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#1E40AF' }}>History</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    backgroundColor: '#FFF7ED',
+                    paddingHorizontal: 12,
+                    paddingVertical: 7,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: '#FED7AA',
+                  }}
+                  onPress={() => navigation.navigate('Leave')}
+                >
+                  <Calendar size={14} color="#EA580C" strokeWidth={2.2} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#C2410C' }}>Leave</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    backgroundColor: '#FAF5FF',
+                    paddingHorizontal: 12,
+                    paddingVertical: 7,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: '#E9D5FF',
+                  }}
+                  onPress={() => navigation.navigate('Permission')}
+                >
+                  <Clock size={14} color="#7C3AED" strokeWidth={2.2} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#6D28D9' }}>Permission</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    backgroundColor: '#F0FDFA',
+                    paddingHorizontal: 12,
+                    paddingVertical: 7,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: '#99F6E4',
+                  }}
+                  onPress={() => navigation.navigate('WFH')}
+                >
+                  <Building2 size={14} color="#0D9488" strokeWidth={2.2} />
+                  <Text style={{ fontSize: 11, fontFamily: 'Comfortaa_700Bold', color: '#0F766E' }}>WFH</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {/* QUICK ACTIONS BANNER */}
             <View style={styles.quickNavRow}>
               <TouchableOpacity

@@ -1,6 +1,8 @@
 import { resolveMediaUrl } from '../utils/imageUtils';
-import React, { useEffect, useState, useMemo } from 'react';
-import { Search, RotateCcw, X } from 'lucide-react';
+import React, { useEffect, useState, useMemo, useContext } from 'react';
+import { Search, RotateCcw, X, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 import {
   getLeaves,
@@ -11,6 +13,7 @@ import {
 import type { LeaveRequest } from '../api/leaves';
 
 const Leaves: React.FC = () => {
+  const { user } = useContext(AuthContext);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -201,15 +204,36 @@ const Leaves: React.FC = () => {
           </p>
         </div>
 
-        <div className="summary">
-          <strong>
-            {
-              leaves.filter(
-                item => item.status === 'PENDING'
-              ).length
-            }
-          </strong>
-          <span>Pending Requests</span>
+        <div className="summary" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {user?.role === 'REPORTING_MANAGER' && (
+            <Link
+              to="/manager/my-leaves"
+              style={{
+                textDecoration: 'none',
+                background: '#16a34a',
+                color: '#ffffff',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontWeight: 600,
+                fontSize: '13px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Plus size={16} /> Apply for Myself
+            </Link>
+          )}
+          <div>
+            <strong>
+              {
+                leaves.filter(
+                  item => item.status === 'PENDING'
+                ).length
+              }
+            </strong>
+            <span>Pending Requests</span>
+          </div>
         </div>
       </div>
 

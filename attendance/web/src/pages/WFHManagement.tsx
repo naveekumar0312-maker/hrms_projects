@@ -1,7 +1,9 @@
 import { resolveMediaUrl } from '../utils/imageUtils';
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useContext } from 'react';
 import './WFHManagement.css';
-import { Search, RotateCcw, X } from 'lucide-react';
+import { Search, RotateCcw, X, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import { CustomDatePicker } from '../components/CustomDatePicker';
 import {
   getWFHRequests,
@@ -11,6 +13,7 @@ import {
 import type { WFHRequest } from '../api/wfh';
 
 const WFHManagement: React.FC = () => {
+  const { user } = useContext(AuthContext);
   const [requests, setRequests] = useState<WFHRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
@@ -133,11 +136,32 @@ const WFHManagement: React.FC = () => {
           <p>Review and manage employee WFH applications.</p>
         </div>
 
-        <div className="summary">
-          <strong>
-            {requests.filter((item) => item.status === 'PENDING').length}
-          </strong>
-          <span>Pending Requests</span>
+        <div className="summary" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          {user?.role === 'REPORTING_MANAGER' && (
+            <Link
+              to="/manager/my-wfh"
+              style={{
+                textDecoration: 'none',
+                background: '#16a34a',
+                color: '#ffffff',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                fontWeight: 600,
+                fontSize: '13px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <Plus size={16} /> Apply for Myself
+            </Link>
+          )}
+          <div>
+            <strong>
+              {requests.filter((item) => item.status === 'PENDING').length}
+            </strong>
+            <span>Pending Requests</span>
+          </div>
         </div>
       </div>
 

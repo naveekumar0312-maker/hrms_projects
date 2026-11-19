@@ -11,6 +11,7 @@ import {
   Calendar,
   Clock,
   Building2,
+  CalendarDays,
 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api';
@@ -112,6 +113,7 @@ const ManagerLayout: React.FC = () => {
     { to: '/manager/team', label: 'My Team', icon: Users },
     { to: '/manager/tasks', label: 'Task Management', icon: ListTodo },
     { to: '/manager/team-attendance', label: 'Team Attendance', icon: CalendarCheck },
+    { to: '/manager/my-attendance', label: 'My Attendance', icon: CalendarDays },
     { to: '/manager/leaves', label: 'Leaves', icon: Calendar },
     { to: '/manager/permissions', label: 'Permissions', icon: Clock },
     { to: '/manager/wfh', label: 'WFH Requests', icon: Building2 },
