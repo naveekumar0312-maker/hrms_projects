@@ -135,7 +135,27 @@ const ManagerDashboard: React.FC = () => {
   }, []);
 
   const filteredStatusModalItems = statusModalItems.filter((item) => {
-    // Search query filter
+    // 1. Strict status matching to ensure zero leakage from any un-filtered data
+    if (activeStatusModal) {
+      const recStatus = (item.calculated_status || '').toUpperCase();
+      if (activeStatusModal === 'PRESENT_TODAY' && recStatus !== 'PRESENT') {
+        return false;
+      }
+      if (activeStatusModal === 'LATE_TODAY' && recStatus !== 'LATE') {
+        return false;
+      }
+      if (activeStatusModal === 'ABSENT_TODAY' && recStatus !== 'ABSENT') {
+        return false;
+      }
+      if (
+        activeStatusModal === 'ON_LEAVE_TODAY' &&
+        !['ON_LEAVE', 'ON LEAVE', 'HALF DAY', 'HALF_DAY'].includes(recStatus)
+      ) {
+        return false;
+      }
+    }
+
+    // 2. Search query filter
     if (!statusModalSearch.trim()) return true;
     const q = statusModalSearch.toLowerCase();
     return (
