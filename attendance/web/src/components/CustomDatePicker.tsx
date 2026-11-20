@@ -15,6 +15,7 @@ export interface CustomDatePickerProps {
   placeholder?: string;
   alignRight?: boolean;
   disabled?: boolean;
+  direction?: 'down' | 'up' | 'auto';
 }
 
 export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
@@ -29,6 +30,7 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
   placeholder = 'Select date',
   alignRight = false,
   disabled = false,
+  direction = 'auto',
 }) => {
   const effectiveMin = minDate || min;
   const effectiveMax = maxDate || max;
@@ -70,19 +72,26 @@ export const CustomDatePicker: React.FC<CustomDatePickerProps> = ({
 
   const todayStr = toDateString(new Date());
 
-  // Auto-detect viewport collision: if near screen bottom, open upwards!
+  // Auto-detect viewport collision: only open upwards if direction is 'up' or ('auto' and spaceBelow is insufficient AND top space is abundant)
   useEffect(() => {
     if (open && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const popupHeight = 330;
-      const spaceBelow = window.innerHeight - rect.bottom;
-      if (spaceBelow < popupHeight && rect.top > popupHeight) {
+      if (direction === 'up') {
         setOpenUpwards(true);
-      } else {
+      } else if (direction === 'down') {
         setOpenUpwards(false);
+      } else {
+        const rect = containerRef.current.getBoundingClientRect();
+        const popupHeight = 350;
+        const spaceBelow = window.innerHeight - rect.bottom;
+        const spaceAbove = rect.top;
+        if (spaceBelow < 200 && spaceAbove > popupHeight + 20) {
+          setOpenUpwards(true);
+        } else {
+          setOpenUpwards(false);
+        }
       }
     }
-  }, [open]);
+  }, [open, direction]);
 
   // Generate Year options (from 1940 to 2040)
   const years = Array.from({ length: 101 }, (_, i) => 1940 + i);

@@ -876,7 +876,7 @@ const Permissions: React.FC = () => {
           border: 1px solid #e2e8f0;
           border-radius: 18px;
           box-shadow: 0 8px 28px rgba(7, 87, 184, 0.05);
-          overflow: hidden;
+          overflow: visible;
         }
 
         .card-top {
