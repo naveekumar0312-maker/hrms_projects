@@ -27,11 +27,7 @@ export interface CreateLeaveRequest {
 }
 
 export const getLeaves = async (params?: { date?: string; search?: string; status?: string; scope?: string }) => {
-  const finalParams = { ...params };
-  if (!finalParams.search && !finalParams.date && !finalParams.status && !finalParams.scope) {
-    finalParams.scope = 'my';
-  }
-  const response = await api.get('/attendance/leaves/', { params: finalParams });
+  const response = await api.get('/attendance/leaves/', { params });
   return response.data;
 };
 

@@ -53,7 +53,7 @@ export const AdminWFHScreen = ({ navigation }: any) => {
 
   // Date and Search Filter State
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [isDateFilterActive, setIsDateFilterActive] = useState(true);
+  const [isDateFilterActive, setIsDateFilterActive] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const changeDate = (days: number) => {

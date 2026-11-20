@@ -20,7 +20,7 @@ const WFH = () => {
   const loadRequests = async () => {
     try {
       setError('');
-      const data = await getWFHRequests();
+      const data = await getWFHRequests({ scope: 'my' });
       setRequests(Array.isArray(data) ? data : data.results || []);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Unable to load WFH requests.');

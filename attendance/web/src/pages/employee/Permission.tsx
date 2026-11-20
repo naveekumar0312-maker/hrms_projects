@@ -176,7 +176,7 @@ const Permission: React.FC = () => {
       setError('');
 
       const [response] = await Promise.all([
-        getPermissions(),
+        getPermissions({ scope: 'my' }),
         loadSummary(date || undefined),
       ]);
 

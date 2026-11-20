@@ -2568,13 +2568,7 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
             )
         elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             scope_param = self.request.query_params.get('scope')
-            has_explicit_filter = any([
-                self.request.query_params.get('company'),
-                self.request.query_params.get('branch'),
-                self.request.query_params.get('search'),
-                self.request.query_params.get('employee')
-            ])
-            if scope_param == 'my' or not has_explicit_filter:
+            if scope_param == 'my':
                 if emp:
                     queryset = queryset.filter(employee=emp)
                 else:
@@ -2910,13 +2904,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             )
         elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             scope_param = self.request.query_params.get('scope')
-            has_explicit_filter = any([
-                self.request.query_params.get('company'),
-                self.request.query_params.get('branch'),
-                self.request.query_params.get('search'),
-                self.request.query_params.get('employee')
-            ])
-            if scope_param == 'my' or not has_explicit_filter:
+            if scope_param == 'my':
                 if emp:
                     queryset = queryset.filter(employee=emp)
                 else:
@@ -3139,13 +3127,7 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
             )
         elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             scope_param = self.request.query_params.get('scope')
-            has_explicit_filter = any([
-                self.request.query_params.get('company'),
-                self.request.query_params.get('branch'),
-                self.request.query_params.get('search'),
-                self.request.query_params.get('employee')
-            ])
-            if scope_param == 'my' or not has_explicit_filter:
+            if scope_param == 'my':
                 if emp:
                     queryset = queryset.filter(employee=emp)
                 else:

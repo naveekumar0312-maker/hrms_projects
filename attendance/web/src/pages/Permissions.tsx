@@ -37,7 +37,7 @@ const Permissions: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [rejectPermissionItem, setRejectPermissionItem] = useState<PermissionRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   const loadPermissions = async (dateParam?: string, searchParam?: string) => {

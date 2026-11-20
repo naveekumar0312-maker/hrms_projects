@@ -20,7 +20,7 @@ const Leaves: React.FC = () => {
   const [viewLeave, setViewLeave] = useState<LeaveRequest | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
   const loadLeaves = async (dateParam?: string, searchParam?: string) => {

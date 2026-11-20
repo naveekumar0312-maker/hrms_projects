@@ -33,7 +33,7 @@ const Leave: React.FC = () => {
       setLoading(true);
       setError('');
 
-      const data = await getLeaves();
+      const data = await getLeaves({ scope: 'my' });
 
       setLeaves(
         Array.isArray(data)
