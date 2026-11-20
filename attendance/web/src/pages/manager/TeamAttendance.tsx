@@ -9,6 +9,7 @@ import {
 import api from '../../api';
 import '../ReportingManagers.css';
 import { CustomDatePicker } from '../../components/CustomDatePicker';
+import { formatTimeAMPM } from '../../utils/timeUtils';
 
 interface TeamAttendanceRow {
   employee_id: number;
@@ -177,7 +178,7 @@ const ManagerTeamAttendance: React.FC = () => {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '13px' }}>{time}</span>
+          <span style={{ fontWeight: 700, color: '#0F172A', fontSize: '13px' }}>{formatTimeAMPM(time)}</span>
           <span
             style={{
               padding: '2px 6px',

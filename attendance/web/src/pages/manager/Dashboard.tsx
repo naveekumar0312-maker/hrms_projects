@@ -35,6 +35,7 @@ import CameraCapture from '../../components/CameraCapture';
 import { useLocation } from '../../hooks/useLocation';
 import type { LocationData } from '../../hooks/useLocation';
 import { checkIn, checkOut } from '../../api/attendance';
+import { formatTimeAMPM } from '../../utils/timeUtils';
 import './ManagerDashboard.css';
 import '../ReportingManagers.css';
 
@@ -1050,12 +1051,12 @@ const ManagerDashboard: React.FC = () => {
                             </td>
                             <td>
                               <span style={{ fontSize: '13px', fontWeight: item.check_in ? 600 : 400, color: item.check_in ? '#0f172a' : '#94a3b8' }}>
-                                {item.check_in || '—'}
+                                {item.check_in ? formatTimeAMPM(item.check_in) : '—'}
                               </span>
                             </td>
                             <td>
                               <span style={{ fontSize: '13px', fontWeight: item.check_out ? 600 : 400, color: item.check_out ? '#0f172a' : '#94a3b8' }}>
-                                {item.check_out || '—'}
+                                {item.check_out ? formatTimeAMPM(item.check_out) : '—'}
                               </span>
                             </td>
                             <td>
