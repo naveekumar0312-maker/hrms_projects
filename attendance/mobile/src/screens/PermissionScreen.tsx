@@ -22,7 +22,7 @@ import {
 import EmployeeHeader from './EmployeeHeader';
 import { COLORS } from '../constants/theme';
 import { useAppMessage } from '../context/MessageContext';
-import { DatePicker, DropdownPicker } from '../components/pickers';
+import { DatePicker, DropdownPicker, TimePicker } from '../components/pickers';
 
 import {
   createPermission,
@@ -44,6 +44,8 @@ const PermissionScreen = () => {
   const [showForm, setShowForm] = useState(false);
 
   const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
   const [duration, setDuration] = useState(30);
   const [reason, setReason] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -86,6 +88,8 @@ const PermissionScreen = () => {
 
   const resetForm = () => {
     setDate('');
+    setStartTime('');
+    setEndTime('');
     setDuration(30);
     setReason('');
   };
@@ -103,6 +107,30 @@ const PermissionScreen = () => {
       return new Date(year, month - 1, day);
     }
     return new Date();
+  };
+
+  const handleStartTimeChange = (val: string) => {
+    setStartTime(val);
+    if (val && /^\d{2}:\d{2}/.test(val)) {
+      const [h, m] = val.split(':').map(Number);
+      const totalMinutes = h * 60 + m + duration;
+      const endH = Math.floor(totalMinutes / 60) % 24;
+      const endM = totalMinutes % 60;
+      const formattedEnd = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`;
+      setEndTime(formattedEnd);
+    }
+  };
+
+  const handleDurationChange = (minutes: number) => {
+    setDuration(minutes);
+    if (startTime && /^\d{2}:\d{2}/.test(startTime)) {
+      const [h, m] = startTime.split(':').map(Number);
+      const totalMinutes = h * 60 + m + minutes;
+      const endH = Math.floor(totalMinutes / 60) % 24;
+      const endM = totalMinutes % 60;
+      const formattedEnd = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`;
+      setEndTime(formattedEnd);
+    }
   };
 
   const handleSubmit = async () => {
@@ -127,6 +155,8 @@ const PermissionScreen = () => {
       await createPermission({
         date: date.trim(),
         duration_minutes: duration,
+        start_time: startTime ? startTime.substring(0, 8) : undefined,
+        end_time: endTime ? endTime.substring(0, 8) : undefined,
         reason: reason.trim(),
       });
 
@@ -358,7 +388,7 @@ const PermissionScreen = () => {
                       selected &&
                         styles.durationButtonSelected,
                     ]}
-                    onPress={() => setDuration(minutes)}
+                    onPress={() => handleDurationChange(minutes)}
                   >
                     <Clock3
                       size={16}
@@ -378,6 +408,25 @@ const PermissionScreen = () => {
                   </Pressable>
                 );
               })}
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+              <View style={{ flex: 1 }}>
+                <TimePicker
+                  label="Start Time"
+                  value={startTime}
+                  onChange={handleStartTimeChange}
+                  placeholder="Select Start"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <TimePicker
+                  label="End Time"
+                  value={endTime}
+                  onChange={(val) => setEndTime(val)}
+                  placeholder="Select End"
+                />
+              </View>
             </View>
 
             <Text style={styles.label}>Reason</Text>

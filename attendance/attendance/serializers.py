@@ -426,9 +426,13 @@ class PermissionRequestSerializer(serializers.ModelSerializer):
 
             attrs['duration_minutes'] = duration
         elif request and request.method == 'POST':
-            raise serializers.ValidationError({
-                'start_time': 'Start time and end time are required.'
-            })
+            # If duration_minutes is provided without start_time/end_time (e.g. from mobile or legacy clients)
+            duration_val = attrs.get('duration_minutes', 60)
+            if duration_val not in [30, 60]:
+                raise serializers.ValidationError({
+                    'duration_minutes': 'Permission duration must be 30 or 60 minutes.'
+                })
+            attrs['duration_minutes'] = duration_val
         elif instance:
             attrs['duration_minutes'] = instance.duration_minutes
 

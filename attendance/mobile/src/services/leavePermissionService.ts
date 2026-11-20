@@ -20,6 +20,8 @@ export interface PermissionRequest {
   employee_name?: string;
   employee_id?: string;
   date: string;
+  start_time?: string | null;
+  end_time?: string | null;
   duration_minutes: number;
   reason: string;
   status?: 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -57,6 +59,8 @@ export const createPermission = async (data: {
   date: string;
   duration_minutes: number;
   reason: string;
+  start_time?: string | null;
+  end_time?: string | null;
 }) => {
   const response = await api.post('/attendance/permissions/', data);
   return response.data;
