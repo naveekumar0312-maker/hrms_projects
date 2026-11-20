@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import './WFH.css';
 import { CalendarDays, Clock, Home, Send } from 'lucide-react';
 import CustomDatePicker from '../../components/CustomDatePicker';
