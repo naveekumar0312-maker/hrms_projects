@@ -27,9 +27,11 @@ export interface PermissionRequest {
   created_at?: string;
 }
 
-export const getLeaves = async () => {
+export const getLeaves = async (params?: any) => {
   console.log('LEAVES API URL:', api.defaults.baseURL + '/attendance/leaves/');
-  const response = await api.get('/attendance/leaves/');
+  const response = await api.get('/attendance/leaves/', {
+    params: { scope: 'my', ...params },
+  });
   return response.data;
 };
 
@@ -43,9 +45,11 @@ export const createLeave = async (data: {
   return response.data;
 };
 
-export const getPermissions = async () => {
+export const getPermissions = async (params?: any) => {
   console.log('PERMISSIONS API URL:', api.defaults.baseURL + '/attendance/permissions/');
-  const response = await api.get('/attendance/permissions/');
+  const response = await api.get('/attendance/permissions/', {
+    params: { scope: 'my', ...params },
+  });
   return response.data;
 };
 

@@ -24,8 +24,12 @@ export interface CreateWFHRequest {
   reason: string;
 }
 
-export const getWFHRequests = async (params?: { date?: string; search?: string; status?: string }) => {
-  const response = await api.get('/attendance/wfh/', { params });
+export const getWFHRequests = async (params?: { date?: string; search?: string; status?: string; scope?: string }) => {
+  const finalParams = { ...params };
+  if (!finalParams.search && !finalParams.date && !finalParams.status && !finalParams.scope) {
+    finalParams.scope = 'my';
+  }
+  const response = await api.get('/attendance/wfh/', { params: finalParams });
   return response.data;
 };
 

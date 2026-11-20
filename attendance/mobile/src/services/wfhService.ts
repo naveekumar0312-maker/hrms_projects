@@ -23,8 +23,10 @@ export interface CreateWFHRequest {
   reason: string;
 }
 
-export const getWFHRequests = async (): Promise<WFHRequest[] | { results: WFHRequest[] }> => {
-  const response = await api.get('/attendance/wfh/');
+export const getWFHRequests = async (params?: any): Promise<WFHRequest[] | { results: WFHRequest[] }> => {
+  const response = await api.get('/attendance/wfh/', {
+    params: { scope: 'my', ...params },
+  });
   return response.data;
 };
 

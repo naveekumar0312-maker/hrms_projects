@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,11 @@ import {
   RefreshControl,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
+  TextInput,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -27,11 +32,17 @@ import {
   MapPin,
   CalendarDays,
   FileText,
+  SwitchCamera,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react-native';
+import { Camera, CameraType, CameraView } from 'expo-camera';
+import * as Location from 'expo-location';
 import { AuthContext } from '../../context/AuthContext';
+import { useAppMessage } from '../../context/MessageContext';
 import { getManagerDashboardSummary, ManagerSummary } from '../../services/managerService';
 import { fetchPendingActionsReminder } from '../../services/adminHRService';
-import { getTodayAttendance } from '../../services/attendanceService';
+import { getTodayAttendance, checkIn, checkOut } from '../../services/attendanceService';
 import {
   MobileRolePendingActionsModal,
   MobilePendingActionItem,
@@ -58,6 +69,267 @@ export default function ManagerDashboardScreen({ navigation }: any) {
     summary: {},
     items: [],
   });
+
+  const { showSuccess, showError } = useAppMessage();
+
+  // Interactive Camera & Location Check-In / Check-Out states
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [cameraVisible, setCameraVisible] = useState(false);
+  const [currentAction, setCurrentAction] = useState<'CHECK_IN' | 'CHECK_OUT' | null>(null);
+  const [loadingAction, setLoadingAction] = useState(false);
+
+  const [cameraFacing, setCameraFacing] = useState<CameraType>('front');
+  const [capturedPhotoUri, setCapturedPhotoUri] = useState<string | null>(null);
+  const [capturedLocationName, setCapturedLocationName] = useState<string>('Fetching location...');
+  const [isResolvingLocation, setIsResolvingLocation] = useState(false);
+  const [locationResolutionError, setLocationResolutionError] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<any>(null);
+
+  // Late Reason Modal State
+  const [showLateReasonModal, setShowLateReasonModal] = useState(false);
+  const [lateReasonText, setLateReasonText] = useState('');
+  const [pendingLateMinutes, setPendingLateMinutes] = useState(0);
+  const [pendingPhotoUri, setPendingPhotoUri] = useState<string | null>(null);
+
+  const cameraRef = useRef<CameraView>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasCameraPermission(status === 'granted');
+    })();
+  }, []);
+
+  const verifyLocation = async () => {
+    try {
+      const servicesEnabled = await Location.hasServicesEnabledAsync();
+      if (!servicesEnabled) return false;
+
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') return false;
+
+      // 1. Try fast last known position first
+      try {
+        const lastKnown = await Location.getLastKnownPositionAsync({ maxAge: 600000 });
+        if (lastKnown?.coords) {
+          setCurrentLocation(lastKnown);
+        }
+      } catch (e) {}
+
+      // 2. Fetch fresh position with 5s timeout fallback
+      const fetchPosition = async () => {
+        try {
+          return await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        } catch {
+          return await Location.getLastKnownPositionAsync();
+        }
+      };
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 5000)
+      );
+
+      const location: any = await Promise.race([fetchPosition(), timeoutPromise]).catch(() => null);
+
+      if (location?.coords) {
+        setCurrentLocation(location);
+        return location;
+      }
+
+      if (currentLocation?.coords) {
+        return currentLocation;
+      }
+
+      // Fallback for field/manager if coords exist on branch
+      if (employee?.branch?.latitude && employee?.branch?.longitude) {
+        const fallback = {
+          coords: {
+            latitude: Number(employee.branch.latitude),
+            longitude: Number(employee.branch.longitude),
+            accuracy: 50,
+          },
+          timestamp: Date.now(),
+        };
+        setCurrentLocation(fallback as any);
+        return fallback;
+      }
+
+      return false;
+    } catch (error) {
+      if (currentLocation?.coords) return currentLocation;
+      return false;
+    }
+  };
+
+  const resolveLocationForCapture = async (locCoords?: { latitude: number; longitude: number }) => {
+    setIsResolvingLocation(true);
+    setLocationResolutionError(false);
+    setCapturedLocationName('Fetching location...');
+
+    try {
+      let coords = locCoords;
+      if (!coords && currentLocation?.coords) {
+        coords = {
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        };
+      }
+
+      if (!coords) {
+        const branchName = employee?.branch?.branch_name || employee?.branch?.name;
+        setCapturedLocationName(branchName || 'Location verified');
+        return;
+      }
+
+      try {
+        const results = await Location.reverseGeocodeAsync({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        });
+
+        if (results && results.length > 0) {
+          const addr = results[0];
+          const parts: string[] = [];
+          const area = addr.name || addr.district || addr.street || addr.subregion;
+          if (area) parts.push(area);
+          if (addr.district && !parts.includes(addr.district)) parts.push(addr.district);
+          if (addr.city && !parts.includes(addr.city)) parts.push(addr.city);
+          if (parts.length > 0) {
+            setCapturedLocationName(parts.join(', '));
+            return;
+          }
+        }
+      } catch (err: any) {
+        console.warn('[CAMERA] Reverse geocode failed:', err?.message);
+      }
+
+      const branchName = employee?.branch?.branch_name || employee?.branch?.name;
+      setCapturedLocationName(branchName || `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`);
+    } catch (err: any) {
+      const branchName = employee?.branch?.branch_name || employee?.branch?.name;
+      setCapturedLocationName(branchName || 'Location verified');
+    } finally {
+      setIsResolvingLocation(false);
+    }
+  };
+
+  const startAttendance = async (type: 'CHECK_IN' | 'CHECK_OUT') => {
+    if (!hasCameraPermission) {
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        showError('Permission Denied', 'Camera permission is required for attendance.');
+        return;
+      }
+      setHasCameraPermission(true);
+    }
+    const location = await verifyLocation();
+    if (!location) {
+      showError('Location Error', 'Unable to verify your location. Ensure GPS is on and try again.');
+      return;
+    }
+    setCurrentAction(type);
+    setCameraVisible(true);
+  };
+
+  const takePicture = async () => {
+    if (!cameraRef.current || loadingAction) return;
+    try {
+      setLoadingAction(true);
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.5,
+        skipProcessing: true,
+      });
+
+      if (!photo?.uri) {
+        throw new Error('Photo capture failed');
+      }
+
+      setCapturedPhotoUri(photo.uri);
+      setCameraVisible(false);
+      setLoadingAction(false);
+
+      if (currentLocation?.coords) {
+        resolveLocationForCapture({
+          latitude: currentLocation.coords.latitude,
+          longitude: currentLocation.coords.longitude,
+        });
+      } else {
+        const branchName = employee?.branch?.branch_name || employee?.branch?.name;
+        setCapturedLocationName(branchName || 'Location verified');
+      }
+    } catch (e: any) {
+      setLoadingAction(false);
+      showError('Capture Error', e?.message || 'Failed to take photo.');
+    }
+  };
+
+  const retakePicture = () => {
+    setCapturedPhotoUri(null);
+    setCapturedLocationName('Fetching location...');
+    setIsResolvingLocation(false);
+    setLocationResolutionError(false);
+    setCameraVisible(true);
+  };
+
+  const submitAttendance = async (photoUri: string, reason?: string) => {
+    if (loadingAction) return;
+    try {
+      setLoadingAction(true);
+      const locationData = {
+        latitude: currentLocation?.coords?.latitude,
+        longitude: currentLocation?.coords?.longitude,
+        accuracy: currentLocation?.coords?.accuracy || 0,
+      };
+
+      if (!locationData.latitude || !locationData.longitude) {
+        throw new Error('Valid GPS location is required to submit attendance.');
+      }
+
+      if (currentAction === 'CHECK_IN') {
+        await checkIn(locationData, photoUri, reason);
+        showSuccess('Check-In Successful!', 'Your check-in has been recorded successfully.');
+      } else {
+        await checkOut(locationData, photoUri);
+        showSuccess('Check-Out Successful!', 'Your check-out has been recorded successfully.');
+      }
+      setShowLateReasonModal(false);
+      setLateReasonText('');
+      setPendingPhotoUri(null);
+      setCurrentAction(null);
+      await loadData();
+    } catch (error: any) {
+      if (error?.response?.data?.code === 'LATE_REASON_REQUIRED') {
+        const mins = error.response.data.late_minutes || 0;
+        setPendingLateMinutes(mins);
+        setPendingPhotoUri(photoUri);
+        setShowLateReasonModal(true);
+      } else {
+        showError('Attendance Failed', error.message || 'Validation failed.');
+        setCurrentAction(null);
+      }
+    } finally {
+      setLoadingAction(false);
+    }
+  };
+
+  const confirmCapturedPhoto = async () => {
+    if (!capturedPhotoUri || loadingAction) return;
+    await submitAttendance(capturedPhotoUri);
+    setCapturedPhotoUri(null);
+  };
+
+  const handleConfirmLateReason = async () => {
+    if (!lateReasonText.trim()) {
+      showError('Reason Required', 'Please enter a valid reason for late check-in.');
+      return;
+    }
+    if (!pendingPhotoUri) {
+      showError('Error', 'Photo session expired, please take a photo again.');
+      setShowLateReasonModal(false);
+      return;
+    }
+    await submitAttendance(pendingPhotoUri, lateReasonText.trim());
+  };
 
   // Hourly / mount reminder for Manager
   useEffect(() => {
@@ -133,6 +405,120 @@ export default function ManagerDashboardScreen({ navigation }: any) {
 
   const isTeamLeader = user?.role === 'TEAM_LEADER';
   const roleTitle = isTeamLeader ? 'Team Leader' : 'Reporting Manager';
+
+  if (capturedPhotoUri) {
+    return (
+      <View style={[styles.photoPreviewContainer, { paddingTop: Math.max(insets.top + 10, 24) }]}>
+        <StatusBar style="dark" hidden={false} />
+        <View style={styles.photoPreviewHeader}>
+          <TouchableOpacity
+            onPress={retakePicture}
+            style={styles.previewBackButton}
+          >
+            <Text style={styles.previewBackText}>Retake</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.photoPreviewTitle}>
+            {currentAction === 'CHECK_IN' ? 'Check In Photo' : 'Check Out Photo'}
+          </Text>
+
+          <View style={{ width: 60 }} />
+        </View>
+
+        {/* Photo Container */}
+        <View style={styles.photoPreviewImageContainer}>
+          <Image
+            source={{ uri: capturedPhotoUri }}
+            style={styles.photoPreviewImage}
+            resizeMode="contain"
+          />
+        </View>
+
+        {/* Location Display Underneath Photo */}
+        <View style={styles.photoLocationCard}>
+          <View style={styles.photoLocationHeader}>
+            <View style={styles.photoLocationTitleRow}>
+              <MapPin size={18} color={COLORS.primary} />
+              <Text style={styles.photoLocationHeaderTitle}>Location</Text>
+            </View>
+            {isResolvingLocation && (
+              <ActivityIndicator size="small" color={COLORS.primary} style={{ marginLeft: 8 }} />
+            )}
+            {locationResolutionError && !isResolvingLocation && (
+              <TouchableOpacity
+                style={styles.retryLocationButton}
+                onPress={() => resolveLocationForCapture(currentLocation?.coords)}
+              >
+                <RefreshCw size={14} color={COLORS.primary} />
+                <Text style={styles.retryLocationText}>Retry</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <Text style={[
+            styles.photoLocationName,
+            isResolvingLocation && styles.photoLocationLoading,
+            locationResolutionError && styles.photoLocationError,
+          ]}>
+            {capturedLocationName}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.confirmPhotoButton,
+            (loadingAction || isResolvingLocation) && styles.confirmPhotoButtonDisabled,
+          ]}
+          onPress={confirmCapturedPhoto}
+          disabled={loadingAction}
+        >
+          {loadingAction ? (
+            <ActivityIndicator color="#FFF" />
+          ) : (
+            <Text style={styles.confirmPhotoText}>
+              {currentAction === 'CHECK_IN'
+                ? 'Confirm Check In'
+                : 'Confirm Check Out'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (cameraVisible) {
+    return (
+      <View style={styles.cameraContainer}>
+        <StatusBar style="dark" hidden={false} />
+        <CameraView
+          style={StyleSheet.absoluteFill}
+          facing={cameraFacing}
+          mirror={cameraFacing === 'front'}
+          ref={cameraRef}
+        />
+
+        <View style={styles.cameraOverlay} pointerEvents="box-none">
+          <View style={[styles.cameraHeader, { marginTop: Math.max(insets.top + 10, 28) }]}>
+            <TouchableOpacity onPress={() => setCameraVisible(false)} style={styles.backButton}>
+              <Text style={styles.backText}>Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.cameraTitle}>{currentAction === 'CHECK_IN' ? 'Check In' : 'Check Out'}</Text>
+            <TouchableOpacity
+              onPress={() => setCameraFacing((prev) => (prev === 'front' ? 'back' : 'front'))}
+              style={styles.flipCameraButton}
+            >
+              <SwitchCamera size={20} color="#FFF" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.cameraSubtitle}>Capture your photo and location to proceed</Text>
+
+          <TouchableOpacity style={styles.captureButton} onPress={takePicture}>
+            <View style={styles.captureButtonInner} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -250,6 +636,66 @@ export default function ManagerDashboardScreen({ navigation }: any) {
                     {todayAttendance?.working_hours || '00:00'}
                   </Text>
                 </View>
+              </View>
+
+              {/* Punch In / Out Action Buttons */}
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+                {!todayAttendance?.check_in_time && (
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#22C55E',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      paddingVertical: 12,
+                      borderRadius: 12,
+                    }}
+                    onPress={() => startAttendance('CHECK_IN')}
+                    disabled={loadingAction}
+                  >
+                    <LogIn size={18} color="#FFFFFF" strokeWidth={2.2} />
+                    <Text style={{ color: '#FFFFFF', fontFamily: 'Comfortaa_700Bold', fontSize: 14 }}>Check In</Text>
+                  </TouchableOpacity>
+                )}
+
+                {todayAttendance?.check_in_time && !todayAttendance?.check_out_time && (
+                  <TouchableOpacity
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#EF4444',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      paddingVertical: 12,
+                      borderRadius: 12,
+                    }}
+                    onPress={() => startAttendance('CHECK_OUT')}
+                    disabled={loadingAction}
+                  >
+                    <LogOut size={18} color="#FFFFFF" strokeWidth={2.2} />
+                    <Text style={{ color: '#FFFFFF', fontFamily: 'Comfortaa_700Bold', fontSize: 14 }}>Check Out</Text>
+                  </TouchableOpacity>
+                )}
+
+                {todayAttendance?.check_in_time && todayAttendance?.check_out_time && (
+                  <View
+                    style={{
+                      flex: 1,
+                      backgroundColor: '#F1F5F9',
+                      paddingVertical: 10,
+                      borderRadius: 12,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ color: '#475569', fontFamily: 'Comfortaa_700Bold', fontSize: 13 }}>
+                      Attendance Completed for Today
+                    </Text>
+                  </View>
+                )}
               </View>
 
               {/* Self-Service Action Pills */}
@@ -574,6 +1020,88 @@ export default function ManagerDashboardScreen({ navigation }: any) {
           }
         }}
       />
+
+      {/* LATE REASON MODAL */}
+      <Modal
+        visible={showLateReasonModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          if (!loadingAction) {
+            setShowLateReasonModal(false);
+            setLateReasonText('');
+            setPendingPhotoUri(null);
+            setCurrentAction(null);
+          }
+        }}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.lateModalOverlay}
+        >
+          <View style={styles.lateModalCard}>
+            <View style={styles.lateModalHeader}>
+              <View style={styles.lateModalIconBg}>
+                <AlertCircle size={26} color="#DC2626" strokeWidth={2.2} />
+              </View>
+              <View style={styles.lateModalHeaderTextWrapper}>
+                <Text style={styles.lateModalTitle}>Late Arrival Notice</Text>
+                <Text style={styles.lateModalSubtitle}>
+                  {pendingLateMinutes > 0
+                    ? `You are checking in ${pendingLateMinutes} min${pendingLateMinutes > 1 ? 's' : ''} late.`
+                    : 'You have exceeded the standard grace window.'}
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.lateModalInstruction}>
+              Please explain why you arrived late today. This reason will be recorded on your attendance entry.
+            </Text>
+
+            <TextInput
+              style={styles.lateReasonInput}
+              placeholder="e.g. Heavy traffic, emergency at home..."
+              placeholderTextColor="#9CA3AF"
+              multiline
+              numberOfLines={3}
+              value={lateReasonText}
+              onChangeText={setLateReasonText}
+              editable={!loadingAction}
+              textAlignVertical="top"
+            />
+
+            <View style={styles.lateModalActions}>
+              <TouchableOpacity
+                style={styles.lateModalCancelBtn}
+                onPress={() => {
+                  setShowLateReasonModal(false);
+                  setLateReasonText('');
+                  setPendingPhotoUri(null);
+                  setCurrentAction(null);
+                }}
+                disabled={loadingAction}
+              >
+                <Text style={styles.lateModalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.lateModalSubmitBtn,
+                  (!lateReasonText.trim() || loadingAction) && styles.lateModalSubmitBtnDisabled,
+                ]}
+                onPress={handleConfirmLateReason}
+                disabled={!lateReasonText.trim() || loadingAction}
+              >
+                {loadingAction ? (
+                  <ActivityIndicator color="#FFF" size="small" />
+                ) : (
+                  <Text style={styles.lateModalSubmitText}>Submit & Check In</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -776,5 +1304,225 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
     color: '#EA580C',
   },
+  lateModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  lateModalCard: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 22,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 18,
+    elevation: 8,
+  },
+  lateModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  lateModalIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FEE2E2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  lateModalHeaderTextWrapper: {
+    flex: 1,
+  },
+  lateModalTitle: {
+    fontSize: 18,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#111827',
+  },
+  lateModalSubtitle: {
+    fontSize: 13,
+    color: '#DC2626',
+    fontFamily: 'Comfortaa_600SemiBold',
+    marginTop: 2,
+  },
+  lateModalInstruction: {
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  lateReasonInput: {
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 14,
+    color: '#111827',
+    minHeight: 80,
+    marginBottom: 18,
+  },
+  lateModalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  lateModalCancelBtn: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  lateModalCancelText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontFamily: 'Comfortaa_600SemiBold',
+  },
+  lateModalSubmitBtn: {
+    backgroundColor: '#22C55E',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 130,
+  },
+  lateModalSubmitBtnDisabled: {
+    backgroundColor: '#FDBA74',
+  },
+  lateModalSubmitText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  cameraContainer: { flex: 1, backgroundColor: 'black' },
+  cameraOverlay: { ...StyleSheet.absoluteFill, justifyContent: 'space-between', alignItems: 'center', padding: 24, zIndex: 10 },
+  cameraHeader: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginTop: 40 },
+  backButton: { paddingVertical: 8, paddingHorizontal: 14, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
+  backText: { color: '#FFF', fontSize: 16, fontFamily: 'Comfortaa_600SemiBold' },
+  flipCameraButton: { padding: 10, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
+  cameraTitle: { color: '#FFF', fontSize: 20, fontFamily: 'Comfortaa_700Bold' },
+  cameraSubtitle: { color: '#FFF', fontSize: 14, marginTop: 12, textAlign: 'center' },
+  photoPreviewContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+    paddingTop: 50,
+    paddingHorizontal: 18,
+    paddingBottom: 24,
+  },
+  photoPreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+  previewBackButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255,255,255,0.14)',
+    borderRadius: 10,
+  },
+  previewBackText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  photoPreviewTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  photoPreviewImageContainer: {
+    flex: 1,
+    width: '100%',
+    borderRadius: 16,
+    overflow: 'hidden',
+    backgroundColor: '#111',
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoPreviewImage: {
+    width: '100%',
+    height: '100%',
+  },
+  photoLocationCard: {
+    marginTop: 12,
+    backgroundColor: '#1E1E1E',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#2A2A2A',
+  },
+  photoLocationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  photoLocationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  photoLocationHeaderTitle: {
+    color: '#9CA3AF',
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  photoLocationName: {
+    color: '#F9FAFB',
+    fontSize: 13,
+    fontFamily: 'Comfortaa_600SemiBold',
+    lineHeight: 18,
+  },
+  photoLocationLoading: {
+    color: '#D1D5DB',
+    fontStyle: 'italic',
+  },
+  photoLocationError: {
+    color: '#F87171',
+  },
+  retryLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: 'rgba(234, 88, 12, 0.15)',
+  },
+  retryLocationText: {
+    color: COLORS.primary,
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  confirmPhotoButton: {
+    marginTop: 14,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: COLORS.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmPhotoButtonDisabled: {
+    opacity: 0.6,
+  },
+  confirmPhotoText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontFamily: 'Comfortaa_700Bold',
+  },
+  captureButton: { width: 80, height: 80, borderRadius: 40, backgroundColor: 'rgba(255, 255, 255, 0.3)', justifyContent: 'center', alignItems: 'center', marginBottom: 30 },
+  captureButtonInner: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFF' },
 });
 
