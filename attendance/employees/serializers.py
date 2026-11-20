@@ -104,6 +104,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
         email = data.get('email')
         if email:
             data['email'] = email.strip().lower()
+        elif email == '':
+            data['email'] = None
 
         phone_number = data.get('phone_number')
         if phone_number:

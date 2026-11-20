@@ -420,7 +420,7 @@ export const EmployeeForm = ({ onClose, onSuccess, employeeId, pageMode = false 
         employee_id: formData.employee_id?.trim() ? formData.employee_id.trim() : undefined,
         company: parseInt(formData.company, 10),
         full_name: formData.full_name,
-        email: formData.email.trim().toLowerCase(),
+        email: formData.email.trim() ? formData.email.trim().toLowerCase() : null,
         phone_number: formData.phone_number,
         branch: parseInt(formData.branch, 10),
         department: formData.department,
