@@ -20,7 +20,10 @@ import {
   CalendarDays,
   AlertCircle,
   CheckCircle2,
+  Plus,
+  Zap,
 } from 'lucide-react';
+import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { AuthContext } from '../../context/AuthContext';
@@ -177,6 +180,9 @@ const ManagerDashboard: React.FC = () => {
       setLoadingAction(false);
     }
   };
+
+  // Quick Task Creation Modal state
+  const [showQuickTaskModal, setShowQuickTaskModal] = useState(false);
 
   // Attendance drill-down modal state
   const [activeStatusModal, setActiveStatusModal] = useState<string | null>(null);
@@ -336,64 +342,45 @@ const ManagerDashboard: React.FC = () => {
 
   return (
     <div className="mgr-dashboard-page">
-      {/* COMPANY & MANAGER PROFILE BANNER */}
-      <div className="mgr-company-banner" style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '12px',
-        padding: '20px 24px',
-        marginBottom: '24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '16px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '12px',
-            background: '#ecfdf5',
-            color: '#22C55E',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '1px solid #a7f3d0'
-          }}>
-            <Building size={24} />
+      {/* 1. HERO BANNER */}
+      <div className="mgr-hero-banner">
+        <div className="mgr-hero-left">
+          <div className="mgr-hero-icon">
+            <Building size={28} />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a' }}>
-                {summary?.company_name || user?.company_name || 'Yaazh 360'}
-              </span>
-              <span style={{
-                background: '#f1f5f9',
-                color: '#475569',
-                fontSize: '11px',
-                fontWeight: 600,
-                padding: '2px 8px',
-                borderRadius: '9999px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                <Shield size={11} /> Reporting Manager
+            <div className="mgr-hero-company">
+              <span>{summary?.company_name || user?.company_name || 'Yaazh 360'}</span>
+              <span className="mgr-hero-badge">
+                <Shield size={12} /> Reporting Manager
               </span>
             </div>
-            <div style={{ fontSize: '14px', color: '#64748b' }}>
-              Manager: <strong>{summary?.manager_name || user?.username}</strong> &bull; Username: <code>{user?.username}</code> &bull; Total Structure: <strong>{summary?.total_employees ?? 0} members</strong>
+            <div className="mgr-hero-sub">
+              <span>Manager: <strong>{summary?.manager_name || user?.username}</strong></span>
+              <span>&bull;</span>
+              <span>Username: <code>{user?.username}</code></span>
+              <span>&bull;</span>
+              <span>Team Size: <strong>{summary?.total_employees ?? 0} members</strong></span>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Link to="/manager/team" className="rm-btn rm-btn-primary" style={{ textDecoration: 'none' }}>
+        <div className="mgr-hero-actions">
+          <button
+            type="button"
+            className="mgr-hero-btn mgr-hero-btn-primary"
+            onClick={() => setShowQuickTaskModal(true)}
+          >
+            <Plus size={16} /> Assign Task
+          </button>
+          <Link to="/manager/team" className="mgr-hero-btn mgr-hero-btn-outline">
             <Users size={16} /> Manage Team
           </Link>
-          <button className="rm-btn rm-btn-secondary" onClick={() => loadDashboardData()}>
+          <button
+            type="button"
+            className="mgr-hero-btn mgr-hero-btn-outline"
+            onClick={() => loadDashboardData()}
+          >
             <RefreshCw size={16} /> Refresh
           </button>
         </div>
@@ -405,8 +392,7 @@ const ManagerDashboard: React.FC = () => {
           color: punchMsg.type === 'success' ? '#166534' : '#991b1b',
           border: `1px solid ${punchMsg.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
           padding: '12px 18px',
-          borderRadius: '10px',
-          marginBottom: '20px',
+          borderRadius: '12px',
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
@@ -418,30 +404,115 @@ const ManagerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* MANAGER PERSONAL ATTENDANCE CARD */}
-      <div style={{
-        background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '14px',
-        padding: '20px 24px',
-        marginBottom: '26px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-      }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-          marginBottom: '16px',
-          borderBottom: '1px solid #f1f5f9',
-          paddingBottom: '14px',
-        }}>
+      {/* 2. QUICK ACTIONS HUB (Approve Leaves/Permissions/WFH, Assign Task, Mark Attendance) */}
+      <div className="mgr-quick-hub">
+        <div className="mgr-hub-header">
+          <div className="mgr-hub-title">
+            <Zap size={18} color="#22c55e" />
+            <span>Quick Actions Hub</span>
+            <span className="mgr-hub-badge">Manager Controls</span>
+          </div>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>
+            Frequently used managerial actions at a glance
+          </span>
+        </div>
+
+        <div className="mgr-hub-grid">
+          {/* Quick Action: Assign Task */}
+          <div
+            className="mgr-hub-action-card"
+            onClick={() => setShowQuickTaskModal(true)}
+            style={{ borderLeft: '4px solid #3b82f6' }}
+          >
+            <div className="mgr-hub-icon-wrap" style={{ background: '#eff6ff', color: '#2563eb' }}>
+              <Plus size={20} strokeWidth={2.5} />
+            </div>
+            <div className="mgr-hub-info">
+              <span className="mgr-hub-action-label">Assign New Task</span>
+              <span className="mgr-hub-action-desc">Delegate task to team members</span>
+            </div>
+            <ArrowRight size={16} color="#94a3b8" />
+          </div>
+
+          {/* Quick Action: Leave Approvals */}
+          <Link
+            to="/manager/leaves"
+            className="mgr-hub-action-card"
+            style={{ borderLeft: '4px solid #ea580c' }}
+          >
+            <div className="mgr-hub-icon-wrap" style={{ background: '#fff7ed', color: '#ea580c' }}>
+              <Calendar size={20} />
+            </div>
+            <div className="mgr-hub-info">
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span className="mgr-hub-action-label">Approve Leaves</span>
+                {pendingStats.pending_leaves > 0 && (
+                  <span className="mgr-hub-counter" style={{ background: '#ffedd5', color: '#c2410c' }}>
+                    {pendingStats.pending_leaves}
+                  </span>
+                )}
+              </div>
+              <span className="mgr-hub-action-desc">Review pending leave applications</span>
+            </div>
+            <ArrowRight size={16} color="#94a3b8" />
+          </Link>
+
+          {/* Quick Action: Permission Approvals */}
+          <Link
+            to="/manager/permissions"
+            className="mgr-hub-action-card"
+            style={{ borderLeft: '4px solid #2563eb' }}
+          >
+            <div className="mgr-hub-icon-wrap" style={{ background: '#eff6ff', color: '#2563eb' }}>
+              <Clock size={20} />
+            </div>
+            <div className="mgr-hub-info">
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span className="mgr-hub-action-label">Approve Permissions</span>
+                {pendingStats.pending_permissions > 0 && (
+                  <span className="mgr-hub-counter" style={{ background: '#dbeafe', color: '#1d4ed8' }}>
+                    {pendingStats.pending_permissions}
+                  </span>
+                )}
+              </div>
+              <span className="mgr-hub-action-desc">Short time & early exits</span>
+            </div>
+            <ArrowRight size={16} color="#94a3b8" />
+          </Link>
+
+          {/* Quick Action: WFH Approvals */}
+          <Link
+            to="/manager/wfh"
+            className="mgr-hub-action-card"
+            style={{ borderLeft: '4px solid #7c3aed' }}
+          >
+            <div className="mgr-hub-icon-wrap" style={{ background: '#faf5ff', color: '#7c3aed' }}>
+              <Building2 size={20} />
+            </div>
+            <div className="mgr-hub-info">
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <span className="mgr-hub-action-label">Approve WFH</span>
+                {pendingStats.pending_wfh > 0 && (
+                  <span className="mgr-hub-counter" style={{ background: '#f3e8ff', color: '#6b21a8' }}>
+                    {pendingStats.pending_wfh}
+                  </span>
+                )}
+              </div>
+              <span className="mgr-hub-action-desc">Work from home requests</span>
+            </div>
+            <ArrowRight size={16} color="#94a3b8" />
+          </Link>
+        </div>
+      </div>
+
+      {/* 3. MANAGER PERSONAL ATTENDANCE CARD */}
+      <div className="mgr-self-punch-card">
+        <div className="mgr-self-punch-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{
               width: '42px',
               height: '42px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               background: '#ecfdf5',
               color: '#059669',
               display: 'flex',
@@ -451,22 +522,22 @@ const ManagerDashboard: React.FC = () => {
               <Clock size={22} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: '#0f172a' }}>
+              <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
                 My Attendance & Self Punch
               </h2>
-              <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#64748b' }}>
+              <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
                 Mark your daily personal check-in / check-out with GPS & photo
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <Link
               to="/manager/my-attendance"
               style={{
                 textDecoration: 'none',
                 color: '#2563eb',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
@@ -476,14 +547,14 @@ const ManagerDashboard: React.FC = () => {
                 background: '#eff6ff',
               }}
             >
-              <CalendarDays size={14} /> My Punch History
+              <CalendarDays size={13} /> Punch History
             </Link>
             <Link
               to="/manager/my-leaves"
               style={{
                 textDecoration: 'none',
                 color: '#ea580c',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
@@ -493,14 +564,14 @@ const ManagerDashboard: React.FC = () => {
                 background: '#fff7ed',
               }}
             >
-              <Calendar size={14} /> Apply Leave
+              <Calendar size={13} /> Apply Leave
             </Link>
             <Link
               to="/manager/my-permissions"
               style={{
                 textDecoration: 'none',
                 color: '#7c3aed',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
@@ -510,14 +581,14 @@ const ManagerDashboard: React.FC = () => {
                 background: '#faf5ff',
               }}
             >
-              <Clock size={14} /> Apply Permission
+              <Clock size={13} /> Apply Permission
             </Link>
             <Link
               to="/manager/my-wfh"
               style={{
                 textDecoration: 'none',
                 color: '#0d9488',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 600,
                 display: 'flex',
                 alignItems: 'center',
@@ -527,27 +598,15 @@ const ManagerDashboard: React.FC = () => {
                 background: '#f0fdfa',
               }}
             >
-              <Building2 size={14} /> Apply WFH
+              <Building2 size={13} /> Apply WFH
             </Link>
           </div>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '16px',
-          alignItems: 'center',
-        }}>
-          <div style={{
-            background: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '10px',
-            padding: '14px 18px',
-          }}>
-            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-              Punch In Status
-            </div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+        <div className="mgr-punch-status-grid">
+          <div className="mgr-punch-stat-box">
+            <div className="mgr-punch-stat-label">Punch In Status</div>
+            <div className="mgr-punch-stat-value">
               {myAttendance?.check_in_time ? (
                 <span style={{ color: '#16a34a' }}>
                   {new Date(myAttendance.check_in_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -558,16 +617,9 @@ const ManagerDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div style={{
-            background: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '10px',
-            padding: '14px 18px',
-          }}>
-            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-              Punch Out Status
-            </div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+          <div className="mgr-punch-stat-box">
+            <div className="mgr-punch-stat-label">Punch Out Status</div>
+            <div className="mgr-punch-stat-value">
               {myAttendance?.check_out_time ? (
                 <span style={{ color: '#2563eb' }}>
                   {new Date(myAttendance.check_out_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -578,16 +630,9 @@ const ManagerDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div style={{
-            background: '#f8fafc',
-            border: '1px solid #e2e8f0',
-            borderRadius: '10px',
-            padding: '14px 18px',
-          }}>
-            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>
-              Today's Duration
-            </div>
-            <div style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', marginTop: '4px' }}>
+          <div className="mgr-punch-stat-box">
+            <div className="mgr-punch-stat-label">Today's Duration</div>
+            <div className="mgr-punch-stat-value">
               {myAttendance?.working_hours || '00:00'} hrs
             </div>
           </div>
@@ -601,18 +646,18 @@ const ManagerDashboard: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '12px 22px',
+                padding: '11px 20px',
                 borderRadius: '10px',
                 border: 'none',
                 background: myAttendance?.check_in_time ? '#e2e8f0' : '#16a34a',
                 color: myAttendance?.check_in_time ? '#94a3b8' : '#ffffff',
                 fontWeight: 700,
-                fontSize: '14px',
+                fontSize: '13px',
                 cursor: myAttendance?.check_in_time ? 'not-allowed' : 'pointer',
                 boxShadow: myAttendance?.check_in_time ? 'none' : '0 2px 6px rgba(22, 163, 74, 0.25)',
               }}
             >
-              <LogIn size={18} />
+              <LogIn size={16} />
               <span>Check In</span>
             </button>
 
@@ -624,18 +669,18 @@ const ManagerDashboard: React.FC = () => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '12px 22px',
+                padding: '11px 20px',
                 borderRadius: '10px',
                 border: 'none',
                 background: (!myAttendance?.check_in_time || myAttendance?.check_out_time) ? '#e2e8f0' : '#dc2626',
                 color: (!myAttendance?.check_in_time || myAttendance?.check_out_time) ? '#94a3b8' : '#ffffff',
                 fontWeight: 700,
-                fontSize: '14px',
+                fontSize: '13px',
                 cursor: (!myAttendance?.check_in_time || myAttendance?.check_out_time) ? 'not-allowed' : 'pointer',
                 boxShadow: (!myAttendance?.check_in_time || myAttendance?.check_out_time) ? 'none' : '0 2px 6px rgba(220, 38, 38, 0.25)',
               }}
             >
-              <LogOut size={18} />
+              <LogOut size={16} />
               <span>Check Out</span>
             </button>
           </div>
@@ -643,22 +688,27 @@ const ManagerDashboard: React.FC = () => {
       </div>
 
       {error && (
-        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '12px 16px', borderRadius: '8px', marginBottom: '20px' }}>
+        <div style={{ background: '#fee2e2', color: '#991b1b', padding: '12px 16px', borderRadius: '12px', marginBottom: '8px' }}>
           {error}
         </div>
       )}
 
-      {/* SECTION 1: HIERARCHY OVERVIEW */}
-      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', marginBottom: '14px' }}>
-        Organization & Team Scope
-      </h3>
-      <div className="mgr-cards-grid" style={{ marginBottom: '28px' }}>
+      {/* 4. SECTION: TEAM SCOPE OVERVIEW */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+          Organization & Team Structure
+        </h3>
+        <Link to="/manager/team" className="mgr-link-btn">
+          View Organization <ArrowRight size={14} />
+        </Link>
+      </div>
+      <div className="mgr-cards-grid">
         {employeeCards.map((c, i) => {
           const Icon = c.icon;
           return (
             <div key={i} className="mgr-stat-card">
               <div className="mgr-stat-icon" style={{ background: c.bg, color: c.color }}>
-                <Icon size={24} />
+                <Icon size={22} />
               </div>
               <div className="mgr-stat-content">
                 <span className="mgr-stat-label">{c.title}</span>
@@ -669,14 +719,14 @@ const ManagerDashboard: React.FC = () => {
         })}
       </div>
 
-      {/* SECTION 2: ATTENDANCE OVERVIEW (CLICKABLE DRILL-DOWN) */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
+      {/* 5. SECTION: TEAM ATTENDANCE (DRILL-DOWN ENABLED) */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '10px' }}>
         <div>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', margin: 0 }}>
-            Team Attendance Overview
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+            Team Attendance Live Status
           </h3>
-          <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>
-            Click any card to view detailed employee report for the selected date
+          <p style={{ margin: '3px 0 0', fontSize: '12px', color: '#64748b' }}>
+            Click any attendance card to view individual employees for {selectedDate}
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -700,7 +750,7 @@ const ManagerDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="mgr-cards-grid" style={{ marginBottom: '32px' }}>
+      <div className="mgr-cards-grid">
         {attendanceCards.map((c, i) => {
           const Icon = c.icon;
           return (
@@ -718,7 +768,7 @@ const ManagerDashboard: React.FC = () => {
               }}
             >
               <div className="mgr-stat-icon" style={{ background: c.bg, color: c.color, border: `1px solid ${c.border}` }}>
-                <Icon size={24} />
+                <Icon size={22} />
               </div>
               <div className="mgr-stat-content" style={{ flex: 1 }}>
                 <span className="mgr-stat-label">{c.title}</span>
@@ -736,66 +786,15 @@ const ManagerDashboard: React.FC = () => {
         })}
       </div>
 
-      {/* SECTION 3: REQUESTS & APPROVALS (LEAVES, PERMISSIONS, WFH) */}
-      <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#1C1917', marginBottom: '14px' }}>
-        Team Approvals & Requests
-      </h3>
-      <div className="mgr-cards-grid" style={{ marginBottom: '32px' }}>
-        <Link to="/manager/leaves" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div className="mgr-stat-card" style={{ cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}>
-            <div className="mgr-stat-icon" style={{ background: '#fff7ed', color: '#ea580c' }}>
-              <Calendar size={24} />
-            </div>
-            <div className="mgr-stat-content">
-              <span className="mgr-stat-label">Leave Requests</span>
-              <span className="mgr-stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {loading ? '--' : `${pendingStats.pending_leaves} Pending`}
-                <ArrowRight size={16} color="#ea580c" />
-              </span>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/manager/permissions" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div className="mgr-stat-card" style={{ cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}>
-            <div className="mgr-stat-icon" style={{ background: '#eff6ff', color: '#2563eb' }}>
-              <Clock size={24} />
-            </div>
-            <div className="mgr-stat-content">
-              <span className="mgr-stat-label">Permission Requests</span>
-              <span className="mgr-stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {loading ? '--' : `${pendingStats.pending_permissions} Pending`}
-                <ArrowRight size={16} color="#2563eb" />
-              </span>
-            </div>
-          </div>
-        </Link>
-
-        <Link to="/manager/wfh" style={{ textDecoration: 'none', color: 'inherit' }}>
-          <div className="mgr-stat-card" style={{ cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}>
-            <div className="mgr-stat-icon" style={{ background: '#faf5ff', color: '#7c3aed' }}>
-              <Building2 size={24} />
-            </div>
-            <div className="mgr-stat-content">
-              <span className="mgr-stat-label">WFH Requests</span>
-              <span className="mgr-stat-value" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {loading ? '--' : `${pendingStats.pending_wfh} Pending`}
-                <ArrowRight size={16} color="#7c3aed" />
-              </span>
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Assigned Team Members Table Preview */}
-      <div className="mgr-section-card">
+      {/* 6. ASSIGNED TEAM MEMBERS TABLE PREVIEW */}
+      <div className="mgr-section-card" style={{ marginTop: '10px' }}>
         <div className="mgr-section-header">
           <div>
-            <h2>My Assigned Team</h2>
-            <p>Employees currently reporting to your department.</p>
+            <h2>My Assigned Team Members</h2>
+            <p>Employees currently active in your reporting hierarchy.</p>
           </div>
           <Link to="/manager/team" className="mgr-link-btn">
-            View All Team <ArrowRight size={16} />
+            View All Team ({team.length}) <ArrowRight size={16} />
           </Link>
         </div>
 
@@ -846,6 +845,7 @@ const ManagerDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
 
       {/* Late Check-in Reason Modal */}
       {showLateModal && (
@@ -908,6 +908,19 @@ const ManagerDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+            {/* Quick Task Workspace Modal */}
+      {showQuickTaskModal && (
+        <TaskWorkspaceModal
+          taskId={null}
+          initialMode="edit"
+          onClose={() => setShowQuickTaskModal(false)}
+          onSaved={() => {
+            setShowQuickTaskModal(false);
+            loadDashboardData();
+          }}
+        />
       )}
 
       {/* Camera Capture Modal */}

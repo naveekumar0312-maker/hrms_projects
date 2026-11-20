@@ -1,45 +1,313 @@
+/* ==========================================================================
+   MANAGER DASHBOARD - MODERN USER-FRIENDLY REDESIGN
+   ========================================================================== */
+
 .mgr-dashboard-page {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 22px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
 }
 
-.mgr-dash-header {
+/* 1. HERO BANNER */
+.mgr-hero-banner {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f3d2e 100%);
+  border-radius: 18px;
+  padding: 24px 28px;
+  color: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 20px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.25), 0 8px 10px -6px rgba(15, 23, 42, 0.2);
+  position: relative;
+  overflow: hidden;
 }
 
-.mgr-dash-header h1 {
-  font-size: 22px;
+.mgr-hero-banner::after {
+  content: '';
+  position: absolute;
+  right: -60px;
+  top: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.2) 0%, rgba(34, 197, 94, 0) 70%);
+  pointer-events: none;
+}
+
+.mgr-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  z-index: 1;
+}
+
+.mgr-hero-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(34, 197, 94, 0.15);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #4ade80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mgr-hero-company {
+  font-size: 20px;
   font-weight: 700;
-  margin: 0 0 4px 0;
-  color: var(--text-primary, #0f172a);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.mgr-dash-header p {
-  margin: 0;
+.mgr-hero-badge {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mgr-hero-sub {
+  margin-top: 6px;
+  font-size: 13px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mgr-hero-sub strong {
+  color: #f1f5f9;
+}
+
+.mgr-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  z-index: 1;
+}
+
+.mgr-hero-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.mgr-hero-btn-primary {
+  background: #22c55e;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+}
+
+.mgr-hero-btn-primary:hover {
+  background: #16a34a;
+  transform: translateY(-1px);
+}
+
+.mgr-hero-btn-outline {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.mgr-hero-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* 2. QUICK ACTIONS HUB (FEATURED) */
+.mgr-quick-hub {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.mgr-hub-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mgr-hub-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.mgr-hub-badge {
+  font-size: 11px;
+  background: #f1f5f9;
+  color: #475569;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.mgr-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.mgr-hub-action-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  cursor: pointer;
+}
+
+.mgr-hub-action-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 14px -2px rgba(0, 0, 0, 0.06);
+}
+
+.mgr-hub-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mgr-hub-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mgr-hub-action-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  display: block;
+}
+
+.mgr-hub-action-desc {
+  font-size: 11px;
   color: #64748b;
-  font-size: 14px;
+  margin-top: 2px;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+.mgr-hub-counter {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+/* 3. MANAGER SELF PUNCH CARD */
+.mgr-self-punch-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.mgr-self-punch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 16px;
+}
+
+.mgr-punch-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+  align-items: center;
+}
+
+.mgr-punch-stat-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.mgr-punch-stat-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mgr-punch-stat-value {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 4px;
+}
+
+/* 4. ATTENDANCE & SCOPE CARDS GRID */
 .mgr-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
 }
 
 .mgr-stat-card {
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #e2e8f0);
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 14px;
-  padding: 20px;
+  padding: 18px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -50,13 +318,13 @@
 
 .mgr-stat-card-clickable:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 8px 16px -2px rgba(0, 0, 0, 0.06);
 }
 
 .mgr-stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 10px;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,71 +334,50 @@
 .mgr-stat-content {
   display: flex;
   flex-direction: column;
+  flex: 1;
 }
 
 .mgr-stat-label {
-  font-size: 13px;
+  font-size: 12px;
   color: #64748b;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .mgr-stat-value {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
-  color: var(--text-primary, #0f172a);
+  color: #0f172a;
+  margin-top: 2px;
 }
 
-.mgr-team-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+/* 5. TEAM PREVIEW TABLE */
+.mgr-section-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
 .mgr-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .mgr-section-header h2 {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
-  margin: 0 0 2px 0;
-  color: var(--text-primary, #0f172a);
+  margin: 0;
+  color: #0f172a;
 }
 
-.mgr-company-banner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-@media (max-width: 768px) {
-  .mgr-company-banner {
-    flex-direction: column;
-    align-items: stretch !important;
-    padding: 16px !important;
-  }
-  .mgr-company-banner > div {
-    flex-direction: column;
-    align-items: flex-start !important;
-    gap: 12px !important;
-    width: 100% !important;
-  }
-  .mgr-company-banner .rm-btn {
-    flex: 1;
-    justify-content: center;
-  }
-}
-
-.mgr-section-card {
-  background: var(--surface, #fff);
-  border: 1px solid var(--border, #e2e8f0);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+.mgr-section-header p {
+  margin: 4px 0 0 0;
+  font-size: 13px;
+  color: #64748b;
 }
 
 .mgr-table-responsive {
@@ -144,7 +391,7 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 14px;
+  font-size: 13px;
   min-width: 600px;
 }
 
@@ -154,15 +401,15 @@
   font-weight: 600;
   color: #475569;
   border-bottom: 1px solid #e2e8f0;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.5px;
 }
 
 .mgr-table td {
   padding: 14px 16px;
   border-bottom: 1px solid #f1f5f9;
-  color: #1C1917;
+  color: #1e293b;
   vertical-align: middle;
 }
 
@@ -172,17 +419,17 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--primary, #22C55E);
+  color: #22c55e;
   text-decoration: none;
   transition: color 0.15s;
 }
 
 .mgr-link-btn:hover {
-  color: #16A34A;
+  color: #16a34a;
 }
 
 .mgr-empty-preview {
-  padding: 36px 16px;
+  padding: 40px 16px;
   text-align: center;
   color: #64748b;
   display: flex;
@@ -191,7 +438,7 @@
   gap: 8px;
 }
 
-/* RESPONSIVE MEDIA QUERIES FOR MANAGER DASHBOARD */
+/* RESPONSIVE BREAKPOINTS */
 @media (max-width: 1024px) {
   .mgr-cards-grid {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -200,40 +447,30 @@
 }
 
 @media (max-width: 768px) {
-  .mgr-dash-header {
+  .mgr-hero-banner {
+    padding: 18px 20px;
+  }
+  .mgr-hero-left {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
+  }
+  .mgr-hero-actions {
+    width: 100%;
+  }
+  .mgr-hero-btn {
+    flex: 1;
+    justify-content: center;
   }
   .mgr-cards-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
-  .mgr-stat-card {
-    padding: 14px;
-    gap: 12px;
+  .mgr-hub-grid {
+    grid-template-columns: 1fr;
   }
-  .mgr-stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
-  }
-  .mgr-stat-icon svg {
-    width: 20px;
-    height: 20px;
-  }
-  .mgr-stat-value {
-    font-size: 20px;
-  }
-  .mgr-stat-label {
-    font-size: 12px;
-  }
-  .mgr-section-card {
-    padding: 14px;
-  }
-  .mgr-section-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  .mgr-punch-status-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -242,4 +479,3 @@
     grid-template-columns: 1fr;
   }
 }
-
