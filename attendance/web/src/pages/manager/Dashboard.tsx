@@ -22,6 +22,9 @@ import {
   CheckCircle2,
   Plus,
   Zap,
+  CalendarPlus,
+  ClockPlus,
+  Home,
 } from 'lucide-react';
 import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
 import { Link, useNavigate } from 'react-router-dom';
@@ -290,13 +293,6 @@ const ManagerDashboard: React.FC = () => {
       color: '#1d4ed8',
       bg: '#dbeafe',
     },
-    {
-      title: 'Direct Employees',
-      value: summary?.direct_employees ?? 0,
-      icon: Users,
-      color: '#0284c7',
-      bg: '#e0f2fe',
-    },
   ];
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
@@ -404,20 +400,21 @@ const ManagerDashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 2. QUICK ACTIONS HUB (Approve Leaves/Permissions/WFH, Assign Task, Mark Attendance) */}
+      {/* 2. QUICK ACTIONS HUB */}
       <div className="mgr-quick-hub">
+        {/* SECTION A: TEAM CONTROLS & APPROVALS */}
         <div className="mgr-hub-header">
           <div className="mgr-hub-title">
             <Zap size={18} color="#22c55e" />
-            <span>Quick Actions Hub</span>
+            <span>Team Approvals & Task Assignment</span>
             <span className="mgr-hub-badge">Manager Controls</span>
           </div>
           <span style={{ fontSize: '12px', color: '#64748b' }}>
-            Frequently used managerial actions at a glance
+            Review team requests & delegate tasks
           </span>
         </div>
 
-        <div className="mgr-hub-grid">
+        <div className="mgr-hub-grid" style={{ marginBottom: '18px' }}>
           {/* Quick Action: Assign Task */}
           <div
             className="mgr-hub-action-card"
@@ -503,6 +500,84 @@ const ManagerDashboard: React.FC = () => {
             <ArrowRight size={16} color="#94a3b8" />
           </Link>
         </div>
+
+        {/* SECTION B: MANAGER PERSONAL REQUEST QUICK LINKS */}
+        <div className="mgr-hub-header" style={{ paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+          <div className="mgr-hub-title">
+            <User size={18} color="#059669" />
+            <span>My Personal Requests & Passes</span>
+            <span className="mgr-hub-badge" style={{ background: '#ecfdf5', color: '#047857' }}>Self Service</span>
+          </div>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>
+            Quick links for your own leave, permission, WFH and punch records
+          </span>
+        </div>
+
+        <div className="mgr-hub-grid">
+          {/* Quick Link: Apply Leave */}
+          <Link
+            to="/manager/my-leaves"
+            className="mgr-hub-action-card"
+            style={{ borderLeft: '4px solid #f97316' }}
+          >
+            <div className="mgr-hub-icon-wrap" style={{ background: '#fff7ed', color: '#ea580c' }}>
+              <CalendarPlus size={20} />
+            </div>
+            <div className="mgr-hub-info">
+              <span className="mgr-hub-action-label">Apply Leave</span>
+              <span className="mgr-hub-action-desc">Casual, sick or annual leave</span>
+            </div>
+            <ArrowRight size={16} color="#94a3b8" />
+          </Link>
+
+          {/* Quick Link: Apply Permission */}
+          <Link
+            to="/manager/my-permissions"
+            className="mgr-hub-action-card"
+            style={{ borderLeft: '4px solid #8b5cf6' }}
+          >
+            <div className="mgr-hub-icon-wrap" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
+              <ClockPlus size={20} />
+            </div>
+            <div className="mgr-hub-info">
+              <span className="mgr-hub-action-label">Apply Permission</span>
+              <span className="mgr-hub-action-desc">30 / 60 mins emergency exit</span>
+            </div>
+            <ArrowRight size={16} color="#94a3b8" />
+          </Link>
+
+          {/* Quick Link: Apply WFH */}
+          <Link
+            to="/manager/my-wfh"
+            className="mgr-hub-action-card"
+            style={{ borderLeft: '4px solid #0d9488' }}
+          >
+            <div className="mgr-hub-icon-wrap" style={{ background: '#f0fdfa', color: '#0d9488' }}>
+              <Home size={20} />
+            </div>
+            <div className="mgr-hub-info">
+              <span className="mgr-hub-action-label">Apply WFH</span>
+              <span className="mgr-hub-action-desc">Request work from home day</span>
+            </div>
+            <ArrowRight size={16} color="#94a3b8" />
+          </Link>
+
+          {/* Quick Link: My Punch History */}
+          <Link
+            to="/manager/my-attendance"
+            className="mgr-hub-action-card"
+            style={{ borderLeft: '4px solid #0284c7' }}
+          >
+            <div className="mgr-hub-icon-wrap" style={{ background: '#f0f9ff', color: '#0284c7' }}>
+              <CalendarDays size={20} />
+            </div>
+            <div className="mgr-hub-info">
+              <span className="mgr-hub-action-label">My Punch History</span>
+              <span className="mgr-hub-action-desc">View monthly personal logs</span>
+            </div>
+            <ArrowRight size={16} color="#94a3b8" />
+          </Link>
+        </div>
       </div>
 
       {/* 3. MANAGER PERSONAL ATTENDANCE CARD */}
@@ -547,58 +622,7 @@ const ManagerDashboard: React.FC = () => {
                 background: '#eff6ff',
               }}
             >
-              <CalendarDays size={13} /> Punch History
-            </Link>
-            <Link
-              to="/manager/my-leaves"
-              style={{
-                textDecoration: 'none',
-                color: '#ea580c',
-                fontSize: '12px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '6px 12px',
-                borderRadius: '8px',
-                background: '#fff7ed',
-              }}
-            >
-              <Calendar size={13} /> Apply Leave
-            </Link>
-            <Link
-              to="/manager/my-permissions"
-              style={{
-                textDecoration: 'none',
-                color: '#7c3aed',
-                fontSize: '12px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '6px 12px',
-                borderRadius: '8px',
-                background: '#faf5ff',
-              }}
-            >
-              <Clock size={13} /> Apply Permission
-            </Link>
-            <Link
-              to="/manager/my-wfh"
-              style={{
-                textDecoration: 'none',
-                color: '#0d9488',
-                fontSize: '12px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                padding: '6px 12px',
-                borderRadius: '8px',
-                background: '#f0fdfa',
-              }}
-            >
-              <Building2 size={13} /> Apply WFH
+              <CalendarDays size={13} /> View Attendance Log
             </Link>
           </div>
         </div>
