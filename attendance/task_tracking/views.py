@@ -46,9 +46,13 @@ def check_user_task_access(task, user):
     if user.role == 'REPORTING_MANAGER':
         if not emp:
             raise PermissionDenied("Reporting Manager profile not found.")
-        is_global = (emp.branch is None and (user.company_id is None))
-        if not is_global and task.company_id != user.company_id and (emp.branch and task.company_id != emp.branch.company_id):
-            raise PermissionDenied("You do not have access to this task.")
+        is_global = (not emp.managed_companies.exists() and emp.branch is None and (user.company_id is None))
+        if not is_global:
+            if emp.managed_companies.exists():
+                if not emp.managed_companies.filter(pk=task.company_id).exists():
+                    raise PermissionDenied("You do not have access to this task.")
+            elif task.company_id != user.company_id and (emp.branch and task.company_id != emp.branch.company_id):
+                raise PermissionDenied("You do not have access to this task.")
         if (
             is_global or
             task.assigned_by_id == user.id or

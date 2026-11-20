@@ -36,12 +36,14 @@ import { AdminHRHeader } from '../../components/AdminHRHeader';
 import {
   fetchReportingManagers,
   fetchEmployees,
+  fetchCompanies,
   createReportingManager,
   assignTeamToManager,
   updateReportingManager,
   deleteReportingManager,
   ManagerAccountItem,
   EmployeeItem,
+  CompanySummary,
 } from '../../services/adminHRService';
 import { promoteEmployeeToTeamLeader } from '../../services/managerService';
 
@@ -52,6 +54,7 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
 
   const [managers, setManagers] = useState<ManagerAccountItem[]>([]);
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
+  const [companies, setCompanies] = useState<CompanySummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Assign Team Modal State
@@ -60,7 +63,7 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<number[]>([]);
   const [assigning, setAssigning] = useState(false);
 
-  // Add Manager Modal State
+  // Add/Edit Manager Modal State
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [fullName, setFullName] = useState('');
   const [username, setUsername] = useState('');
@@ -68,6 +71,8 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [department, setDepartment] = useState('Management');
   const [designation, setDesignation] = useState('Reporting Manager');
+  const [companyScope, setCompanyScope] = useState<'ALL' | 'SPECIFIC'>('ALL');
+  const [selectedCompanyIds, setSelectedCompanyIds] = useState<number[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,12 +84,14 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [mgrList, empList] = await Promise.all([
+      const [mgrList, empList, compList] = await Promise.all([
         fetchReportingManagers(companyId),
         fetchEmployees(companyId),
+        fetchCompanies().catch(() => []),
       ]);
       setManagers(mgrList);
       setEmployees(empList);
+      setCompanies(compList);
     } catch (error) {
       console.error('Failed fetching managers/employees:', error);
     } finally {
@@ -141,6 +148,8 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
     setPhoneNumber('');
     setDepartment('Management');
     setDesignation('Reporting Manager');
+    setCompanyScope('ALL');
+    setSelectedCompanyIds([]);
     setAddModalVisible(true);
   };
 
@@ -153,6 +162,12 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
     setPhoneNumber(manager.phone_number || '');
     setDepartment(manager.department || 'Management');
     setDesignation(manager.designation || 'Reporting Manager');
+    const existingCompIds = manager.company_ids && manager.company_ids.length > 0
+      ? manager.company_ids
+      : (manager.company_id ? [manager.company_id] : []);
+    const isAll = manager.is_all_companies || existingCompIds.length === 0;
+    setCompanyScope(isAll ? 'ALL' : 'SPECIFIC');
+    setSelectedCompanyIds(existingCompIds);
     setAddModalVisible(true);
   };
 
@@ -192,24 +207,37 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
       Alert.alert('Validation Error', 'Username is required.');
       return;
     }
-    if (!trimmedPwd || trimmedPwd.length < 6) {
+    if (!isEditing && (!trimmedPwd || trimmedPwd.length < 6)) {
       Alert.alert('Validation Error', 'Password must be at least 6 characters.');
       return;
     }
 
     setSubmitting(true);
     try {
-      await createReportingManager({
+      const isAll = companyScope === 'ALL';
+      const payload: any = {
         full_name: trimmedName,
         username: trimmedUsername,
-        password: trimmedPwd,
-        status: 'ACTIVE',
         phone_number: phoneNumber.trim() || undefined,
         department: department.trim() || 'Management',
         designation: designation.trim() || 'Reporting Manager',
-      });
+        company_id: isAll ? 'ALL' : (selectedCompanyIds[0] ? String(selectedCompanyIds[0]) : 'ALL'),
+        company_ids: isAll ? [] : selectedCompanyIds,
+      };
 
-      Alert.alert('Success', `Reporting Manager "${trimmedName}" created successfully!`);
+      if (isEditing && editingManagerId) {
+        if (trimmedPwd) {
+          payload.password = trimmedPwd;
+        }
+        await updateReportingManager(editingManagerId, payload);
+        Alert.alert('Success', `Reporting Manager "${trimmedName}" updated successfully!`);
+      } else {
+        payload.password = trimmedPwd;
+        payload.status = 'ACTIVE';
+        await createReportingManager(payload);
+        Alert.alert('Success', `Reporting Manager "${trimmedName}" created successfully!`);
+      }
+
       setAddModalVisible(false);
       setFullName('');
       setUsername('');
@@ -218,7 +246,7 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
       loadData();
     } catch (error: any) {
       const respData = error?.response?.data;
-      let errMsg = 'Failed to create reporting manager.';
+      let errMsg = isEditing ? 'Failed to update reporting manager.' : 'Failed to create reporting manager.';
       if (typeof respData === 'string') {
         errMsg = respData;
       } else if (respData?.username) {
@@ -226,7 +254,7 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
       } else if (respData?.detail) {
         errMsg = respData.detail;
       }
-      Alert.alert('Creation Failed', errMsg);
+      Alert.alert('Error', errMsg);
     } finally {
       setSubmitting(false);
     }
@@ -375,13 +403,79 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
         <View style={styles.modalOverlay}>
           <View style={styles.addModalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Reporting Manager</Text>
+              <Text style={styles.modalTitle}>{isEditing ? 'Edit Reporting Manager' : 'Add Reporting Manager'}</Text>
               <TouchableOpacity onPress={() => setAddModalVisible(false)} style={styles.closeBtn}>
                 <X size={20} color="#000000" />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
+              {!isHR && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={styles.inputLabel}>Company Scope *</Text>
+                  <View style={{ flexDirection: 'row', gap: 12, marginBottom: 8, marginTop: 4 }}>
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                      onPress={() => {
+                        setCompanyScope('ALL');
+                        setSelectedCompanyIds([]);
+                      }}
+                    >
+                      <View style={[styles.checkbox, companyScope === 'ALL' && styles.checkboxActive]}>
+                        {companyScope === 'ALL' ? <Text style={styles.checkmark}>✓</Text> : null}
+                      </View>
+                      <Text style={{ fontSize: 13, color: '#333333', fontWeight: '500' }}>All Companies (Global)</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}
+                      onPress={() => {
+                        setCompanyScope('SPECIFIC');
+                        if (selectedCompanyIds.length === 0 && companies.length > 0) {
+                          setSelectedCompanyIds([companies[0].id]);
+                        }
+                      }}
+                    >
+                      <View style={[styles.checkbox, companyScope === 'SPECIFIC' && styles.checkboxActive]}>
+                        {companyScope === 'SPECIFIC' ? <Text style={styles.checkmark}>✓</Text> : null}
+                      </View>
+                      <Text style={{ fontSize: 13, color: '#333333', fontWeight: '500' }}>Specific (1, 2, or 3+)</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {companyScope === 'SPECIFIC' && (
+                    <View style={{ borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 8, padding: 8, backgroundColor: '#f8fafc', maxHeight: 120 }}>
+                      <ScrollView nestedScrollEnabled>
+                        {companies.map((comp) => {
+                          const isChecked = selectedCompanyIds.includes(comp.id);
+                          return (
+                            <TouchableOpacity
+                              key={comp.id}
+                              style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 6, paddingHorizontal: 4 }}
+                              onPress={() => {
+                                setSelectedCompanyIds((prev) =>
+                                  prev.includes(comp.id) ? prev.filter((id) => id !== comp.id) : [...prev, comp.id]
+                                );
+                              }}
+                            >
+                              <Text style={{ fontSize: 13, color: '#333333' }}>{comp.name}</Text>
+                              <View style={[styles.checkbox, isChecked && styles.checkboxActive]}>
+                                {isChecked ? <Text style={styles.checkmark}>✓</Text> : null}
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    </View>
+                  )}
+                  {companyScope === 'SPECIFIC' && (
+                    <Text style={{ fontSize: 11, color: '#64748b', marginTop: 4 }}>
+                      Selected {selectedCompanyIds.length} company/companies.
+                    </Text>
+                  )}
+                </View>
+              )}
+
               <Text style={styles.inputLabel}>Full Name *</Text>
               <View style={styles.inputFieldWrap}>
                 <User size={16} color="#888888" style={{ marginRight: 8 }} />
@@ -471,7 +565,9 @@ export const AdminReportingManagersScreen = ({ navigation }: any) => {
               {submitting ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.createBtnText}>Create Reporting Manager</Text>
+                <Text style={styles.createBtnText}>
+                  {isEditing ? 'Save Changes' : 'Create Reporting Manager'}
+                </Text>
               )}
             </TouchableOpacity>
           </View>

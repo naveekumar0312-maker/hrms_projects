@@ -83,8 +83,12 @@ class ReportingManagerViewSet(viewsets.ViewSet):
         ).prefetch_related('direct_reports')
 
         if company_id:
-            # Include managers explicitly in this company AND global managers (branch is None or user.company is None)
-            queryset = queryset.filter(Q(branch__company_id=company_id) | Q(branch__isnull=True, user__company__isnull=True))
+            # Include managers explicitly in this company, managers with this company in managed_companies, AND global managers
+            queryset = queryset.filter(
+                Q(branch__company_id=company_id) |
+                Q(managed_companies__id=company_id) |
+                Q(branch__isnull=True, user__company__isnull=True, managed_companies__isnull=True)
+            ).distinct()
         elif request.user.role == 'HR':
             return Response([])
 
@@ -310,17 +314,24 @@ class ManagerPortalBaseView(views.APIView):
         Returns employees assigned to this manager according to the strict scope:
         1. If manager is assigned multiple managed_branches:
            Strictly returns employees belonging to those managed branches!
-        2. Else if manager is assigned to a specific branch:
+        2. Else if manager has managed_companies:
+           Strictly returns employees belonging to those managed companies!
+        3. Else if manager is assigned to a specific branch:
            Strictly returns employees belonging to that branch only!
-        3. Else if manager is assigned to a specific company (no branch):
+        4. Else if manager is assigned to a specific company (no branch):
            Strictly returns employees belonging to that company only!
-        4. Else (Global Access Manager - All Companies / no branch & no company):
+        5. Else (Global Access Manager - All Companies / no branch & no company):
            Returns employees across all companies/branches!
         """
+        managed_companies = manager.managed_companies.all()
         managed_branches = manager.managed_branches.all()
         if managed_branches.exists():
             qs = Employee.objects.filter(
                 branch__in=managed_branches
+            ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by('employee_id')
+        elif managed_companies.exists():
+            qs = Employee.objects.filter(
+                branch__company__in=managed_companies
             ).exclude(pk=manager.pk).exclude(user__role__in=['SUPER_ADMIN', 'ADMIN']).order_by('employee_id')
         elif manager.branch:
             # Strictly scoped to this branch only

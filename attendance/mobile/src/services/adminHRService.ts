@@ -145,7 +145,11 @@ export interface ManagerAccountItem {
   phone_number?: string;
   department?: string;
   designation?: string;
+  company_id?: number;
   company_name?: string;
+  company_ids?: number[];
+  company_names?: string[];
+  is_all_companies?: boolean;
   assigned_employees_count?: number;
   status: boolean;
 }
@@ -374,6 +378,8 @@ export const createReportingManager = async (data: {
   phone_number?: string;
   department?: string;
   designation?: string;
+  company_id?: string | number;
+  company_ids?: number[];
 }): Promise<any> => {
   const response = await api.post('/employees/hr/managers/', data);
   return response.data;

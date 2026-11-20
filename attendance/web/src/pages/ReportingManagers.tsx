@@ -35,6 +35,8 @@ interface ReportingManager {
   branch_names?: string[];
   company_id?: number;
   company_name?: string;
+  company_ids?: number[];
+  company_names?: string[];
   is_all_companies?: boolean;
   is_active: boolean;
   account_status: string;
@@ -80,6 +82,8 @@ const ReportingManagers: React.FC = () => {
     username: '',
     password: '',
     status: 'ACTIVE',
+    companyScope: 'ALL' as 'ALL' | 'SPECIFIC',
+    companyIds: [] as number[],
     companyId: 'ALL',
     branchId: '',
     branchIds: [] as number[],
@@ -157,11 +161,14 @@ const ReportingManagers: React.FC = () => {
   // ---------------------------------------------------------------------------
   const handleOpenAdd = () => {
     const defaultCompany = user?.role === 'SUPER_ADMIN' ? 'ALL' : String(user?.company_id || 'ALL');
+    const defaultCompIds = user?.role === 'SUPER_ADMIN' ? [] : (user?.company_id ? [user.company_id] : []);
     setFormData({
       fullName: '',
       username: '',
       password: '',
       status: 'ACTIVE',
+      companyScope: user?.role === 'SUPER_ADMIN' ? 'ALL' : 'SPECIFIC',
+      companyIds: defaultCompIds,
       companyId: defaultCompany,
       branchId: '',
       branchIds: [],
@@ -194,14 +201,16 @@ const ReportingManagers: React.FC = () => {
 
     try {
       setFormLoading(true);
+      const isAll = formData.companyScope === 'ALL';
       const payload: any = {
         full_name: name,
         username: uname,
         password: pwd,
         status: formData.status,
-        company_id: formData.companyId,
+        company_id: isAll ? 'ALL' : (formData.companyIds[0] ? String(formData.companyIds[0]) : 'ALL'),
+        company_ids: isAll ? [] : formData.companyIds,
       };
-      if (formData.companyId !== 'ALL') {
+      if (!isAll && formData.companyIds.length > 0) {
         if (formData.branchIds && formData.branchIds.length > 0) {
           payload.branch_ids = formData.branchIds;
           payload.branch_id = formData.branchIds[0];
@@ -252,6 +261,11 @@ const ReportingManagers: React.FC = () => {
   // ---------------------------------------------------------------------------
   const handleOpenEdit = (manager: ReportingManager) => {
     setSelectedManager(manager);
+    const existingCompIds = manager.company_ids && manager.company_ids.length > 0
+      ? manager.company_ids
+      : (manager.company_id ? [manager.company_id] : []);
+
+    const isAll = manager.is_all_companies || existingCompIds.length === 0;
     const mgrCompany = manager.company_id ? String(manager.company_id) : 'ALL';
     const initBranchIds = manager.branch_ids && manager.branch_ids.length > 0
       ? manager.branch_ids
@@ -262,6 +276,8 @@ const ReportingManagers: React.FC = () => {
       username: manager.username || '',
       password: '',
       status: (manager.status && manager.is_active) ? 'ACTIVE' : 'INACTIVE',
+      companyScope: isAll ? 'ALL' : 'SPECIFIC',
+      companyIds: existingCompIds,
       companyId: mgrCompany,
       branchId: manager.branch ? String(manager.branch) : '',
       branchIds: initBranchIds,
@@ -295,16 +311,18 @@ const ReportingManagers: React.FC = () => {
 
     try {
       setFormLoading(true);
+      const isAll = formData.companyScope === 'ALL';
       const payload: any = {
         full_name: name,
         username: uname,
         status: formData.status,
-        company_id: formData.companyId,
+        company_id: isAll ? 'ALL' : (formData.companyIds[0] ? String(formData.companyIds[0]) : 'ALL'),
+        company_ids: isAll ? [] : formData.companyIds,
       };
       if (pwd) {
         payload.password = pwd;
       }
-      if (formData.companyId === 'ALL') {
+      if (isAll) {
         payload.branch_id = 0; // Clear branch
         payload.branch_ids = [];
       } else if (formData.branchIds && formData.branchIds.length > 0) {
@@ -564,28 +582,90 @@ const ReportingManagers: React.FC = () => {
                   </div>
                 )}
 
-                {/* COMPANY SELECTION (ALL COMPANIES OR SPECIFIC COMPANY) */}
+                {/* COMPANY SELECTION (ALL COMPANIES OR MULTIPLE SPECIFIC COMPANIES) */}
                 <div className="rm-form-group">
-                  <label>Company *</label>
+                  <label>Company Scope *</label>
                   {user?.role === 'SUPER_ADMIN' ? (
-                    <CustomSelect
-                      value={formData.companyId}
-                      onChange={(val) => {
-                        setFormData({
-                          ...formData,
-                          companyId: val,
-                          branchId: '', // Reset branch when company changes
-                        });
-                      }}
-                      options={[
-                        { value: 'ALL', label: 'All Companies (Global Access)' },
-                        ...companies.map((c) => ({
-                          value: String(c.id),
-                          label: c.name,
-                        })),
-                      ]}
-                      placeholder="Select company"
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', gap: '16px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
+                          <input
+                            type="radio"
+                            name="add-company-scope"
+                            checked={formData.companyScope === 'ALL'}
+                            onChange={() => setFormData({ ...formData, companyScope: 'ALL', companyIds: [], branchIds: [], branchId: '' })}
+                            style={{ accentColor: '#22C55E' }}
+                          />
+                          All Companies (Global Access)
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
+                          <input
+                            type="radio"
+                            name="add-company-scope"
+                            checked={formData.companyScope === 'SPECIFIC'}
+                            onChange={() => {
+                              const initial = companies.length > 0 ? [companies[0].id] : [];
+                              setFormData({ ...formData, companyScope: 'SPECIFIC', companyIds: initial, branchIds: [], branchId: '' });
+                            }}
+                            style={{ accentColor: '#22C55E' }}
+                          />
+                          Specific Company / Companies (1, 2, or 3+)
+                        </label>
+                      </div>
+
+                      {formData.companyScope === 'SPECIFIC' && (
+                        <div style={{
+                          maxHeight: '140px',
+                          overflowY: 'auto',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          background: '#ffffff',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px'
+                        }}>
+                          {companies.map((c) => {
+                            const isChecked = formData.companyIds.includes(c.id);
+                            return (
+                              <label
+                                key={c.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  fontSize: '13px',
+                                  color: '#334155',
+                                  cursor: 'pointer',
+                                  userSelect: 'none'
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      const next = [...formData.companyIds, c.id];
+                                      setFormData({ ...formData, companyIds: next });
+                                    } else {
+                                      const next = formData.companyIds.filter((id) => id !== c.id);
+                                      setFormData({ ...formData, companyIds: next });
+                                    }
+                                  }}
+                                  style={{ accentColor: '#22C55E', width: 16, height: 16 }}
+                                />
+                                <span>{c.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {formData.companyScope === 'SPECIFIC' && (
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          Selected {formData.companyIds.length} company/companies. Manager will have access to these selected companies.
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <input
                       type="text"
@@ -600,9 +680,9 @@ const ReportingManagers: React.FC = () => {
                 {/* BRANCH SELECTION (ALLOW MULTIPLE BRANCHES) */}
                 <div className="rm-form-group">
                   <label>
-                    Branch(es) {formData.companyId === 'ALL' ? '(All Branches Covered)' : '*'}
+                    Branch(es) {formData.companyScope === 'ALL' ? '(All Branches Covered)' : '(Optional across selected companies)'}
                   </label>
-                  {formData.companyId === 'ALL' ? (
+                  {formData.companyScope === 'ALL' ? (
                     <input
                       type="text"
                       className="rm-input"
@@ -626,8 +706,8 @@ const ReportingManagers: React.FC = () => {
                         {branches
                           .filter(
                             (b) =>
-                              !b.company_id ||
-                              String(b.company_id) === formData.companyId
+                              formData.companyIds.length === 0 ||
+                              (b.company_id && formData.companyIds.includes(b.company_id))
                           )
                           .map((b) => {
                             const isChecked = formData.branchIds.includes(b.id);
@@ -670,16 +750,16 @@ const ReportingManagers: React.FC = () => {
                               </label>
                             );
                           })}
-                        {branches.filter((b) => !b.company_id || String(b.company_id) === formData.companyId).length === 0 && (
+                        {branches.filter((b) => formData.companyIds.length === 0 || (b.company_id && formData.companyIds.includes(b.company_id))).length === 0 && (
                           <span style={{ fontSize: '13px', color: '#94a3b8' }}>
-                            {branchesLoading ? 'Loading branches...' : 'No branches available for this company.'}
+                            {branchesLoading ? 'Loading branches...' : 'No branches available for selected companies.'}
                           </span>
                         )}
                       </div>
                       <span style={{ fontSize: '12px', color: '#64748b' }}>
                         {formData.branchIds.length > 0
                           ? `Selected: ${formData.branchIds.length} branch(es)`
-                          : 'Select one or more branches for this manager.'}
+                          : 'Leave empty for all branches under selected companies, or select specific branches.'}
                       </span>
                     </div>
                   )}
@@ -911,28 +991,90 @@ const ReportingManagers: React.FC = () => {
                   </div>
                 )}
 
-                {/* COMPANY SELECTION (ALL COMPANIES OR SPECIFIC COMPANY) */}
+                {/* COMPANY SELECTION (ALL COMPANIES OR MULTIPLE SPECIFIC COMPANIES) */}
                 <div className="rm-form-group">
-                  <label>Company *</label>
+                  <label>Company Scope *</label>
                   {user?.role === 'SUPER_ADMIN' ? (
-                    <CustomSelect
-                      value={formData.companyId}
-                      onChange={(val) => {
-                        setFormData({
-                          ...formData,
-                          companyId: val,
-                          branchId: '', // Reset branch when company changes
-                        });
-                      }}
-                      options={[
-                        { value: 'ALL', label: 'All Companies (Global Access)' },
-                        ...companies.map((c) => ({
-                          value: String(c.id),
-                          label: c.name,
-                        })),
-                      ]}
-                      placeholder="Select company"
-                    />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div style={{ display: 'flex', gap: '16px' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
+                          <input
+                            type="radio"
+                            name="add-company-scope"
+                            checked={formData.companyScope === 'ALL'}
+                            onChange={() => setFormData({ ...formData, companyScope: 'ALL', companyIds: [], branchIds: [], branchId: '' })}
+                            style={{ accentColor: '#22C55E' }}
+                          />
+                          All Companies (Global Access)
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}>
+                          <input
+                            type="radio"
+                            name="add-company-scope"
+                            checked={formData.companyScope === 'SPECIFIC'}
+                            onChange={() => {
+                              const initial = companies.length > 0 ? [companies[0].id] : [];
+                              setFormData({ ...formData, companyScope: 'SPECIFIC', companyIds: initial, branchIds: [], branchId: '' });
+                            }}
+                            style={{ accentColor: '#22C55E' }}
+                          />
+                          Specific Company / Companies (1, 2, or 3+)
+                        </label>
+                      </div>
+
+                      {formData.companyScope === 'SPECIFIC' && (
+                        <div style={{
+                          maxHeight: '140px',
+                          overflowY: 'auto',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '8px 12px',
+                          background: '#ffffff',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '6px'
+                        }}>
+                          {companies.map((c) => {
+                            const isChecked = formData.companyIds.includes(c.id);
+                            return (
+                              <label
+                                key={c.id}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  fontSize: '13px',
+                                  color: '#334155',
+                                  cursor: 'pointer',
+                                  userSelect: 'none'
+                                }}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      const next = [...formData.companyIds, c.id];
+                                      setFormData({ ...formData, companyIds: next });
+                                    } else {
+                                      const next = formData.companyIds.filter((id) => id !== c.id);
+                                      setFormData({ ...formData, companyIds: next });
+                                    }
+                                  }}
+                                  style={{ accentColor: '#22C55E', width: 16, height: 16 }}
+                                />
+                                <span>{c.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {formData.companyScope === 'SPECIFIC' && (
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          Selected {formData.companyIds.length} company/companies. Manager will have access to these selected companies.
+                        </span>
+                      )}
+                    </div>
                   ) : (
                     <input
                       type="text"
@@ -947,9 +1089,9 @@ const ReportingManagers: React.FC = () => {
                 {/* BRANCH SELECTION (ALLOW MULTIPLE BRANCHES) */}
                 <div className="rm-form-group">
                   <label>
-                    Branch(es) {formData.companyId === 'ALL' ? '(All Branches Covered)' : '*'}
+                    Branch(es) {formData.companyScope === 'ALL' ? '(All Branches Covered)' : '(Optional across selected companies)'}
                   </label>
-                  {formData.companyId === 'ALL' ? (
+                  {formData.companyScope === 'ALL' ? (
                     <input
                       type="text"
                       className="rm-input"
@@ -973,8 +1115,8 @@ const ReportingManagers: React.FC = () => {
                         {branches
                           .filter(
                             (b) =>
-                              !b.company_id ||
-                              String(b.company_id) === formData.companyId
+                              formData.companyIds.length === 0 ||
+                              (b.company_id && formData.companyIds.includes(b.company_id))
                           )
                           .map((b) => {
                             const isChecked = formData.branchIds.includes(b.id);
@@ -1017,16 +1159,16 @@ const ReportingManagers: React.FC = () => {
                               </label>
                             );
                           })}
-                        {branches.filter((b) => !b.company_id || String(b.company_id) === formData.companyId).length === 0 && (
+                        {branches.filter((b) => formData.companyIds.length === 0 || (b.company_id && formData.companyIds.includes(b.company_id))).length === 0 && (
                           <span style={{ fontSize: '13px', color: '#94a3b8' }}>
-                            {branchesLoading ? 'Loading branches...' : 'No branches available for this company.'}
+                            {branchesLoading ? 'Loading branches...' : 'No branches available for selected companies.'}
                           </span>
                         )}
                       </div>
                       <span style={{ fontSize: '12px', color: '#64748b' }}>
                         {formData.branchIds.length > 0
                           ? `Selected: ${formData.branchIds.length} branch(es)`
-                          : 'Select one or more branches for this manager.'}
+                          : 'Leave empty for all branches under selected companies, or select specific branches.'}
                       </span>
                     </div>
                   )}
