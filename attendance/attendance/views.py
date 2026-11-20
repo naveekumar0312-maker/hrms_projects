@@ -2,7 +2,7 @@ from rest_framework import views, viewsets, status, permissions
 from rest_framework.response import Response
 from django.utils import timezone
 from django.conf import settings
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from employees.models import Employee
 from .models import (
     Attendance,
