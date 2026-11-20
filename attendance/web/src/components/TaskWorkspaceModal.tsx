@@ -820,6 +820,14 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                   }}>
                     {description || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No description provided.</span>}
                   </div>
+                  {(taskData?.voice_note_url || voiceNoteUrl) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0', marginTop: '10px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        🎙️ Voice Note / Audio:
+                      </span>
+                      <audio controls src={taskData?.voice_note_url || voiceNoteUrl || undefined} style={{ height: '32px', flex: 1 }} />
+                    </div>
+                  )}
                 </div>
 
                 {/* 3. ASSIGNED EMPLOYEES */}
@@ -1086,15 +1094,57 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                   </div>
 
                   <div className="task-field-group">
-                    <label className="task-field-label">Description</label>
+                    <div className="task-field-label-row">
+                      <label className="task-field-label">Description</label>
+                      {!isEmployee && (
+                        <button
+                          type="button"
+                          className={`task-voice-btn ${isRecordingVoiceNote ? 'recording' : ''}`}
+                          onClick={startVoiceInput}
+                          title={isRecordingVoiceNote ? "Click to Stop Voice Note" : "Record Voice Note"}
+                        >
+                          {isRecordingVoiceNote ? (
+                            <>
+                              <span className="task-voice-dot" />
+                              <span>Recording Voice Note... (Click to stop)</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mic size={12} />
+                              <span>Record Voice Note</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
                     <textarea
                       className="task-textarea-modern"
                       rows={4}
-                      placeholder="Provide full context, technical specifications, and expected deliverables..."
+                      placeholder="Provide full context, technical specifications, and expected deliverables (or record a voice note)..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       disabled={isEmployee}
                     />
+                    {(voiceNoteUrl || taskData?.voice_note_url) && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0fdf4', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', marginTop: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534' }}>🎙️ Voice Note:</span>
+                          <audio controls src={voiceNoteUrl || taskData?.voice_note_url} style={{ height: '30px', flex: 1 }} />
+                        </div>
+                        <button
+                          type="button"
+                          className="task-tool-btn"
+                          title="Remove Voice Note"
+                          style={{ marginLeft: '10px' }}
+                          onClick={() => {
+                            setVoiceNoteBlob(null);
+                            setVoiceNoteUrl(null);
+                          }}
+                        >
+                          <X size={14} color="#ef4444" />
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* ASSIGNED EMPLOYEES SELECTION WITH COMPANY FILTER */}

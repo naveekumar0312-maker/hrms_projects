@@ -1,4 +1,4 @@
-﻿import { api } from '../context/AuthContext';
+import { api } from '../context/AuthContext';
 
 export type WFHStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
