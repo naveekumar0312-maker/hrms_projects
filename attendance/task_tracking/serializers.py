@@ -272,7 +272,7 @@ class TaskCreateUpdateSerializer(serializers.ModelSerializer):
         elif assigned_to:
             employees_to_check = [assigned_to]
 
-        if employees_to_check and (is_create or 'assigned_employee_ids' in attrs or 'assigned_to' in attrs):
+        if is_create and employees_to_check:
             for target_emp in employees_to_check:
                 # 2. Prevent cross-company assignment (except for Global Manager who manages all companies)
                 if not is_global_mgr and user.company_id and target_emp.branch and target_emp.branch.company_id != user.company_id:
