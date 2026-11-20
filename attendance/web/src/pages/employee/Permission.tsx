@@ -112,6 +112,18 @@ const TimePicker12Hour: React.FC<TimePicker12HourProps> = ({
     </div>
   );
 };
+const formatPermissionTime = (time?: string | null): string => {
+  if (!time) return '--';
+  const match = time.match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return time;
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  if (hours > 23 || hours < 0) return time;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const displayHour = hours % 12 || 12;
+  return `${String(displayHour).padStart(2, '0')}:${minutes} ${period}`;
+};
+
 const formatDate = (date: string) => {
   if (!date) return '-';
 
@@ -1145,8 +1157,8 @@ const Permission: React.FC = () => {
               <>
                 <h2>Permission Details</h2>
                 <p><strong>Date:</strong> {formatDate(viewPermission.date)}</p>
-                <p><strong>Start Time:</strong> {viewPermission.start_time || '--'}</p>
-                <p><strong>End Time:</strong> {viewPermission.end_time || '--'}</p>
+                <p><strong>Start Time:</strong> {formatPermissionTime(viewPermission.start_time)}</p>
+                <p><strong>End Time:</strong> {formatPermissionTime(viewPermission.end_time)}</p>
                 <p><strong>Duration:</strong> {viewPermission.duration_minutes} minutes</p>
                 <p><strong>Reason:</strong> {viewPermission.reason}</p>
                 <p><strong>Status:</strong> {viewPermission.status}</p>
