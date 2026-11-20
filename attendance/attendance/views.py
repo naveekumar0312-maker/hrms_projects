@@ -34,6 +34,30 @@ from notifications.services import (
     notify_employee_request_decision,
 )
 
+
+def get_manager_scope_employee_ids(emp):
+    """
+    Returns queryset or list of Employee IDs that strictly fall under this manager:
+    1. If manager has managed_branches: only employees in those branches
+    2. Else if manager has a branch assigned: only employees in that branch
+    3. Else if manager has managed_companies: only employees in those companies
+    4. Else if manager has a user company (and NO branch): only employees in that company
+    5. Else (Global): None (meaning all employees across all companies)
+    """
+    if not emp:
+        return []
+    managed_branches = emp.managed_branches.all()
+    if managed_branches.exists():
+        return Employee.objects.filter(branch__in=managed_branches).values_list('id', flat=True)
+    if emp.branch_id:
+        return Employee.objects.filter(branch_id=emp.branch_id).values_list('id', flat=True)
+    managed_companies = emp.managed_companies.all()
+    if managed_companies.exists():
+        return Employee.objects.filter(branch__company__in=managed_companies).values_list('id', flat=True)
+    if emp.user and emp.user.company_id:
+        return Employee.objects.filter(branch__company_id=emp.user.company_id).values_list('id', flat=True)
+    return None  # Global Access Manager
+
 class IsAdminUser(permissions.BasePermission):
     def has_permission(self, request, view):
         user = request.user
@@ -295,28 +319,20 @@ class AttendanceViewSet(viewsets.ModelViewSet):
             if scope_param == 'my':
                 queryset = queryset.filter(employee=emp)
             else:
-                is_global = (user.role == 'REPORTING_MANAGER' and emp.branch is None and user.company_id is None)
-                if is_global:
+                allowed_ids = get_manager_scope_employee_ids(emp)
+                if allowed_ids is not None:
+                    # Strict scoping: only employees within manager's branch/companies
+                    queryset = queryset.filter(employee_id__in=allowed_ids, employee__status=True)
+                else:
                     # Global Access Manager: access attendance of all employees across all companies
                     queryset = queryset.filter(employee__status=True)
-                    company_id = self.request.query_params.get('company')
-                    branch_id = self.request.query_params.get('branch')
-                    if company_id:
-                        queryset = queryset.filter(employee__branch__company_id=company_id)
-                    if branch_id:
-                        queryset = queryset.filter(employee__branch_id=branch_id)
-                elif user.company_id:
-                    # Company-level Manager
-                    queryset = queryset.filter(employee__branch__company_id=user.company_id, employee__status=True)
-                    branch_id = self.request.query_params.get('branch')
-                    if branch_id:
-                        queryset = queryset.filter(employee__branch_id=branch_id)
-                elif emp.branch_id:
-                    # Branch-level Manager: all employees in this branch or direct reports
-                    queryset = queryset.filter(employee__branch_id=emp.branch_id, employee__status=True)
-                else:
-                    rep_ids = list(emp.direct_reports.filter(status=True).values_list('id', flat=True))
-                    queryset = queryset.filter(employee_id__in=rep_ids)
+
+                company_id = self.request.query_params.get('company')
+                branch_id = self.request.query_params.get('branch')
+                if company_id:
+                    queryset = queryset.filter(employee__branch__company_id=company_id)
+                if branch_id:
+                    queryset = queryset.filter(employee__branch_id=branch_id)
 
         elif hasattr(user, 'employee_profile'):
             # Regular employees can only access their own attendance
@@ -406,23 +422,12 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         elif user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             mgr_emp = getattr(user, 'employee_profile', None)
             if mgr_emp:
-                is_global = (user.role == 'REPORTING_MANAGER' and mgr_emp.branch is None and user.company_id is None)
-                if is_global:
-                    if company_id:
-                        approved_leaves = approved_leaves.filter(
-                            employee__branch__company_id=company_id
-                        )
-                elif user.company_id:
+                allowed_ids = get_manager_scope_employee_ids(mgr_emp)
+                if allowed_ids is not None:
+                    approved_leaves = approved_leaves.filter(employee_id__in=allowed_ids)
+                elif company_id:
                     approved_leaves = approved_leaves.filter(
-                        employee__branch__company_id=user.company_id
-                    )
-                elif mgr_emp.branch_id:
-                    approved_leaves = approved_leaves.filter(
-                        employee__branch_id=mgr_emp.branch_id
-                    )
-                else:
-                    approved_leaves = approved_leaves.filter(
-                        employee__reporting_manager=mgr_emp
+                        employee__branch__company_id=company_id
                     )
             else:
                 approved_leaves = approved_leaves.none()
@@ -633,16 +638,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         elif request.user.role in ('REPORTING_MANAGER', 'TEAM_LEADER'):
             mgr_emp = getattr(request.user, 'employee_profile', None)
             if mgr_emp:
-                is_global = (request.user.role == 'REPORTING_MANAGER' and mgr_emp.branch is None and request.user.company_id is None)
-                if is_global:
-                    if company_id:
-                        employee_qs = employee_qs.filter(branch__company_id=company_id)
-                elif request.user.company_id:
-                    employee_qs = employee_qs.filter(branch__company_id=request.user.company_id, status=True)
-                elif mgr_emp.branch_id:
-                    employee_qs = employee_qs.filter(branch_id=mgr_emp.branch_id, status=True)
-                else:
-                    employee_qs = employee_qs.filter(reporting_manager=mgr_emp)
+                allowed_ids = get_manager_scope_employee_ids(mgr_emp)
+                if allowed_ids is not None:
+                    employee_qs = employee_qs.filter(id__in=allowed_ids, status=True)
+                elif company_id:
+                    employee_qs = employee_qs.filter(branch__company_id=company_id)
             else:
                 employee_qs = employee_qs.none()
         elif request.user.role in ('SUPER_ADMIN', 'ADMIN'):
@@ -2496,11 +2496,8 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
                     raise ValidationError("Only pending requests can be edited or deleted.")
                 return
             if emp:
-                if emp.branch_id and instance.employee.branch_id == emp.branch_id:
-                    return
-                if user.company_id and instance.employee.branch and instance.employee.branch.company_id == user.company_id:
-                    return
-                if not emp.branch_id and not user.company_id:
+                allowed_ids = get_manager_scope_employee_ids(emp)
+                if allowed_ids is None or instance.employee_id in allowed_ids:
                     return
             raise PermissionDenied("You cannot modify requests outside your scope.")
 
@@ -2585,10 +2582,9 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
             else:
                 if not emp:
                     return queryset.none()
-                if emp.branch_id:
-                    queryset = queryset.filter(employee__branch_id=emp.branch_id)
-                elif user.company_id:
-                    queryset = queryset.filter(employee__branch__company_id=user.company_id)
+                allowed_ids = get_manager_scope_employee_ids(emp)
+                if allowed_ids is not None:
+                    queryset = queryset.filter(employee_id__in=allowed_ids)
                 else:
                     # Global Access Manager: all companies
                     pass
@@ -2842,11 +2838,8 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                     raise ValidationError("Only pending requests can be edited or deleted.")
                 return
             if emp:
-                if emp.branch_id and instance.employee.branch_id == emp.branch_id:
-                    return
-                if user.company_id and instance.employee.branch and instance.employee.branch.company_id == user.company_id:
-                    return
-                if not emp.branch_id and not user.company_id:
+                allowed_ids = get_manager_scope_employee_ids(emp)
+                if allowed_ids is None or instance.employee_id in allowed_ids:
                     return
             raise PermissionDenied("You cannot modify requests outside your scope.")
 
@@ -2931,10 +2924,9 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             else:
                 if not emp:
                     return queryset.none()
-                if emp.branch_id:
-                    queryset = queryset.filter(employee__branch_id=emp.branch_id)
-                elif user.company_id:
-                    queryset = queryset.filter(employee__branch__company_id=user.company_id)
+                allowed_ids = get_manager_scope_employee_ids(emp)
+                if allowed_ids is not None:
+                    queryset = queryset.filter(employee_id__in=allowed_ids)
                 else:
                     # Global Access Manager: all companies
                     pass
@@ -3161,10 +3153,9 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
             else:
                 if not emp:
                     return queryset.none()
-                if emp.branch_id:
-                    queryset = queryset.filter(employee__branch_id=emp.branch_id)
-                elif user.company_id:
-                    queryset = queryset.filter(employee__branch__company_id=user.company_id)
+                allowed_ids = get_manager_scope_employee_ids(emp)
+                if allowed_ids is not None:
+                    queryset = queryset.filter(employee_id__in=allowed_ids)
                 else:
                     # Global Access Manager: all companies
                     pass
@@ -3228,11 +3219,8 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
                     raise ValidationError('Only pending WFH requests can be edited or deleted.')
                 return
             if emp:
-                if emp.branch_id and instance.employee.branch_id == emp.branch_id:
-                    return
-                if user.company_id and instance.employee.branch and instance.employee.branch.company_id == user.company_id:
-                    return
-                if not emp.branch_id and not user.company_id:
+                allowed_ids = get_manager_scope_employee_ids(emp)
+                if allowed_ids is None or instance.employee_id in allowed_ids:
                     return
             raise PermissionDenied('You cannot modify requests outside your scope.')
 
