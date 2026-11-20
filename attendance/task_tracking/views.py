@@ -367,24 +367,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         task = self.get_object()
         check_user_task_access(task, user)
 
-        # Employees can only update task status (or add completion notes)
-        if user.role == 'EMPLOYEE':
-            for field, new_val in serializer.validated_data.items():
-                if field in ('status',):
-                    continue
-                current_val = getattr(task, field, None)
-                if hasattr(current_val, 'pk'):
-                    current_val = current_val.pk
-                if hasattr(new_val, 'pk'):
-                    new_val = new_val.pk
-                if current_val != new_val:
-                    raise PermissionDenied("Employees can only update task status.")
-        elif user.role in ('REPORTING_MANAGER', 'MANAGER', 'TEAM_LEADER'):
-            # Managers and Team Leaders cannot change the execution status of active (published) tasks.
-            # Only assigned employees update task status as they work.
-            if not task.is_draft and 'status' in serializer.validated_data:
-                serializer.validated_data.pop('status', None)
-
+        # Allow assignee (employee or manager assigned as worker) or creator/manager/admin to update status and task fields
         old_status = task.status
         old_is_draft = task.is_draft
 

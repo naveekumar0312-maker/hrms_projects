@@ -52,26 +52,6 @@ const getPriorityBadgeStyle = (p: string) => {
   }
 };
 
-const getStatusBadgeStyle = (s: string) => {
-  switch (s) {
-    case 'PENDING':
-    case 'TODO':
-      return { color: '#d97706', bg: '#fef3c7', border: '#fde68a', label: 'To Do (Pending)' };
-    case 'IN_PROGRESS':
-      return { color: '#0284c7', bg: '#e0f2fe', border: '#bae6fd', label: 'In Progress' };
-    case 'COMPLETED':
-      return { color: '#16a34a', bg: '#dcfce7', border: '#bbf7d0', label: 'Completed' };
-    case 'ON_HOLD':
-      return { color: '#64748b', bg: '#f1f5f9', border: '#e2e8f0', label: 'On Hold' };
-    case 'CANCELLED':
-      return { color: '#991b1b', bg: '#fee2e2', border: '#fca5a5', label: 'Cancelled' };
-    case 'OVERDUE':
-      return { color: '#dc2626', bg: '#fee2e2', border: '#fca5a5', label: 'Overdue' };
-    default:
-      return { color: '#475569', bg: '#f1f5f9', border: '#cbd5e1', label: s?.replace(/_/g, ' ') || 'Pending' };
-  }
-};
-
 export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   taskId,
   initialMode,
@@ -372,9 +352,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
         formData.append('voice_note', effectiveVoiceBlob, `voice_note_${Date.now()}.${ext}`);
 
         if (taskId) {
-          if (!isEmployee) {
-            formData.delete('status');
-          }
           await api.patch(`/tasks-module/tasks/${taskId}/`, formData);
           setMode('view');
         } else {
@@ -386,10 +363,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
         }
       } else {
         if (taskId) {
-          if (!isEmployee) {
-            // Managers cannot alter task status on published tasks
-            delete payload.status;
-          }
           await api.patch(`/tasks-module/tasks/${taskId}/`, payload);
           setMode('view');
         } else {
@@ -711,7 +684,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {taskId && !isEmployee && mode === 'view' && (
+            {taskId && mode === 'view' && (
               <button
                 type="button"
                 className="rm-btn rm-btn-secondary"
@@ -723,7 +696,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                 <span>Edit</span>
               </button>
             )}
-            {taskId && !isEmployee && mode === 'edit' && (
+            {taskId && mode === 'edit' && (
               <button
                 type="button"
                 className="rm-btn rm-btn-secondary"
@@ -950,60 +923,30 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                     <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
                       Status
                     </span>
-                    {isEmployee ? (
-                      /* Assigned employee can update their task status */
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <CustomSelect
-                          value={status}
-                          onChange={(val) => setStatus(val)}
-                          direction="up"
-                          options={[
-                            { value: 'PENDING', label: 'To Do (Pending)' },
-                            { value: 'IN_PROGRESS', label: 'In Progress' },
-                            { value: 'COMPLETED', label: 'Completed' },
-                            { value: 'ON_HOLD', label: 'On Hold' },
-                            { value: 'CANCELLED', label: 'Cancelled' },
-                          ]}
-                          placeholder="Select status"
-                        />
-                        <button
-                          type="button"
-                          className="rm-btn rm-btn-primary"
-                          style={{ padding: '6px 12px', fontSize: '12px' }}
-                          onClick={() => handleSaveTask(false)}
-                          disabled={submitting}
-                        >
-                          {submitting ? 'Updating...' : 'Update Status'}
-                        </button>
-                      </div>
-                    ) : (
-                      /* Managers cannot change active status - only view */
-                      <div>
-                        {(() => {
-                          const sStyle = getStatusBadgeStyle(status);
-                          return (
-                            <span
-                              style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                background: sStyle.bg,
-                                color: sStyle.color,
-                                border: `1px solid ${sStyle.border}`,
-                                padding: '4px 12px',
-                                borderRadius: '6px',
-                                fontSize: '12px',
-                                fontWeight: 700,
-                              }}
-                            >
-                              {sStyle.label}
-                            </span>
-                          );
-                        })()}
-                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px' }}>
-                          Updated by assigned employee
-                        </div>
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <CustomSelect
+                        value={status}
+                        onChange={(val) => setStatus(val)}
+                        direction="up"
+                        options={[
+                          { value: 'PENDING', label: 'To Do (Pending)' },
+                          { value: 'IN_PROGRESS', label: 'In Progress' },
+                          { value: 'COMPLETED', label: 'Completed' },
+                          { value: 'ON_HOLD', label: 'On Hold' },
+                          { value: 'CANCELLED', label: 'Cancelled' },
+                        ]}
+                        placeholder="Select status"
+                      />
+                      <button
+                        type="button"
+                        className="rm-btn rm-btn-primary"
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                        onClick={() => handleSaveTask(false)}
+                        disabled={submitting}
+                      >
+                        {submitting ? 'Updating...' : 'Update Status'}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1068,7 +1011,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                       placeholder="Enter task title..."
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      disabled={isEmployee}
                       required
                     />
                     {(voiceNoteUrl || taskData?.voice_note_url) && (
@@ -1096,26 +1038,24 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                   <div className="task-field-group">
                     <div className="task-field-label-row">
                       <label className="task-field-label">Description</label>
-                      {!isEmployee && (
-                        <button
-                          type="button"
-                          className={`task-voice-btn ${isRecordingVoiceNote ? 'recording' : ''}`}
-                          onClick={startVoiceInput}
-                          title={isRecordingVoiceNote ? "Click to Stop Voice Note" : "Record Voice Note"}
-                        >
-                          {isRecordingVoiceNote ? (
-                            <>
-                              <span className="task-voice-dot" />
-                              <span>Recording Voice Note... (Click to stop)</span>
-                            </>
-                          ) : (
-                            <>
-                              <Mic size={12} />
-                              <span>Record Voice Note</span>
-                            </>
-                          )}
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        className={`task-voice-btn ${isRecordingVoiceNote ? 'recording' : ''}`}
+                        onClick={startVoiceInput}
+                        title={isRecordingVoiceNote ? "Click to Stop Voice Note" : "Record Voice Note"}
+                      >
+                        {isRecordingVoiceNote ? (
+                          <>
+                            <span className="task-voice-dot" />
+                            <span>Recording Voice Note... (Click to stop)</span>
+                          </>
+                        ) : (
+                          <>
+                            <Mic size={12} />
+                            <span>Record Voice Note</span>
+                          </>
+                        )}
+                      </button>
                     </div>
                     <textarea
                       className="task-textarea-modern"
@@ -1123,7 +1063,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                       placeholder="Provide full context, technical specifications, and expected deliverables (or record a voice note)..."
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      disabled={isEmployee}
                     />
                     {(voiceNoteUrl || taskData?.voice_note_url) && (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0fdf4', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', marginTop: '10px' }}>
@@ -1187,7 +1126,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                         setAssignedEmployeeIds(ids);
                         setAssignedTo(ids.length > 0 ? String(ids[0]) : '');
                       }}
-                      disabled={isEmployee}
                       placeholder={
                         selectedCompanyFilter === 'ALL'
                           ? "Search and select employees across companies..."
@@ -1206,7 +1144,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                         value={startDate}
                         onChange={(d) => setStartDate(d)}
                         placeholder="Select started date"
-                        disabled={isEmployee}
                       />
                     </div>
 
@@ -1217,7 +1154,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                         minDate={startDate || undefined}
                         onChange={(d) => setDueDate(d)}
                         placeholder="Select ended date"
-                        disabled={isEmployee}
                       />
                     </div>
                   </div>
@@ -1226,33 +1162,22 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                 {/* C. STATUS & PRIORITY DROPDOWNS */}
                 <div className="task-form-section">
                   <div className="task-controls-grid">
-                    {/* Status Dropdown: Restricted for Manager */}
+                    {/* Status Dropdown: Editable by Manager, Assignee, and Admin */}
                     <div className="task-field-group">
                       <label className="task-field-label">Status</label>
-                      {!isEmployee && taskId ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
-                            {status.replace(/_/g, ' ')}
-                          </span>
-                          <span style={{ fontSize: '11px', color: '#94a3b8' }}>
-                            (Updated by employee)
-                          </span>
-                        </div>
-                      ) : (
-                        <CustomSelect
-                          value={status}
-                          onChange={(val) => setStatus(val)}
-                          direction="up"
-                          options={[
-                            { value: 'PENDING', label: 'To Do (Pending)' },
-                            { value: 'IN_PROGRESS', label: 'In Progress' },
-                            { value: 'COMPLETED', label: 'Completed' },
-                            { value: 'ON_HOLD', label: 'On Hold' },
-                            { value: 'CANCELLED', label: 'Cancelled' },
-                          ]}
-                          placeholder="Select status"
-                        />
-                      )}
+                      <CustomSelect
+                        value={status}
+                        onChange={(val) => setStatus(val)}
+                        direction="up"
+                        options={[
+                          { value: 'PENDING', label: 'To Do (Pending)' },
+                          { value: 'IN_PROGRESS', label: 'In Progress' },
+                          { value: 'COMPLETED', label: 'Completed' },
+                          { value: 'ON_HOLD', label: 'On Hold' },
+                          { value: 'CANCELLED', label: 'Cancelled' },
+                        ]}
+                        placeholder="Select status"
+                      />
                     </div>
 
                     {/* Modern Priority Dropdown with Low: Green, Medium: Yellow, High: Purple, Urgent: Red */}
@@ -1261,7 +1186,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                       <CustomSelect
                         value={priority}
                         onChange={(val) => setPriority(val as any)}
-                        disabled={isEmployee}
                         direction="up"
                         options={[
                           { value: 'LOW', label: 'Low', dotColor: '#15803d' },
