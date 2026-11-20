@@ -119,29 +119,50 @@ class TaskViewSet(viewsets.ModelViewSet):
         if user.role == 'REPORTING_MANAGER':
             if not emp:
                 return Task.objects.none()
+            
+            # Scope filter: if 'scope=my' or 'assigned_to_me', show only tasks assigned to the manager as worker
+            scope = self.request.query_params.get('scope')
+            if scope in ('my', 'assigned_to_me'):
+                return qs.filter(
+                    Q(assigned_to=emp) | Q(assigned_employees=emp),
+                    is_draft=False
+                ).distinct()
+
+            # Tasks created/assigned by this manager OR assigned to this manager OR assigned to their team
+            manager_filter = (
+                Q(assigned_by=user) |
+                Q(reporting_manager=emp) |
+                Q(assigned_to=emp) |
+                Q(assigned_employees=emp) |
+                Q(team_leader__reporting_manager=emp) |
+                Q(assigned_to__reporting_manager=emp) |
+                Q(assigned_to__team_leader__reporting_manager=emp) |
+                Q(assigned_employees__reporting_manager=emp) |
+                Q(assigned_employees__team_leader__reporting_manager=emp)
+            )
+
             is_global = (emp.branch is None and (user.company_id is None))
             if is_global:
                 company_param = self.request.query_params.get('company')
                 if company_param:
                     qs = qs.filter(company_id=company_param)
-                return qs.distinct()
+                return qs.filter(manager_filter).distinct()
             return qs.filter(
-                Q(company_id=user.company_id) & (
-                    Q(reporting_manager=emp) |
-                    Q(assigned_by=user) |
-                    Q(team_leader__reporting_manager=emp) |
-                    Q(assigned_to=emp) |
-                    Q(assigned_to__reporting_manager=emp) |
-                    Q(assigned_to__team_leader__reporting_manager=emp) |
-                    Q(assigned_employees=emp) |
-                    Q(assigned_employees__reporting_manager=emp) |
-                    Q(assigned_employees__team_leader__reporting_manager=emp)
-                )
+                Q(company_id=user.company_id) & manager_filter
             ).distinct()
 
         if user.role == 'TEAM_LEADER':
             if not emp:
                 return Task.objects.none()
+            
+            # Scope filter: if 'scope=my' or 'assigned_to_me', show only tasks assigned to the TL as worker
+            scope = self.request.query_params.get('scope')
+            if scope in ('my', 'assigned_to_me'):
+                return qs.filter(
+                    Q(assigned_to=emp) | Q(assigned_employees=emp),
+                    is_draft=False
+                ).distinct()
+
             tl_company_id = user.company_id or (emp.branch.company_id if emp.branch else None)
             return qs.filter(
                 Q(company_id=tl_company_id) & (
@@ -150,8 +171,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                     Q(assigned_to=emp) |
                     Q(assigned_to__team_leader=emp) |
                     Q(assigned_employees=emp) |
-                    Q(assigned_employees__team_leader=emp) |
-                    Q(company_id=tl_company_id)
+                    Q(assigned_employees__team_leader=emp)
                 )
             ).distinct()
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   ListTodo,
   Plus,
@@ -10,6 +10,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import api from '../../api';
+import { AuthContext } from '../../context/AuthContext';
 import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
 import { CustomSelect } from '../../components/CustomSelect';
 import { DeleteConfirmModal } from '../../components/DeleteConfirmModal';
@@ -53,11 +54,13 @@ interface TaskItem {
 }
 
 const TaskManager: React.FC = () => {
+  const { user } = useContext(AuthContext);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [priorityFilter, setPriorityFilter] = useState('ALL');
+  const [scopeFilter, setScopeFilter] = useState<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
 
   // Workspace Modal state
   const [showWorkspace, setShowWorkspace] = useState(false);
@@ -213,7 +216,23 @@ const TaskManager: React.FC = () => {
       assignees.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || t.status === statusFilter || (statusFilter === 'DRAFT' && t.is_draft);
     const matchesPriority = priorityFilter === 'ALL' || t.priority === priorityFilter;
-    return matchesSearch && matchesStatus && matchesPriority;
+
+    // Scope check:
+    let matchesScope = true;
+    const currentUsername = (user?.username || '').toLowerCase();
+    const currentFullName = ((user as any)?.first_name ? `${(user as any).first_name} ${(user as any).last_name || ''}`.trim() : user?.username || '').toLowerCase();
+    const assignedBy = (t.assigned_by_name || '').toLowerCase();
+
+    const isAssignedToCurrent = (t.assigned_to && (user as any)?.employee_id && t.assigned_to === (user as any)?.employee_id) ||
+      (t.assigned_employees && t.assigned_employees.some(e => e.id === (user as any)?.employee_id || e.full_name?.toLowerCase() === currentFullName));
+
+    if (scopeFilter === 'ASSIGNED_BY_ME') {
+      matchesScope = assignedBy.includes(currentUsername) || (currentFullName && assignedBy.includes(currentFullName));
+    } else if (scopeFilter === 'ASSIGNED_TO_ME') {
+      matchesScope = Boolean(isAssignedToCurrent);
+    }
+
+    return matchesSearch && matchesStatus && matchesPriority && matchesScope;
   });
 
   return (
@@ -245,6 +264,19 @@ const TaskManager: React.FC = () => {
         </div>
 
         <div className="task-filter-controls">
+          <div style={{ width: '160px' }}>
+            <CustomSelect
+              value={scopeFilter}
+              onChange={(val: any) => setScopeFilter(val)}
+              options={[
+                { value: 'ALL', label: 'All Tasks' },
+                { value: 'ASSIGNED_BY_ME', label: 'Assigned By Me' },
+                { value: 'ASSIGNED_TO_ME', label: 'Assigned To Me' },
+              ]}
+              placeholder="Scope"
+            />
+          </div>
+
           <div style={{ width: '160px' }}>
             <CustomSelect
               value={statusFilter}

@@ -88,6 +88,7 @@ export const TasksScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL');
+  const [scopeTab, setScopeTab] = useState<'ALL' | 'ASSIGNED_BY_ME' | 'ASSIGNED_TO_ME'>('ALL');
 
   // View/Update Task Workspace Modal State
   const [selectedTask, setSelectedTask] = useState<MobileTask | null>(null);
@@ -810,12 +811,34 @@ export const TasksScreen: React.FC = () => {
   };
 
   const filteredTasks = tasks.filter((t) => {
+    // 1. Status Filter
     if (activeTab === 'PENDING') {
-      return ['TODO', 'IN_PROGRESS', 'PENDING_REVIEW', 'OVERDUE', 'ON_HOLD', 'PENDING'].includes(t.status);
+      if (!['TODO', 'IN_PROGRESS', 'PENDING_REVIEW', 'OVERDUE', 'ON_HOLD', 'PENDING'].includes(t.status)) {
+        return false;
+      }
+    } else if (activeTab === 'COMPLETED') {
+      if (t.status !== 'COMPLETED') {
+        return false;
+      }
     }
-    if (activeTab === 'COMPLETED') {
-      return t.status === 'COMPLETED';
+
+    // 2. Scope Filter (for managers / team leaders / admins)
+    if (isManagerOrAdmin && scopeTab !== 'ALL') {
+      const currentUsername = (user?.username || '').toLowerCase();
+      const currentFullName = ((user as any)?.first_name ? `${(user as any).first_name} ${(user as any).last_name || ''}`.trim() : user?.username || '').toLowerCase();
+      const assignedBy = (t.assigned_by_name || '').toLowerCase();
+
+      const isAssignedToCurrent = (t.assigned_to && (user as any)?.employee_id && t.assigned_to === (user as any)?.employee_id) ||
+        (t.assigned_employees && t.assigned_employees.some(e => e.id === (user as any)?.employee_id || e.full_name?.toLowerCase() === currentFullName));
+
+      if (scopeTab === 'ASSIGNED_BY_ME') {
+        const matchesCreator = assignedBy.includes(currentUsername) || (currentFullName && assignedBy.includes(currentFullName));
+        if (!matchesCreator) return false;
+      } else if (scopeTab === 'ASSIGNED_TO_ME') {
+        if (!isAssignedToCurrent) return false;
+      }
     }
+
     return true;
   });
 
@@ -896,6 +919,30 @@ export const TasksScreen: React.FC = () => {
         }
       />
 
+      {/* SCOPE TABS (For Managers/Admins/TL) */}
+      {isManagerOrAdmin && (
+        <View style={styles.scopeTabBar}>
+          <TouchableOpacity
+            style={[styles.scopeTabItem, scopeTab === 'ALL' && styles.scopeTabItemActive]}
+            onPress={() => setScopeTab('ALL')}
+          >
+            <Text style={[styles.scopeTabText, scopeTab === 'ALL' && styles.scopeTabTextActive]}>All Tasks</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.scopeTabItem, scopeTab === 'ASSIGNED_BY_ME' && styles.scopeTabItemActive]}
+            onPress={() => setScopeTab('ASSIGNED_BY_ME')}
+          >
+            <Text style={[styles.scopeTabText, scopeTab === 'ASSIGNED_BY_ME' && styles.scopeTabTextActive]}>Assigned by Me</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.scopeTabItem, scopeTab === 'ASSIGNED_TO_ME' && styles.scopeTabItemActive]}
+            onPress={() => setScopeTab('ASSIGNED_TO_ME')}
+          >
+            <Text style={[styles.scopeTabText, scopeTab === 'ASSIGNED_TO_ME' && styles.scopeTabTextActive]}>Assigned to Me</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       {/* HEADER TABS - Clean Pill Design */}
       <View style={styles.tabBar}>
         <TouchableOpacity
@@ -903,7 +950,7 @@ export const TasksScreen: React.FC = () => {
           onPress={() => setActiveTab('ALL')}
         >
           <Text style={[styles.tabText, activeTab === 'ALL' && styles.tabTextActive]}>
-            All Tasks ({tasks.length})
+            All ({filteredTasks.length})
           </Text>
         </TouchableOpacity>
 
@@ -2553,6 +2600,36 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'Comfortaa_700Bold',
     fontSize: 12,
+  },
+  scopeTabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ECEEF3',
+    gap: 8,
+  },
+  scopeTabItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  scopeTabItemActive: {
+    backgroundColor: '#0F172A',
+    borderColor: '#0F172A',
+  },
+  scopeTabText: {
+    fontSize: 11,
+    color: '#475569',
+    fontFamily: 'Comfortaa_600SemiBold',
+  },
+  scopeTabTextActive: {
+    color: '#FFFFFF',
+    fontFamily: 'Comfortaa_700Bold',
   },
   tabBar: {
     flexDirection: 'row',
