@@ -5,18 +5,23 @@ import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {
   CalendarDays,
   ChevronDown,
+  Edit2,
+  Eye,
   Plus,
+  Trash2,
   X,
 } from 'lucide-react-native';
 
@@ -28,6 +33,8 @@ import { DatePicker, DropdownPicker } from '../components/pickers';
 
 import {
   createLeave,
+  updateLeave,
+  deleteLeave,
   getLeaves,
   getLeaveSummary,
   type LeaveRequest,
@@ -58,6 +65,90 @@ const LeaveScreen = () => {
   const [reason, setReason] = useState('');
   const [showStartDatePicker, setShowStartDatePicker] = useState(false);
   const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+
+  // View Modal State
+  const [viewItem, setViewItem] = useState<LeaveRequest | null>(null);
+
+  // Edit Modal State
+  const [editItem, setEditItem] = useState<LeaveRequest | null>(null);
+  const [editLeaveType, setEditLeaveType] = useState('CASUAL');
+  const [editStartDate, setEditStartDate] = useState('');
+  const [editEndDate, setEditEndDate] = useState('');
+  const [editReason, setEditReason] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  const openEditModal = (item: LeaveRequest) => {
+    setEditItem(item);
+    setEditLeaveType(item.leave_type || 'CASUAL');
+    setEditStartDate(item.start_date || '');
+    setEditEndDate(item.end_date || '');
+    setEditReason(item.reason || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editItem || !editItem.id) return;
+    const cleanStartDate = editStartDate.trim();
+    const cleanEndDate = editLeaveType === 'HALF_DAY' ? cleanStartDate : editEndDate.trim();
+    const cleanReason = editReason.trim();
+
+    if (!cleanStartDate || (editLeaveType !== 'HALF_DAY' && !cleanEndDate)) {
+      showError('Validation Error', editLeaveType === 'HALF_DAY' ? 'Please select date.' : 'Please select both start and end date.');
+      return;
+    }
+    if (!cleanReason) {
+      showError('Validation Error', 'Please enter reason.');
+      return;
+    }
+    if (cleanEndDate < cleanStartDate) {
+      showError('Invalid Period', 'End date cannot be earlier than start date.');
+      return;
+    }
+
+    try {
+      setEditSubmitting(true);
+      await updateLeave(editItem.id, {
+        leave_type: editLeaveType,
+        start_date: cleanStartDate,
+        end_date: cleanEndDate,
+        reason: cleanReason,
+      });
+      showSuccess('Updated', 'Leave request updated successfully.');
+      setEditItem(null);
+      await loadLeaves();
+    } catch (err: any) {
+      const data = err?.response?.data;
+      const msg = data?.detail || data?.error || (typeof data === 'object' ? Object.values(data)[0] : null) || 'Failed to update leave.';
+      showError('Update Failed', String(Array.isArray(msg) ? msg[0] : msg));
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDelete = (item: LeaveRequest) => {
+    if (!item.id) return;
+    Alert.alert(
+      'Delete Leave Request?',
+      'Are you sure you want to permanently delete this pending leave request?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteLeave(item.id!);
+              showSuccess('Deleted', 'Leave request deleted successfully.');
+              await loadLeaves();
+            } catch (err: any) {
+              const data = err?.response?.data;
+              const msg = data?.detail || data?.error || 'Failed to delete leave.';
+              showError('Delete Failed', String(msg));
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const loadLeaves = async () => {
     try {
@@ -255,6 +346,36 @@ const LeaveScreen = () => {
           </Text>
         </View>
       ) : null}
+
+      <View style={styles.cardActionsRow}>
+        <TouchableOpacity
+          style={styles.cardActionBtn}
+          onPress={() => setViewItem(item)}
+        >
+          <Eye size={14} color="#47534C" />
+          <Text style={styles.cardActionText}>View</Text>
+        </TouchableOpacity>
+
+        {item.status === 'PENDING' ? (
+          <>
+            <TouchableOpacity
+              style={[styles.cardActionBtn, styles.editActionBtn]}
+              onPress={() => openEditModal(item)}
+            >
+              <Edit2 size={14} color="#22C55E" />
+              <Text style={[styles.cardActionText, styles.editActionText]}>Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cardActionBtn, styles.deleteActionBtn]}
+              onPress={() => handleDelete(item)}
+            >
+              <Trash2 size={14} color="#EF4444" />
+              <Text style={[styles.cardActionText, styles.deleteActionText]}>Delete</Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
+      </View>
     </View>
   );
 
@@ -422,6 +543,190 @@ const LeaveScreen = () => {
           }
         />
       )}
+
+      {/* VIEW DETAILS MODAL */}
+      <Modal
+        visible={!!viewItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewItem(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Leave Details</Text>
+              <TouchableOpacity onPress={() => setViewItem(null)}>
+                <X size={20} color="#66736B" />
+              </TouchableOpacity>
+            </View>
+
+            {viewItem && (
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>Leave Type</Text>
+                  <Text style={styles.modalFieldValue}>
+                    {getLeaveTypeLabel(viewItem.leave_type)}
+                  </Text>
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>
+                    {viewItem.leave_type === 'HALF_DAY' ? 'Date' : 'Dates'}
+                  </Text>
+                  <Text style={styles.modalFieldValue}>
+                    {viewItem.start_date}
+                    {viewItem.leave_type === 'HALF_DAY' ? '' : ` to ${viewItem.end_date}`}
+                  </Text>
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>Reason</Text>
+                  <Text style={styles.modalFieldValue}>{viewItem.reason}</Text>
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>Status</Text>
+                  <Text
+                    style={[
+                      styles.modalFieldValue,
+                      {
+                        color:
+                          viewItem.status === 'APPROVED'
+                            ? '#22C55E'
+                            : viewItem.status === 'REJECTED'
+                            ? '#EF4444'
+                            : '#F59E0B',
+                        fontFamily: 'Comfortaa_700Bold',
+                      },
+                    ]}
+                  >
+                    {viewItem.status || 'PENDING'}
+                  </Text>
+                </View>
+
+                {viewItem.status === 'REJECTED' && !!viewItem.rejection_reason && (
+                  <View style={styles.modalField}>
+                    <Text style={[styles.modalFieldLabel, { color: '#EF4444' }]}>
+                      Rejection Reason
+                    </Text>
+                    <Text style={[styles.modalFieldValue, { color: '#991B1B' }]}>
+                      {viewItem.rejection_reason}
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setViewItem(null)}
+            >
+              <Text style={styles.modalCloseBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* EDIT MODAL */}
+      <Modal
+        visible={!!editItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditItem(null)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Leave Request</Text>
+              <TouchableOpacity onPress={() => setEditItem(null)}>
+                <X size={20} color="#66736B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <DropdownPicker
+                label="Leave Type"
+                options={LEAVE_TYPES}
+                value={editLeaveType}
+                onChange={(val) => {
+                  setEditLeaveType(val);
+                  if (val === 'HALF_DAY') setEditEndDate('');
+                }}
+                searchable={false}
+                required
+              />
+
+              <DatePicker
+                label={editLeaveType === 'HALF_DAY' ? 'Half Day Date' : 'Start Date'}
+                value={editStartDate}
+                onChange={(selected) => {
+                  setEditStartDate(selected);
+                  if (editEndDate && editEndDate < selected) setEditEndDate('');
+                }}
+                placeholder="YYYY-MM-DD"
+                required
+              />
+
+              {editLeaveType !== 'HALF_DAY' ? (
+                <DatePicker
+                  label="End Date"
+                  value={editEndDate}
+                  onChange={(selected) => {
+                    if (editStartDate && selected < editStartDate) {
+                      showError('Invalid Period', 'End date cannot be earlier than start date.');
+                      return;
+                    }
+                    setEditEndDate(selected);
+                  }}
+                  minDate={editStartDate || undefined}
+                  placeholder="YYYY-MM-DD"
+                  required
+                />
+              ) : null}
+
+              <Text style={styles.label}>Reason</Text>
+              <TextInput
+                value={editReason}
+                onChangeText={setEditReason}
+                placeholder="Enter reason"
+                placeholderTextColor="#9AA39D"
+                style={[styles.input, styles.reasonInput]}
+                multiline
+                textAlignVertical="top"
+              />
+            </ScrollView>
+
+            <View style={styles.modalActionsRow}>
+              <TouchableOpacity
+                style={[styles.modalActionBtn, styles.modalCancelBtn]}
+                onPress={() => setEditItem(null)}
+                disabled={editSubmitting}
+              >
+                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalActionBtn,
+                  styles.modalSaveBtn,
+                  editSubmitting && { opacity: 0.7 },
+                ]}
+                onPress={handleSaveEdit}
+                disabled={editSubmitting}
+              >
+                {editSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.modalSaveBtnText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -780,6 +1085,136 @@ const styles = StyleSheet.create({
     fontFamily: 'Comfortaa_700Bold',
     color: COLORS.primary,
     marginTop: 4,
+  },
+  cardActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F3F1',
+  },
+  cardActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DCE3DF',
+    backgroundColor: '#FFFFFF',
+  },
+  cardActionText: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#47534C',
+  },
+  editActionBtn: {
+    borderColor: '#BBF7D0',
+    backgroundColor: '#F0FDF4',
+  },
+  editActionText: {
+    color: '#22C55E',
+  },
+  deleteActionBtn: {
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
+  },
+  deleteActionText: {
+    color: '#EF4444',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 18,
+  },
+  modalCard: {
+    width: '100%',
+    maxHeight: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F3F1',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontFamily: 'Comfortaa_700Bold',
+    color: COLORS.dark,
+  },
+  modalBody: {
+    marginTop: 14,
+    maxHeight: 380,
+  },
+  modalField: {
+    marginBottom: 12,
+  },
+  modalFieldLabel: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#66736B',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  modalFieldValue: {
+    fontSize: 14,
+    color: COLORS.dark,
+  },
+  modalCloseBtn: {
+    marginTop: 16,
+    minHeight: 44,
+    borderRadius: 10,
+    backgroundColor: '#F0F3F1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseBtnText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#47534C',
+  },
+  modalActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  modalActionBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelBtn: {
+    backgroundColor: '#F0F3F1',
+  },
+  modalCancelBtnText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#47534C',
+  },
+  modalSaveBtn: {
+    backgroundColor: COLORS.primary,
+  },
+  modalSaveBtnText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#FFFFFF',
   },
 });
 

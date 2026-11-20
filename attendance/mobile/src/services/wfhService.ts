@@ -34,3 +34,13 @@ export const createWFHRequest = async (data: CreateWFHRequest) => {
   const response = await api.post('/attendance/wfh/', data);
   return response.data;
 };
+
+export const updateWFHRequest = async (id: number, data: CreateWFHRequest) => {
+  const response = await api.patch(`/attendance/wfh/${id}/`, data);
+  return response.data;
+};
+
+export const deleteWFHRequest = async (id: number) => {
+  const response = await api.delete(`/attendance/wfh/${id}/`);
+  return response.data;
+};

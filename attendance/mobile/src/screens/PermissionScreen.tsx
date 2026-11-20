@@ -5,19 +5,25 @@ import {
   Alert,
   FlatList,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import {
   Clock3,
+  Edit2,
+  Eye,
   Plus,
+  Trash2,
   X,
 } from 'lucide-react-native';
+import { formatAttendanceTime } from '../utils/dateUtils';
 
 import EmployeeHeader from './EmployeeHeader';
 import { COLORS } from '../constants/theme';
@@ -26,6 +32,8 @@ import { DatePicker, DropdownPicker, TimePicker } from '../components/pickers';
 
 import {
   createPermission,
+  updatePermission,
+  deletePermission,
   getPermissions,
   getPermissionSummary,
   type PermissionRequest,
@@ -49,6 +57,108 @@ const PermissionScreen = () => {
   const [duration, setDuration] = useState(30);
   const [reason, setReason] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // View Modal State
+  const [viewItem, setViewItem] = useState<PermissionRequest | null>(null);
+
+  // Edit Modal State
+  const [editItem, setEditItem] = useState<PermissionRequest | null>(null);
+  const [editDate, setEditDate] = useState('');
+  const [editStartTime, setEditStartTime] = useState('');
+  const [editEndTime, setEditEndTime] = useState('');
+  const [editDuration, setEditDuration] = useState(30);
+  const [editReason, setEditReason] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  const openEditModal = (item: PermissionRequest) => {
+    setEditItem(item);
+    setEditDate(item.date || '');
+    setEditStartTime(item.start_time || '');
+    setEditEndTime(item.end_time || '');
+    setEditDuration(item.duration_minutes || 30);
+    setEditReason(item.reason || '');
+  };
+
+  const handleEditStartTimeChange = (val: string) => {
+    setEditStartTime(val);
+    if (val && /^\d{2}:\d{2}/.test(val)) {
+      const [h, m] = val.split(':').map(Number);
+      const totalMinutes = h * 60 + m + editDuration;
+      const endH = Math.floor(totalMinutes / 60) % 24;
+      const endM = totalMinutes % 60;
+      setEditEndTime(`${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`);
+    }
+  };
+
+  const handleEditDurationChange = (minutes: number) => {
+    setEditDuration(minutes);
+    if (editStartTime && /^\d{2}:\d{2}/.test(editStartTime)) {
+      const [h, m] = editStartTime.split(':').map(Number);
+      const totalMinutes = h * 60 + m + minutes;
+      const endH = Math.floor(totalMinutes / 60) % 24;
+      const endM = totalMinutes % 60;
+      setEditEndTime(`${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}:00`);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editItem || !editItem.id) return;
+    if (!editDate.trim()) {
+      showError('Validation Error', 'Please enter permission date.');
+      return;
+    }
+    if (!editReason.trim()) {
+      showError('Validation Error', 'Please enter reason.');
+      return;
+    }
+    try {
+      setEditSubmitting(true);
+      await updatePermission(editItem.id, {
+        date: editDate.trim(),
+        duration_minutes: editDuration,
+        start_time: editStartTime ? editStartTime.substring(0, 8) : undefined,
+        end_time: editEndTime ? editEndTime.substring(0, 8) : undefined,
+        reason: editReason.trim(),
+      });
+      showSuccess('Updated', 'Permission request updated successfully.');
+      setEditItem(null);
+      await loadPermissions();
+      await loadPermissionSummary();
+    } catch (err: any) {
+      const data = err?.response?.data;
+      const msg = data?.detail || data?.error || (typeof data === 'object' ? Object.values(data)[0] : null) || 'Failed to update permission.';
+      showError('Update Failed', String(Array.isArray(msg) ? msg[0] : msg));
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleDelete = (item: PermissionRequest) => {
+    if (!item.id) return;
+    Alert.alert(
+      'Delete Permission Request?',
+      'Are you sure you want to permanently delete this pending permission request?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePermission(item.id!);
+              showSuccess('Deleted', 'Permission request deleted successfully.');
+              await loadPermissions();
+              await loadPermissionSummary();
+            } catch (err: any) {
+              const data = err?.response?.data;
+              const msg = data?.detail || data?.error || 'Failed to delete permission.';
+              showError('Delete Failed', String(msg));
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const loadPermissionSummary = async (selectedDate?: string) => {
     try {
@@ -256,6 +366,36 @@ const PermissionScreen = () => {
           </Text>
         </View>
       ) : null}
+
+      <View style={styles.cardActionsRow}>
+        <TouchableOpacity
+          style={styles.cardActionBtn}
+          onPress={() => setViewItem(item)}
+        >
+          <Eye size={14} color="#47534C" />
+          <Text style={styles.cardActionText}>View</Text>
+        </TouchableOpacity>
+
+        {item.status === 'PENDING' ? (
+          <>
+            <TouchableOpacity
+              style={[styles.cardActionBtn, styles.editActionBtn]}
+              onPress={() => openEditModal(item)}
+            >
+              <Edit2 size={14} color="#22C55E" />
+              <Text style={[styles.cardActionText, styles.editActionText]}>Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cardActionBtn, styles.deleteActionBtn]}
+              onPress={() => handleDelete(item)}
+            >
+              <Trash2 size={14} color="#EF4444" />
+              <Text style={[styles.cardActionText, styles.deleteActionText]}>Delete</Text>
+            </TouchableOpacity>
+          </>
+        ) : null}
+      </View>
     </View>
   );
 
@@ -503,6 +643,217 @@ const PermissionScreen = () => {
           }
         />
       )}
+
+      {/* VIEW DETAILS MODAL */}
+      <Modal
+        visible={!!viewItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setViewItem(null)}
+      >
+        <View style={styles.modalBackdrop}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Permission Details</Text>
+              <TouchableOpacity onPress={() => setViewItem(null)}>
+                <X size={20} color="#66736B" />
+              </TouchableOpacity>
+            </View>
+
+            {viewItem && (
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>Date</Text>
+                  <Text style={styles.modalFieldValue}>{viewItem.date}</Text>
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>Start Time</Text>
+                  <Text style={styles.modalFieldValue}>
+                    {formatAttendanceTime(viewItem.start_time)}
+                  </Text>
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>End Time</Text>
+                  <Text style={styles.modalFieldValue}>
+                    {formatAttendanceTime(viewItem.end_time)}
+                  </Text>
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>Duration</Text>
+                  <Text style={styles.modalFieldValue}>
+                    {viewItem.duration_minutes} minutes
+                  </Text>
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>Reason</Text>
+                  <Text style={styles.modalFieldValue}>{viewItem.reason}</Text>
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalFieldLabel}>Status</Text>
+                  <Text
+                    style={[
+                      styles.modalFieldValue,
+                      {
+                        color:
+                          viewItem.status === 'APPROVED'
+                            ? '#22C55E'
+                            : viewItem.status === 'REJECTED'
+                            ? '#EF4444'
+                            : '#F59E0B',
+                        fontFamily: 'Comfortaa_700Bold',
+                      },
+                    ]}
+                  >
+                    {viewItem.status || 'PENDING'}
+                  </Text>
+                </View>
+
+                {viewItem.status === 'REJECTED' && !!viewItem.rejection_reason && (
+                  <View style={styles.modalField}>
+                    <Text style={[styles.modalFieldLabel, { color: '#EF4444' }]}>
+                      Rejection Reason
+                    </Text>
+                    <Text style={[styles.modalFieldValue, { color: '#991B1B' }]}>
+                      {viewItem.rejection_reason}
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            )}
+
+            <TouchableOpacity
+              style={styles.modalCloseBtn}
+              onPress={() => setViewItem(null)}
+            >
+              <Text style={styles.modalCloseBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* EDIT MODAL */}
+      <Modal
+        visible={!!editItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEditItem(null)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.modalBackdrop}
+        >
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Permission</Text>
+              <TouchableOpacity onPress={() => setEditItem(null)}>
+                <X size={20} color="#66736B" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.modalBody} keyboardShouldPersistTaps="handled">
+              <DatePicker
+                label="Date"
+                value={editDate}
+                onChange={setEditDate}
+                placeholder="YYYY-MM-DD"
+                required
+              />
+
+              <Text style={styles.label}>Duration</Text>
+              <View style={styles.durationRow}>
+                {DURATION_OPTIONS.map((minutes) => {
+                  const selected = editDuration === minutes;
+                  return (
+                    <Pressable
+                      key={minutes}
+                      style={[
+                        styles.durationButton,
+                        selected && styles.durationButtonSelected,
+                      ]}
+                      onPress={() => handleEditDurationChange(minutes)}
+                    >
+                      <Clock3
+                        size={16}
+                        color={selected ? '#FFFFFF' : '#66736B'}
+                        strokeWidth={2.2}
+                      />
+                      <Text
+                        style={[
+                          styles.durationText,
+                          selected && styles.durationTextSelected,
+                        ]}
+                      >
+                        {minutes} Minutes
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 4 }}>
+                <View style={{ flex: 1 }}>
+                  <TimePicker
+                    label="Start Time"
+                    value={editStartTime}
+                    onChange={handleEditStartTimeChange}
+                    placeholder="Select Start"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <TimePicker
+                    label="End Time"
+                    value={editEndTime}
+                    onChange={(val) => setEditEndTime(val)}
+                    placeholder="Select End"
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.label}>Reason</Text>
+              <TextInput
+                value={editReason}
+                onChangeText={setEditReason}
+                placeholder="Enter reason"
+                placeholderTextColor="#9AA39D"
+                style={[styles.input, styles.reasonInput]}
+                multiline
+                textAlignVertical="top"
+              />
+            </ScrollView>
+
+            <View style={styles.modalActionsRow}>
+              <TouchableOpacity
+                style={[styles.modalActionBtn, styles.modalCancelBtn]}
+                onPress={() => setEditItem(null)}
+                disabled={editSubmitting}
+              >
+                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.modalActionBtn,
+                  styles.modalSaveBtn,
+                  editSubmitting && { opacity: 0.7 },
+                ]}
+                onPress={handleSaveEdit}
+                disabled={editSubmitting}
+              >
+                {editSubmitting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.modalSaveBtnText}>Save Changes</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -877,6 +1228,136 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     color: '#7A857E',
+  },
+  cardActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F3F1',
+  },
+  cardActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#DCE3DF',
+    backgroundColor: '#FFFFFF',
+  },
+  cardActionText: {
+    fontSize: 12,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#47534C',
+  },
+  editActionBtn: {
+    borderColor: '#BBF7D0',
+    backgroundColor: '#F0FDF4',
+  },
+  editActionText: {
+    color: '#22C55E',
+  },
+  deleteActionBtn: {
+    borderColor: '#FECACA',
+    backgroundColor: '#FEF2F2',
+  },
+  deleteActionText: {
+    color: '#EF4444',
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 18,
+  },
+  modalCard: {
+    width: '100%',
+    maxHeight: '85%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F3F1',
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontFamily: 'Comfortaa_700Bold',
+    color: COLORS.dark,
+  },
+  modalBody: {
+    marginTop: 14,
+    maxHeight: 380,
+  },
+  modalField: {
+    marginBottom: 12,
+  },
+  modalFieldLabel: {
+    fontSize: 11,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#66736B',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  modalFieldValue: {
+    fontSize: 14,
+    color: COLORS.dark,
+  },
+  modalCloseBtn: {
+    marginTop: 16,
+    minHeight: 44,
+    borderRadius: 10,
+    backgroundColor: '#F0F3F1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCloseBtnText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#47534C',
+  },
+  modalActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  modalActionBtn: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalCancelBtn: {
+    backgroundColor: '#F0F3F1',
+  },
+  modalCancelBtnText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#47534C',
+  },
+  modalSaveBtn: {
+    backgroundColor: COLORS.primary,
+  },
+  modalSaveBtnText: {
+    fontSize: 14,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#FFFFFF',
   },
 });
 

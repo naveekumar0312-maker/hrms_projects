@@ -47,6 +47,24 @@ export const createLeave = async (data: {
   return response.data;
 };
 
+export const updateLeave = async (
+  id: number,
+  data: {
+    leave_type: string;
+    start_date: string;
+    end_date: string;
+    reason: string;
+  }
+) => {
+  const response = await api.patch(`/attendance/leaves/${id}/`, data);
+  return response.data;
+};
+
+export const deleteLeave = async (id: number) => {
+  const response = await api.delete(`/attendance/leaves/${id}/`);
+  return response.data;
+};
+
 export const getPermissions = async (params?: any) => {
   console.log('PERMISSIONS API URL:', api.defaults.baseURL + '/attendance/permissions/');
   const response = await api.get('/attendance/permissions/', {
@@ -63,6 +81,25 @@ export const createPermission = async (data: {
   end_time?: string | null;
 }) => {
   const response = await api.post('/attendance/permissions/', data);
+  return response.data;
+};
+
+export const updatePermission = async (
+  id: number,
+  data: {
+    date: string;
+    duration_minutes: number;
+    reason: string;
+    start_time?: string | null;
+    end_time?: string | null;
+  }
+) => {
+  const response = await api.patch(`/attendance/permissions/${id}/`, data);
+  return response.data;
+};
+
+export const deletePermission = async (id: number) => {
+  const response = await api.delete(`/attendance/permissions/${id}/`);
   return response.data;
 };
 
