@@ -61,5 +61,6 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 .vscode/
+.kiro/
 **/attendance employees -maxdepth*
 **/ystemctl status nginx*
