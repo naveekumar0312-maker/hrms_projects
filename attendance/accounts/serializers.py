@@ -32,6 +32,69 @@ class UserSerializer(serializers.ModelSerializer):
             return uri
         return company.logo.url
 
+def resolve_user_candidates(identifier):
+    """
+    Resolve potential User objects matching the given identifier through:
+    1. Direct exact matches (username, email, phone number variants, employee ID, employee email, employee full name)
+    2. Case-insensitive relaxed matches (full name starts with / contains, username starts with / contains, employee ID)
+    3. Direct lookup on Employee profile
+    """
+    clean_ident = (identifier or '').strip()
+    if not clean_ident:
+        return []
+
+    digits_only = ''.join(c for c in clean_ident if c.isdigit())
+    phone_variants = [clean_ident]
+    if digits_only:
+        phone_variants.append(digits_only)
+        if len(digits_only) > 10 and digits_only.startswith('91'):
+            phone_variants.append(digits_only[2:])
+    phone_variants = list(set(phone_variants))
+
+    # 1. Exact matches
+    q_exact = (
+        Q(username__iexact=clean_ident) |
+        Q(email__iexact=clean_ident) |
+        Q(phone_number__in=phone_variants) |
+        Q(employee_profile__employee_id__iexact=clean_ident) |
+        Q(employee_profile__email__iexact=clean_ident) |
+        Q(employee_profile__full_name__iexact=clean_ident)
+    )
+
+    clean_with_spaces = clean_ident.replace('_', ' ')
+    clean_with_underscore = clean_ident.replace(' ', '_')
+
+    # 2. Relaxed / prefix / substring matches
+    q_relaxed = (
+        Q(username__istartswith=clean_with_underscore) |
+        Q(username__icontains=clean_ident) |
+        Q(employee_profile__full_name__istartswith=clean_with_spaces) |
+        Q(employee_profile__full_name__icontains=clean_with_spaces) |
+        Q(employee_profile__employee_id__iexact=clean_ident) |
+        Q(employee_profile__employee_id__icontains=clean_ident)
+    )
+
+    candidates = list(User.objects.filter(q_exact).exclude(username='None').distinct())
+    for rc in User.objects.filter(q_relaxed).exclude(username='None').distinct()[:10]:
+        if rc not in candidates:
+            candidates.append(rc)
+
+    # 3. Direct Employee query fallback
+    from employees.models import Employee
+    emp_matches = Employee.objects.filter(
+        Q(employee_id__iexact=clean_ident) |
+        Q(full_name__iexact=clean_ident) |
+        Q(full_name__istartswith=clean_with_spaces) |
+        Q(full_name__icontains=clean_with_spaces) |
+        Q(email__iexact=clean_ident)
+    ).select_related('user')[:10]
+    for emp in emp_matches:
+        if emp.user and emp.user not in candidates:
+            candidates.append(emp.user)
+
+    return candidates
+
+
 class LoginSerializer(serializers.Serializer):
     phone_number = serializers.CharField(required=False, allow_blank=True)
     username = serializers.CharField(required=False, allow_blank=True)
@@ -55,25 +118,8 @@ class LoginSerializer(serializers.Serializer):
         # Handle identifier matching (support username, email, phone number, employee code, or employee full name)
         identifier = (username or phone_number or ident_field or '').strip()
         if identifier and password:
-            # Build search variants for identifier (including phone variations)
-            digits_only = ''.join(c for c in identifier if c.isdigit())
-            phone_variants = [identifier]
-            if digits_only:
-                phone_variants.append(digits_only)
-                if len(digits_only) > 10 and digits_only.startswith('91'):
-                    phone_variants.append(digits_only[2:])
-            phone_variants = list(set(phone_variants))
-
-            user_candidates = User.objects.filter(
-                Q(username__iexact=identifier) |
-                Q(email__iexact=identifier) |
-                Q(phone_number__in=phone_variants) |
-                Q(employee_profile__employee_id__iexact=identifier) |
-                Q(employee_profile__email__iexact=identifier) |
-                Q(employee_profile__full_name__iexact=identifier)
-            ).distinct()
-
-            for candidate in user_candidates:
+            candidates = resolve_user_candidates(identifier)
+            for candidate in candidates:
                 if candidate.check_password(password):
                     user = candidate
                     break
@@ -148,8 +194,8 @@ class LoginSerializer(serializers.Serializer):
                     'detail': 'Your account does not belong to this company.'
                 })
         elif target_portal in ('hr', 'manager'):
-            # HR and Manager logins require a valid company context
-            if not user.company_id:
+            # HR and Manager logins require a valid company context unless cross-company Reporting Manager
+            if not user.company_id and user.role != 'REPORTING_MANAGER':
                 raise serializers.ValidationError({
                     'detail': f'{user.get_role_display()} user is not assigned to any active company.'
                 })
@@ -183,13 +229,14 @@ class ManagerLoginSerializer(serializers.Serializer):
                 'detail': 'Please provide both username/email/phone and password.'
             })
 
-        user_obj = User.objects.filter(
-            Q(username__iexact=identifier) |
-            Q(email__iexact=identifier) |
-            Q(phone_number__iexact=identifier)
-        ).first()
+        user_obj = None
+        candidates = resolve_user_candidates(identifier)
+        for candidate in candidates:
+            if candidate.check_password(password):
+                user_obj = candidate
+                break
 
-        if not user_obj or not user_obj.check_password(password):
+        if not user_obj:
             raise serializers.ValidationError({
                 'detail': 'Invalid username or password.'
             })
@@ -204,7 +251,7 @@ class ManagerLoginSerializer(serializers.Serializer):
                 'detail': 'Access denied. This portal is strictly for Reporting Managers and Team Leaders.'
             })
 
-        if not user_obj.company_id:
+        if not user_obj.company_id and user_obj.role != 'REPORTING_MANAGER':
             raise serializers.ValidationError({
                 'detail': 'User account is not assigned to any active company.'
             })

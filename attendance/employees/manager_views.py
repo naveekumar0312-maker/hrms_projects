@@ -860,8 +860,18 @@ class PromoteEmployeeToTeamLeaderView(ManagerPortalBaseView):
             user.is_active = True
             if username:
                 user.username = username
+            elif user.username in (None, '', 'None'):
+                import re
+                first_name = re.sub(r'[^a-z0-9_]', '', employee.full_name.strip().split()[0].lower()) if employee.full_name else ''
+                emp_code = re.sub(r'[^a-z0-9_]', '', str(employee.employee_id).strip().lower())
+                target_u = first_name or emp_code
+                if User.objects.filter(username__iexact=target_u).exclude(pk=user.pk).exists():
+                    target_u = emp_code
+                user.username = target_u
             if password:
                 user.set_password(password)
+            if employee.email and not user.email:
+                user.email = employee.email
             user.save()
 
         # Update designation if appropriate

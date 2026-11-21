@@ -312,7 +312,7 @@ const UniversalLogin = ({ loginMode = 'general' }: UniversalLoginProps) => {
                     type="text"
                     value={identifier}
                     onChange={(event) => setIdentifier(event.target.value)}
-                    placeholder="Enter your username or phone"
+                    placeholder="Username, Employee ID, or Phone"
                     autoComplete="username"
                     disabled={loading}
                     autoFocus
@@ -421,7 +421,7 @@ const UniversalLogin = ({ loginMode = 'general' }: UniversalLoginProps) => {
                 type="text"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="Username"
+                placeholder="Username, Employee ID, or Phone"
                 autoComplete="username"
                 disabled={loading}
                 autoFocus

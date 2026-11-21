@@ -191,9 +191,28 @@ class EmployeeSerializer(serializers.ModelSerializer):
             employment_status = validated_data.get('employment_status', 'ACTIVE')
             validated_data['status'] = employment_status == 'ACTIVE'
 
+            # Generate unique clean username for employee
+            import re
+            first_name = re.sub(r'[^a-z0-9_]', '', validated_data.get('full_name', '').strip().split()[0].lower()) if validated_data.get('full_name') else ''
+            emp_code = re.sub(r'[^a-z0-9_]', '', str(validated_data.get('employee_id', '')).strip().lower())
+            proposed_username = first_name
+            if not proposed_username or User.objects.filter(username__iexact=proposed_username).exists():
+                proposed_username = emp_code
+            if not proposed_username or User.objects.filter(username__iexact=proposed_username).exists():
+                proposed_username = f"{first_name}_{emp_code}"
+            if not proposed_username:
+                proposed_username = f"emp_{phone_number}"
+
+            target_company_id = getattr(self, '_company_id', None)
+            if not target_company_id and branch and getattr(branch, 'company_id', None):
+                target_company_id = branch.company_id
+
             user = User.objects.create_user(
+                username=proposed_username,
                 phone_number=phone_number,
                 password=password,
+                email=validated_data.get('email', '') or '',
+                company_id=target_company_id,
                 role='EMPLOYEE',
             )
             employee = Employee.objects.create(user=user, **validated_data)
@@ -220,6 +239,27 @@ class EmployeeSerializer(serializers.ModelSerializer):
         if password:
             instance.user.set_password(password)
             instance.user.save(update_fields=['password'])
+
+        # Keep linked user's username, email and company synced
+        if instance.user:
+            user_updated = False
+            if instance.user.username in (None, '', 'None'):
+                import re
+                first_name = re.sub(r'[^a-z0-9_]', '', instance.full_name.strip().split()[0].lower()) if instance.full_name else ''
+                emp_code = re.sub(r'[^a-z0-9_]', '', str(instance.employee_id).strip().lower())
+                target_u = first_name or emp_code
+                if User.objects.filter(username__iexact=target_u).exclude(pk=instance.user.pk).exists():
+                    target_u = emp_code
+                instance.user.username = target_u
+                user_updated = True
+            if instance.email and not instance.user.email:
+                instance.user.email = instance.email
+                user_updated = True
+            if instance.branch and instance.branch.company_id and not instance.user.company_id:
+                instance.user.company_id = instance.branch.company_id
+                user_updated = True
+            if user_updated:
+                instance.user.save()
 
         if 'employment_status' in validated_data:
             validated_data['status'] = validated_data['employment_status'] == 'ACTIVE'
