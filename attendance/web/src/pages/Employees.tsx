@@ -15,6 +15,8 @@ import {
   MapPin,
   CalendarDays,
   Share2,
+  FileText,
+  Clock,
 } from 'lucide-react';
 
 import { CustomSelect } from '../components/CustomSelect';
@@ -441,6 +443,112 @@ const Employees = () => {
           </button>
         </div>
       </div>
+
+      {/* ======================================================
+          26 to 25 ATTENDANCE CYCLE REMINDER BANNER
+          ====================================================== */}
+      {(() => {
+        const today = new Date();
+        const dateNum = today.getDate();
+        const monthNames = [
+          'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+        ];
+        const isCycleEnded = dateNum >= 25 || dateNum <= 5;
+        const prevMonthIdx = (today.getMonth() + 11) % 12;
+        const currMonthIdx = today.getMonth();
+        const cycleLabel = dateNum >= 25
+          ? `26 ${monthNames[prevMonthIdx]} - 25 ${monthNames[currMonthIdx]}`
+          : `26 ${monthNames[(prevMonthIdx + 11) % 12]} - 25 ${monthNames[prevMonthIdx]}`;
+
+        return (
+          <div
+            style={{
+              background: isCycleEnded
+                ? 'linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%)'
+                : 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 100%)',
+              border: isCycleEnded ? '1.5px solid #10B981' : '1px solid #CBD5E1',
+              borderRadius: '14px',
+              padding: '1rem 1.4rem',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+              boxShadow: isCycleEnded ? '0 4px 12px rgba(16, 185, 129, 0.12)' : 'none',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '10px',
+                  background: isCycleEnded ? '#059669' : '#64748B',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#fff',
+                  flexShrink: 0,
+                }}
+              >
+                {isCycleEnded ? <CheckCircle size={22} /> : <Clock size={22} />}
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      fontSize: '0.95rem',
+                      fontWeight: 700,
+                      color: isCycleEnded ? '#065F46' : '#1E293B',
+                    }}
+                  >
+                    Attendance Cycle Notice ({cycleLabel})
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '0.75rem',
+                      fontWeight: 600,
+                      padding: '2px 8px',
+                      borderRadius: '6px',
+                      background: isCycleEnded ? '#D1FAE5' : '#E2E8F0',
+                      color: isCycleEnded ? '#047857' : '#475569',
+                    }}
+                  >
+                    {isCycleEnded ? 'CYCLE CONCLUDED (26th - 25th)' : 'IN PROGRESS'}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.82rem', color: '#475569', marginTop: '3px' }}>
+                  {isCycleEnded
+                    ? 'The 26th-to-25th attendance cycle has concluded. You can generate official Times New Roman PDF statements and share them directly with employees via WhatsApp.'
+                    : `Active cycle runs from 26th to 25th. Full monthly statements can be shared once attendance data is compiled.`}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  color: '#047857',
+                  background: '#FFFFFF',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid #A7F3D0',
+                }}
+              >
+                <FileText size={15} />
+                Official Company PDF Enabled
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ======================================================
           STAT CARDS

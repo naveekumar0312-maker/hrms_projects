@@ -1,23 +1,18 @@
 import io
+import os
 from datetime import datetime
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, KeepTogether
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 
 def generate_attendance_pdf_bytes(report_data):
     """
-    Generate a polished, professional A4 attendance PDF report using ReportLab.
-    report_data is a dict containing:
-      - 'employee': {'id', 'name', 'employee_id', 'department', 'designation', 'branch', 'shift', 'phone_number'}
-      - 'month_name': str
-      - 'year': int
-      - 'summary': dict of summary counters
-      - 'days': list of daily attendance objects
-      - 'company_name': str
+    Generate a polished, professional A4 attendance PDF report using ReportLab
+    with Times-Roman typography and company branding logo.
     """
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -30,15 +25,17 @@ def generate_attendance_pdf_bytes(report_data):
     )
 
     styles = getSampleStyleSheet()
-    primary_color = colors.HexColor('#0F172A')
-    brand_emerald = colors.HexColor('#059669')
-    slate_600 = colors.HexColor('#475569')
-    slate_100 = colors.HexColor('#F1F5F9')
+    primary_color = colors.HexColor('#0F172A')   # Slate 900
+    brand_emerald = colors.HexColor('#047857')   # Emerald 700
+    slate_600 = colors.HexColor('#475569')       # Slate 600
+    slate_100 = colors.HexColor('#F8FAFC')       # Slate 50
+    border_color = colors.HexColor('#CBD5E1')    # Slate 300
 
+    # Times New Roman (Times-Roman / Times-Bold / Times-Italic)
     title_style = ParagraphStyle(
         'DocTitle',
         parent=styles['Normal'],
-        fontName='Helvetica-Bold',
+        fontName='Times-Bold',
         fontSize=18,
         leading=22,
         textColor=primary_color,
@@ -46,7 +43,7 @@ def generate_attendance_pdf_bytes(report_data):
     subtitle_style = ParagraphStyle(
         'DocSubtitle',
         parent=styles['Normal'],
-        fontName='Helvetica',
+        fontName='Times-Roman',
         fontSize=10,
         leading=14,
         textColor=slate_600,
@@ -54,7 +51,7 @@ def generate_attendance_pdf_bytes(report_data):
     section_title_style = ParagraphStyle(
         'SectionTitle',
         parent=styles['Normal'],
-        fontName='Helvetica-Bold',
+        fontName='Times-Bold',
         fontSize=12,
         leading=16,
         textColor=brand_emerald,
@@ -62,60 +59,99 @@ def generate_attendance_pdf_bytes(report_data):
     body_style = ParagraphStyle(
         'DocBody',
         parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=9,
-        leading=12,
+        fontName='Times-Roman',
+        fontSize=9.5,
+        leading=13,
         textColor=primary_color,
     )
     table_header_style = ParagraphStyle(
         'TableHeader',
         parent=styles['Normal'],
-        fontName='Helvetica-Bold',
-        fontSize=8,
-        leading=10,
+        fontName='Times-Bold',
+        fontSize=8.5,
+        leading=11,
         textColor=colors.white,
         alignment=1, # Center
     )
     table_cell_style = ParagraphStyle(
         'TableCell',
         parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=8,
-        leading=10,
+        fontName='Times-Roman',
+        fontSize=8.5,
+        leading=11,
         textColor=primary_color,
         alignment=1, # Center
     )
     table_cell_left = ParagraphStyle(
         'TableCellLeft',
         parent=styles['Normal'],
-        fontName='Helvetica',
-        fontSize=8,
-        leading=10,
+        fontName='Times-Roman',
+        fontSize=8.5,
+        leading=11,
         textColor=primary_color,
         alignment=0, # Left
     )
 
     elements = []
 
-    # 1. Header with Company & Document Title
+    # 1. Header with Company Logo & Company Name & Cycle Title
     emp = report_data.get('employee', {})
     company_name = report_data.get('company_name') or 'HRMS Yaazh360'
+    company_logo_path = report_data.get('company_logo_path')
     month_name = report_data.get('month_name', '')
     year = report_data.get('year', '')
 
-    header_table_data = [
-        [
-            Paragraph(f"<b>{company_name}</b>", title_style),
-            Paragraph(f"<b>MONTHLY ATTENDANCE REPORT</b><br/>Cycle: {month_name} {year}", subtitle_style)
+    logo_element = None
+    if company_logo_path and os.path.exists(company_logo_path):
+        try:
+            # Scale logo to max width 110, height 50 preserving aspect ratio
+            logo_element = Image(company_logo_path, width=1.4*inch, height=0.6*inch, kind='proportional')
+        except Exception:
+            logo_element = None
+
+    company_title_para = Paragraph(
+        f"<font size='16' color='#0F172A'><b>{company_name}</b></font><br/>"
+        f"<font size='9' color='#64748B'>Official Monthly Attendance Statement</font>",
+        title_style
+    )
+    cycle_meta_para = Paragraph(
+        f"<font size='12' color='#047857'><b>ATTENDANCE REPORT</b></font><br/>"
+        f"<font size='10' color='#1E293B'><b>Cycle:</b> 26 {month_name} to 25 Next Month ({year})</font><br/>"
+        f"<font size='8' color='#64748B'>Generated: {datetime.now().strftime('%d %b %Y, %I:%M %p')}</font>",
+        subtitle_style
+    )
+
+    if logo_element:
+        header_table_data = [
+            [logo_element, company_title_para, cycle_meta_para]
         ]
-    ]
-    header_table = Table(header_table_data, colWidths=[300, 222])
-    header_table.setStyle(TableStyle([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-    ]))
+        header_table = Table(header_table_data, colWidths=[105, 235, 182])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+            ('ALIGN', (2, 0), (2, 0), 'RIGHT'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+    else:
+        header_table_data = [
+            [company_title_para, cycle_meta_para]
+        ]
+        header_table = Table(header_table_data, colWidths=[330, 192])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (1, 0), (1, 0), 'RIGHT'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
     elements.append(header_table)
+
+    # Clean divider line
+    divider = Table([['']], colWidths=[522])
+    divider.setStyle(TableStyle([
+        ('LINEBELOW', (0, 0), (-1, -1), 1.5, brand_emerald),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(divider)
     elements.append(Spacer(1, 10))
 
     # 2. Employee Info & Cycle Info Card

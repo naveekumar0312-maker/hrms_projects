@@ -548,6 +548,16 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         )
         data['company_name'] = company_name
 
+        # Include company logo path if available
+        company_logo_path = None
+        if employee.branch and employee.branch.company and employee.branch.company.logo:
+            try:
+                if os.path.exists(employee.branch.company.logo.path):
+                    company_logo_path = employee.branch.company.logo.path
+            except Exception:
+                pass
+        data['company_logo_path'] = company_logo_path
+
         pdf_bytes = generate_attendance_pdf_bytes(data)
 
         # Save to media/attendance_reports/ so it has a permanent shareable URL for WhatsApp

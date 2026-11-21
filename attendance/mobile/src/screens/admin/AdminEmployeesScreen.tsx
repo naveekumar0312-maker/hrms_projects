@@ -40,6 +40,7 @@ import {
   ChevronRight,
   CalendarDays,
   Share2,
+  FileText,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthContext, api } from '../../context/AuthContext';
@@ -535,6 +536,51 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
 
       {/* Search & Branch Filter */}
       <View style={styles.searchSection}>
+        {/* 26 to 25 Cycle Reminder Box */}
+        {(() => {
+          const today = new Date();
+          const dateNum = today.getDate();
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const isCycleEnded = dateNum >= 25 || dateNum <= 5;
+          const prevMonthIdx = (today.getMonth() + 11) % 12;
+          const currMonthIdx = today.getMonth();
+          const cycleLabel = dateNum >= 25
+            ? `26 ${monthNames[prevMonthIdx]} - 25 ${monthNames[currMonthIdx]}`
+            : `26 ${monthNames[(prevMonthIdx + 11) % 12]} - 25 ${monthNames[prevMonthIdx]}`;
+
+          return (
+            <View
+              style={{
+                backgroundColor: isCycleEnded ? '#F0FDF4' : '#F8FAFC',
+                borderWidth: 1.2,
+                borderColor: isCycleEnded ? '#10B981' : '#CBD5E1',
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 12,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <CheckCircle size={15} color={isCycleEnded ? '#059669' : '#64748B'} style={{ marginRight: 6 }} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: isCycleEnded ? '#065F46' : '#1E293B' }}>
+                    Cycle: {cycleLabel}
+                  </Text>
+                </View>
+                <View style={{ backgroundColor: isCycleEnded ? '#D1FAE5' : '#E2E8F0', paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5 }}>
+                  <Text style={{ fontSize: 10, fontWeight: '700', color: isCycleEnded ? '#047857' : '#475569' }}>
+                    {isCycleEnded ? 'CYCLE CONCLUDED' : 'ACTIVE'}
+                  </Text>
+                </View>
+              </View>
+              <Text style={{ fontSize: 11, color: '#475569', lineHeight: 15 }}>
+                {isCycleEnded
+                  ? 'Attendance cycle ended on 25th. Tap Share button on any employee to send official Times New Roman PDF report via WhatsApp.'
+                  : 'Cycle runs from 26th to 25th. PDF monthly attendance reports are ready for sharing.'}
+              </Text>
+            </View>
+          );
+        })()}
+
         <View style={styles.searchBar}>
           <Search size={18} color="#888888" />
           <TextInput
