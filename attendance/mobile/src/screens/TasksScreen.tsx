@@ -273,16 +273,15 @@ export const TasksScreen: React.FC = () => {
   
   // VOICE AUDIO (Safe Document/Audio Picker to support Expo Go without native ExponentAV crash)
   
-  // Voice-to-Text Speech Recognition State for Task Title & Description
-  const [voiceTypingTarget, setVoiceTypingTarget] = useState<'title' | 'description' | null>(null);
+  // Voice-to-Text Speech Recognition State for Task Description
+  const [isRecordingDescVoice, setIsRecordingDescVoice] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
-  const [titleVoiceAudioUri, setTitleVoiceAudioUri] = useState<string | null>(null);
   const [descVoiceAudioUri, setDescVoiceAudioUri] = useState<string | null>(null);
   const voiceTypingRecorder = useRef<any>(null);
   const voiceTypingSeconds = useRef<number>(0);
   const voiceTypingInterval = useRef<any>(null);
 
-  const startVoiceTyping = async (target: 'title' | 'description') => {
+  const startVoiceTyping = async () => {
     try {
       const { granted } = await requestRecordingPermissionsAsync();
       if (!granted) {
@@ -290,7 +289,7 @@ export const TasksScreen: React.FC = () => {
         return;
       }
 
-      if (voiceTypingTarget) {
+      if (isRecordingDescVoice) {
         await stopVoiceTyping();
         return;
       }
@@ -304,7 +303,7 @@ export const TasksScreen: React.FC = () => {
       await recorder.prepareToRecordAsync();
       recorder.record();
       voiceTypingRecorder.current = recorder;
-      setVoiceTypingTarget(target);
+      setIsRecordingDescVoice(true);
       voiceTypingSeconds.current = 0;
 
       voiceTypingInterval.current = setInterval(() => {
@@ -313,18 +312,17 @@ export const TasksScreen: React.FC = () => {
     } catch (e: any) {
       console.log('Error starting voice typing:', e);
       showError('Unable to access microphone for voice typing.');
-      setVoiceTypingTarget(null);
+      setIsRecordingDescVoice(false);
     }
   };
 
   const stopVoiceTyping = async () => {
-    const target = voiceTypingTarget;
     if (voiceTypingInterval.current) {
       clearInterval(voiceTypingInterval.current);
       voiceTypingInterval.current = null;
     }
 
-    if (voiceTypingRecorder.current && target) {
+    if (voiceTypingRecorder.current) {
       try {
         setTranscribing(true);
         await voiceTypingRecorder.current.stop();
@@ -332,20 +330,16 @@ export const TasksScreen: React.FC = () => {
         voiceTypingRecorder.current = null;
 
         if (uri) {
-          if (target === 'title') {
-            setTitleVoiceAudioUri(uri);
-          } else {
-            setDescVoiceAudioUri(uri);
-          }
+          setDescVoiceAudioUri(uri);
         }
       } catch (err: any) {
         console.error('Failed to stop voice recording:', err);
       } finally {
         setTranscribing(false);
-        setVoiceTypingTarget(null);
+        setIsRecordingDescVoice(false);
       }
     } else {
-      setVoiceTypingTarget(null);
+      setIsRecordingDescVoice(false);
     }
   };
 
@@ -519,7 +513,7 @@ export const TasksScreen: React.FC = () => {
 
     try {
       setCreating(true);
-      const chosenVoiceUri = titleVoiceAudioUri || descVoiceAudioUri || (createAttachedFile?.type?.includes('audio') ? createAttachedFile.uri : null);
+      const chosenVoiceUri = descVoiceAudioUri || (createAttachedFile?.type?.includes('audio') ? createAttachedFile.uri : null);
 
       let created: any = null;
       if (chosenVoiceUri) {
@@ -576,7 +570,6 @@ export const TasksScreen: React.FC = () => {
         }
       }
 
-      setTitleVoiceAudioUri(null);
       setDescVoiceAudioUri(null);
       setCreateAttachedFile(null);
       setCreateModalVisible(false);
@@ -1116,101 +1109,47 @@ export const TasksScreen: React.FC = () => {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <View style={styles.formLabelRow}>
-                <Text style={styles.formLabel}>Task Title *</Text>
-                <TouchableOpacity
-                  style={[
-                    styles.voiceTypingBtn,
-                    voiceTypingTarget === 'title' && styles.voiceTypingBtnActive,
-                  ]}
-                  onPress={() => {
-                    if (voiceTypingTarget === 'title') {
-                      stopVoiceTyping();
-                    } else {
-                      startVoiceTyping('title');
-                    }
-                  }}
-                  disabled={transcribing}
-                  activeOpacity={0.8}
-                >
-                  {transcribing && voiceTypingTarget === 'title' ? (
-                    <ActivityIndicator size="small" color="#22C55E" />
-                  ) : (
-                    <>
-                      <Mic
-                        size={13}
-                        color={voiceTypingTarget === 'title' ? '#DC2626' : '#475569'}
-                      />
-                      <Text
-                        style={[
-                          styles.voiceTypingBtnText,
-                          voiceTypingTarget === 'title' && styles.voiceTypingBtnTextActive,
-                        ]}
-                      >
-                        {voiceTypingTarget === 'title' ? 'Tap to Stop' : 'Voice'}
-                      </Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
+              <Text style={styles.formLabel}>Task Title *</Text>
               <TextInput
                 style={styles.formInput}
-                placeholder="Enter task title (or tap Voice)..."
+                placeholder="Enter task title..."
                 placeholderTextColor="#999999"
                 value={title}
                 onChangeText={setTitle}
               />
-              {titleVoiceAudioUri && (
-                <View style={styles.voiceAudioBox}>
-                  <TouchableOpacity
-                    style={styles.voiceAudioPlayBtn}
-                    onPress={() => playAudio(titleVoiceAudioUri, 'title_voice')}
-                  >
-                    {playingAudioId === 'title_voice' ? (
-                      <Pause size={14} color="#22C55E" />
-                    ) : (
-                      <Play size={14} color="#22C55E" />
-                    )}
-                    <Text style={styles.voiceAudioPlayText}>Play Title Voice</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setTitleVoiceAudioUri(null)}>
-                    <X size={14} color="#888888" />
-                  </TouchableOpacity>
-                </View>
-              )}
 
               <View style={[styles.formLabelRow, { marginTop: 6 }]}>
                 <Text style={styles.formLabel}>Description</Text>
                 <TouchableOpacity
                   style={[
                     styles.voiceTypingBtn,
-                    voiceTypingTarget === 'description' && styles.voiceTypingBtnActive,
+                    isRecordingDescVoice && styles.voiceTypingBtnActive,
                   ]}
                   onPress={() => {
-                    if (voiceTypingTarget === 'description') {
+                    if (isRecordingDescVoice) {
                       stopVoiceTyping();
                     } else {
-                      startVoiceTyping('description');
+                      startVoiceTyping();
                     }
                   }}
                   disabled={transcribing}
                   activeOpacity={0.8}
                 >
-                  {transcribing && voiceTypingTarget === 'description' ? (
+                  {transcribing && isRecordingDescVoice ? (
                     <ActivityIndicator size="small" color="#22C55E" />
                   ) : (
                     <>
                       <Mic
                         size={13}
-                        color={voiceTypingTarget === 'description' ? '#DC2626' : '#475569'}
+                        color={isRecordingDescVoice ? '#DC2626' : '#475569'}
                       />
                       <Text
                         style={[
                           styles.voiceTypingBtnText,
-                          voiceTypingTarget === 'description' && styles.voiceTypingBtnTextActive,
+                          isRecordingDescVoice && styles.voiceTypingBtnTextActive,
                         ]}
                       >
-                        {voiceTypingTarget === 'description' ? 'Tap to Stop' : 'Voice'}
+                        {isRecordingDescVoice ? 'Tap to Stop' : 'Voice'}
                       </Text>
                     </>
                   )}

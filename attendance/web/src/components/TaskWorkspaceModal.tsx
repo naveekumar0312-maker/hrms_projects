@@ -124,68 +124,22 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<any>(null);
 
-  // Speech-to-text / Audio voice note recording
-  const [voiceTarget, setVoiceTarget] = useState<'title' | 'description' | null>(null);
+  // Speech-to-text / Audio voice note recording (strictly for Description)
+  const [isRecordingDescVoice, setIsRecordingDescVoice] = useState(false);
   const [voiceNoteBlob, setVoiceNoteBlob] = useState<Blob | null>(null);
   const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
   const fieldMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const fieldAudioChunksRef = useRef<Blob[]>([]);
   const speechRecognizerRef = useRef<any>(null);
 
-  const startVoiceInput = async (target: 'title' | 'description') => {
-    if (voiceTarget === target) {
+  const startVoiceInput = async () => {
+    if (isRecordingDescVoice) {
       stopVoiceInput();
       return;
     }
-    if (voiceTarget) {
-      stopVoiceInput();
-    }
 
-    setVoiceTarget(target);
+    setIsRecordingDescVoice(true);
 
-    // 1. If target is 'title': use SpeechRecognition to transcribe speech directly into task title input
-    if (target === 'title') {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-      if (SpeechRecognition) {
-        try {
-          const recognition = new SpeechRecognition();
-          recognition.continuous = true;
-          recognition.interimResults = true;
-          recognition.lang = 'en-US';
-
-          const initialTitle = title;
-          recognition.onresult = (event: any) => {
-            let transcript = '';
-            for (let i = event.resultIndex; i < event.results.length; i++) {
-              transcript += event.results[i][0].transcript;
-            }
-            setTitle((initialTitle ? initialTitle.trim() + ' ' : '') + transcript.trim());
-          };
-
-          recognition.onerror = (event: any) => {
-            console.warn('Speech recognition error on title:', event.error);
-            if (event.error === 'not-allowed') {
-              alert('Microphone permission denied. Please allow microphone access to use voice.');
-            }
-            setVoiceTarget(null);
-          };
-
-          recognition.onend = () => {
-            setVoiceTarget((curr) => (curr === 'title' ? null : curr));
-          };
-
-          speechRecognizerRef.current = recognition;
-          recognition.start();
-          return;
-        } catch (err: any) {
-          console.error('Failed to start speech recognition for title:', err);
-        }
-      }
-    }
-
-    // 2. If target is 'description': record voice note audio blob + transcribe into description
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -208,12 +162,10 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
         recorder.onstop = () => {
           const blob = new Blob(fieldAudioChunksRef.current, { type: mimeType || 'audio/webm' });
           const url = URL.createObjectURL(blob);
-          if (target === 'description') {
-            setVoiceNoteBlob(blob);
-            setVoiceNoteUrl(url);
-          }
+          setVoiceNoteBlob(blob);
+          setVoiceNoteUrl(url);
           stream.getTracks().forEach((track) => track.stop());
-          setVoiceTarget(null);
+          setIsRecordingDescVoice(false);
         };
 
         recorder.start(100);
@@ -234,9 +186,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
               for (let i = event.resultIndex; i < event.results.length; i++) {
                 transcript += event.results[i][0].transcript;
               }
-              if (target === 'description') {
-                setDescription((initialDesc ? initialDesc.trim() + '\n' : '') + transcript.trim());
-              }
+              setDescription((initialDesc ? initialDesc.trim() + '\n' : '') + transcript.trim());
             };
 
             speechRecognizerRef.current = recognition;
@@ -249,7 +199,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
     } catch (micErr) {
       console.warn('Audio recorder stream could not be started:', micErr);
       alert('Could not access microphone.');
-      setVoiceTarget(null);
+      setIsRecordingDescVoice(false);
     }
   };
 
@@ -266,7 +216,7 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
       } catch (e) {}
       fieldMediaRecorderRef.current = null;
     }
-    setVoiceTarget(null);
+    setIsRecordingDescVoice(false);
   };
 
   // Time log entry state
@@ -1054,35 +1004,13 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                 {/* A. TASK INFORMATION */}
                 <div className="task-form-section">
                   <div className="task-field-group">
-                    <div className="task-field-label-row">
-                      <label className="task-field-label">
-                        Task Title <span className="task-required">*</span>
-                      </label>
-                      {!isEmployee && (
-                        <button
-                          type="button"
-                          className={`task-voice-btn ${voiceTarget === 'title' ? 'recording' : ''}`}
-                          onClick={() => startVoiceInput('title')}
-                          title={voiceTarget === 'title' ? "Click to Stop Voice" : "Voice Typing for Title"}
-                        >
-                          {voiceTarget === 'title' ? (
-                            <>
-                              <span className="task-voice-dot" />
-                              <span>Listening... (Click to stop)</span>
-                            </>
-                          ) : (
-                            <>
-                              <Mic size={12} />
-                              <span>Voice</span>
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    <label className="task-field-label">
+                      Task Title <span className="task-required">*</span>
+                    </label>
                     <input
                       type="text"
                       className="task-input-title-modern"
-                      placeholder="Enter task title (or tap Voice)..."
+                      placeholder="Enter task title..."
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       required
@@ -1094,11 +1022,11 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                       <label className="task-field-label">Description</label>
                       <button
                         type="button"
-                        className={`task-voice-btn ${voiceTarget === 'description' ? 'recording' : ''}`}
-                        onClick={() => startVoiceInput('description')}
-                        title={voiceTarget === 'description' ? "Click to Stop Voice Note" : "Record Voice Note"}
+                        className={`task-voice-btn ${isRecordingDescVoice ? 'recording' : ''}`}
+                        onClick={startVoiceInput}
+                        title={isRecordingDescVoice ? "Click to Stop Voice Note" : "Record Voice Note"}
                       >
-                        {voiceTarget === 'description' ? (
+                        {isRecordingDescVoice ? (
                           <>
                             <span className="task-voice-dot" />
                             <span>Recording Voice Note... (Click to stop)</span>
