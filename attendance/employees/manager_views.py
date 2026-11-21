@@ -790,7 +790,7 @@ class IsReportingManagerOrTeamLeader(permissions.BasePermission):
         )
 
 
-class PromoteEmployeeToTeamLeaderView(views.APIView):
+class PromoteEmployeeToTeamLeaderView(ManagerPortalBaseView):
     """
     Reporting Manager promotes an assigned employee to Team Leader.
     - Preserves employee record, ID, attendance, and leave history.
@@ -810,14 +810,18 @@ class PromoteEmployeeToTeamLeaderView(views.APIView):
             return Response({"detail": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Tenant and reporting hierarchy validation
-        if employee.branch and employee.branch.company_id != request.user.company_id:
+        if request.user.company_id and employee.branch and employee.branch.company_id and employee.branch.company_id != request.user.company_id:
             raise PermissionDenied("Employee belongs to a different company.")
 
-        if employee.reporting_manager_id != manager_emp.id and employee.id != manager_emp.id:
-            raise PermissionDenied("You can only promote employees reporting to you.")
+        # Ensure employee is in manager's assigned team scope
+        manager_team_ids = set(self.get_manager_team_queryset(manager_emp).values_list('id', flat=True))
+        if employee.id not in manager_team_ids and employee.reporting_manager_id != manager_emp.id and employee.id != manager_emp.id:
+            raise PermissionDenied("You can only promote employees in your assigned team.")
 
         username = (request.data.get('username') or '').strip()
         password = request.data.get('password')
+
+        target_company_id = request.user.company_id or (employee.branch.company_id if employee.branch else None)
 
         user = employee.user
         if not user:
@@ -834,14 +838,15 @@ class PromoteEmployeeToTeamLeaderView(views.APIView):
                 username=username,
                 password=password,
                 role='TEAM_LEADER',
-                company_id=request.user.company_id,
+                company_id=target_company_id,
                 is_active=True
             )
             employee.user = user
             employee.save(update_fields=['user'])
         else:
             user.role = 'TEAM_LEADER'
-            user.company_id = request.user.company_id
+            if target_company_id:
+                user.company_id = target_company_id
             user.is_active = True
             if username:
                 user.username = username

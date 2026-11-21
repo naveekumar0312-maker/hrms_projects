@@ -58,10 +58,7 @@ export default function ManagerTeamScreen() {
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
 
-  // Promotion Modal
-  const [promoteCandidate, setPromoteCandidate] = useState<ManagerTeamEmployee | null>(null);
-  const [promoteUsername, setPromoteUsername] = useState('');
-  const [promotePassword, setPromotePassword] = useState('Password@123');
+  // Promotion state
   const [promoteLoading, setPromoteLoading] = useState(false);
 
   // Assign to Leader Modal
@@ -119,30 +116,31 @@ export default function ManagerTeamScreen() {
     }
   };
 
-  const handleOpenPromote = (member: ManagerTeamEmployee) => {
-    setPromoteCandidate(member);
-    const suggestedUname = member.full_name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_tl';
-    setPromoteUsername(suggestedUname);
-    setPromotePassword('Password@123');
-  };
-
-  const handleConfirmPromote = async () => {
-    if (!promoteCandidate) return;
-    try {
-      setPromoteLoading(true);
-      await promoteEmployeeToTeamLeader(promoteCandidate.id, {
-        username: promoteUsername.trim(),
-        password: promotePassword,
-      });
-      Alert.alert('Success', `${promoteCandidate.full_name} is now promoted to Team Leader.`);
-      setPromoteCandidate(null);
-      loadTeamData();
-    } catch (err: any) {
-      const msg = err.response?.data?.detail || err.response?.data?.message || 'Promotion failed.';
-      Alert.alert('Promotion Error', msg);
-    } finally {
-      setPromoteLoading(false);
-    }
+  const handleDirectPromote = (member: ManagerTeamEmployee) => {
+    Alert.alert(
+      'Confirm Promotion',
+      `Are you sure you want to promote ${member.full_name} (${member.employee_id}) to Team Leader?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Promote',
+          style: 'default',
+          onPress: async () => {
+            try {
+              setPromoteLoading(true);
+              const res = await promoteEmployeeToTeamLeader(member.id, {});
+              Alert.alert('Success', res?.message || `${member.full_name} is now promoted to Team Leader.`);
+              loadTeamData();
+            } catch (err: any) {
+              const msg = err.response?.data?.detail || err.response?.data?.message || 'Promotion failed.';
+              Alert.alert('Promotion Error', msg);
+            } finally {
+              setPromoteLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleOpenAssign = async (leader: ManagerTeamEmployee) => {
@@ -332,10 +330,13 @@ export default function ManagerTeamScreen() {
                   {isManager && (!isTL ? (
                     <TouchableOpacity
                       style={styles.promoteBtn}
-                      onPress={() => handleOpenPromote(item)}
+                      onPress={() => handleDirectPromote(item)}
+                      disabled={promoteLoading}
                     >
                       <Award size={14} color="#1D4ED8" style={{ marginRight: 4 }} />
-                      <Text style={styles.promoteBtnText}>Promote to TL</Text>
+                      <Text style={styles.promoteBtnText}>
+                        {promoteLoading ? 'Promoting...' : 'Promote to TL'}
+                      </Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
@@ -448,66 +449,6 @@ export default function ManagerTeamScreen() {
             >
               <Text style={styles.modalCloseBtnText}>Close</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* PROMOTE TO TEAM LEADER MODAL */}
-      <Modal visible={Boolean(promoteCandidate)}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setPromoteCandidate(null)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Promote to Team Leader</Text>
-            <Text style={styles.modalSub}>
-              Promote {promoteCandidate?.full_name} and grant team leader credentials.
-            </Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Login Username *</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={promoteUsername}
-                onChangeText={setPromoteUsername}
-                placeholder="username_tl"
-                autoCapitalize="none"
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Initial Password *</Text>
-              <TextInput
-                style={styles.modalInput}
-                value={promotePassword}
-                onChangeText={setPromotePassword}
-                placeholder="Password"
-                secureTextEntry
-              />
-            </View>
-
-            <View style={styles.modalActionButtons}>
-              <TouchableOpacity
-                style={styles.modalSecondaryBtn}
-                onPress={() => setPromoteCandidate(null)}
-                disabled={promoteLoading}
-              >
-                <Text style={styles.modalSecondaryText}>Cancel</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.modalPrimaryBtn}
-                onPress={handleConfirmPromote}
-                disabled={promoteLoading}
-              >
-                {promoteLoading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.modalPrimaryText}>Promote</Text>
-                )}
-              </TouchableOpacity>
-            </View>
           </View>
         </View>
       </Modal>

@@ -58,10 +58,7 @@ const ManagerTeam: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedMember, setSelectedMember] = useState<any>(null);
 
-  // Promotion Modal
-  const [promoteCandidate, setPromoteCandidate] = useState<TeamEmployee | null>(null);
-  const [promoteUsername, setPromoteUsername] = useState('');
-  const [promotePassword, setPromotePassword] = useState('Password@123');
+  // Promotion state
   const [promoteLoading, setPromoteLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -105,33 +102,22 @@ const ManagerTeam: React.FC = () => {
     }
   };
 
-  // Open Promotion Modal
-  const handleOpenPromote = (member: TeamEmployee) => {
-    setPromoteCandidate(member);
-    const suggestedUname = member.full_name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_tl';
-    setPromoteUsername(suggestedUname);
-    setPromotePassword('Password@123');
-    setActionMsg(null);
-  };
-
-  // Confirm Promotion
-  const handleConfirmPromote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!promoteCandidate) return;
+  // Direct Promote to Team Leader (No form popup - instant promotion with confirmation)
+  const handleDirectPromote = async (member: TeamEmployee) => {
+    const isConfirmed = window.confirm(
+      `Are you sure you want to promote ${member.full_name} (${member.employee_id}) to Team Leader?`
+    );
+    if (!isConfirmed) return;
 
     try {
       setPromoteLoading(true);
       setActionMsg(null);
-      const res = await api.post(`/employees/manager/employees/${promoteCandidate.id}/promote-team-leader/`, {
-        username: promoteUsername.trim(),
-        password: promotePassword,
-      });
+      const res = await api.post(`/employees/manager/employees/${member.id}/promote-team-leader/`, {});
 
       setActionMsg({
         type: 'success',
-        text: res.data.message || `${promoteCandidate.full_name} is now a Team Leader.`,
+        text: res.data.message || `${member.full_name} has been promoted to Team Leader successfully!`,
       });
-      setPromoteCandidate(null);
       loadTeam();
     } catch (err: any) {
       console.error('Promotion error:', err);
@@ -397,7 +383,8 @@ const ManagerTeam: React.FC = () => {
                             className="rm-btn rm-btn-secondary"
                             style={{ padding: '6px 10px', fontSize: '12px', gap: '4px' }}
                             title="Promote to Team Leader"
-                            onClick={() => handleOpenPromote(m)}
+                            onClick={() => handleDirectPromote(m)}
+                            disabled={promoteLoading}
                           >
                             <Award size={14} color="#0284c7" /> Promote TL
                           </button>
@@ -424,63 +411,6 @@ const ManagerTeam: React.FC = () => {
           </table>
         )}
       </div>
-
-      {/* PROMOTION MODAL */}
-      {promoteCandidate && (
-        <div className="rm-modal-backdrop" onClick={() => !promoteLoading && setPromoteCandidate(null)}>
-          <div className="rm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="rm-modal-header">
-              <h2>Promote to Team Leader</h2>
-              <button type="button" className="rm-close-btn" onClick={() => setPromoteCandidate(null)}>
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleConfirmPromote}>
-              <div className="rm-modal-body">
-                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <p style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#0f172a' }}>
-                    Promoting: <strong>{promoteCandidate.full_name}</strong> ({promoteCandidate.employee_id})
-                  </p>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-                    Employee records, attendance history, and profile data will be fully preserved.
-                  </p>
-                </div>
-
-                <div className="rm-form-group">
-                  <label>Team Leader Username *</label>
-                  <input
-                    type="text"
-                    className="rm-input"
-                    value={promoteUsername}
-                    onChange={(e) => setPromoteUsername(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <div className="rm-form-group">
-                  <label>Initial Login Password *</label>
-                  <input
-                    type="password"
-                    className="rm-input"
-                    value={promotePassword}
-                    onChange={(e) => setPromotePassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="rm-modal-footer">
-                <button type="button" className="rm-btn rm-btn-secondary" onClick={() => setPromoteCandidate(null)}>
-                  Cancel
-                </button>
-                <button type="submit" className="rm-btn rm-btn-primary" disabled={promoteLoading}>
-                  {promoteLoading ? 'Promoting...' : 'Confirm Promotion'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* TEAM ASSIGNMENT MODAL */}
       {assigningLeader && (

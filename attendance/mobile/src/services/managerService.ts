@@ -134,8 +134,8 @@ export const getManagerTeamAttendance = async (
   return response.data;
 };
 
-export const promoteEmployeeToTeamLeader = async (employeeId: number, data: { username: string; password?: string }) => {
-  const response = await api.post(`/employees/manager/employees/${employeeId}/promote-team-leader/`, data);
+export const promoteEmployeeToTeamLeader = async (employeeId: number, data?: { username?: string; password?: string }) => {
+  const response = await api.post(`/employees/manager/employees/${employeeId}/promote-team-leader/`, data || {});
   return response.data;
 };
 
