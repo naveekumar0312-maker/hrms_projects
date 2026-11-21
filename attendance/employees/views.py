@@ -529,6 +529,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         Also returns a public media URL that can be directly shared via WhatsApp!
         """
         import os
+        from django.conf import settings
+        from django.utils import timezone
         from django.http import HttpResponse
         from attendance.pdf_service import generate_attendance_pdf_bytes
 
