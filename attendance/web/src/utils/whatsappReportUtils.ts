@@ -15,27 +15,34 @@ export interface ShareReportOptions {
 export const formatWhatsAppReportMessage = (options: ShareReportOptions): string => {
   const { employeeName, employeeId, monthName, year, pdfUrl, summary } = options;
 
-  const present = summary?.present ?? '--';
-  const absent = summary?.absent ?? '--';
+  const present = summary?.present ?? 0;
+  const absent = summary?.absent ?? 0;
   const lateDays = summary?.late_days ?? 0;
   const holidays = summary?.holidays ?? 0;
   const totalMins = summary?.total_working_minutes ?? 0;
-  const workHrsStr = totalMins ? `${Math.floor(totalMins / 60)}h ${totalMins % 60}m` : '--';
+  const workHrsStr = totalMins ? `${Math.floor(totalMins / 60)}h ${String(totalMins % 60).padStart(2, '0')}m` : '0h 00m';
 
-  return `*ATTENDANCE REPORT - ${monthName} ${year}*
-👤 Employee: ${employeeName} (${employeeId})
+  const monthYearHeader = `${String(monthName).toUpperCase()} ${year}`;
 
-📊 *Monthly Highlights:*
-✅ Present Days: ${present}
-❌ Absent Days: ${absent}
-⏰ Late Days: ${lateDays}
-🏖️ Holidays: ${holidays}
-⏳ Total Working Time: ${workHrsStr}
+  return `*OFFICIAL ATTENDANCE RECORD - ${monthYearHeader}*
+========================================
+Employee : ${employeeName}
+Staff ID : ${employeeId}
 
-📄 *Download your full Official Attendance PDF Report here:*
+ATTENDANCE METRICS
+------------------
+Present Days       : ${present}
+Absent Days        : ${absent}
+Late Days          : ${lateDays}
+Company Holidays   : ${holidays}
+Total Working Time : ${workHrsStr}
+
+DOCUMENT LINK
+-------------
+Please download your full PDF report below:
 ${pdfUrl}
 
-_Sent via Yaazh360 HRMS_`;
+Yaazh 360 HRMS - Human Resources Department`;
 };
 
 export const shareAttendanceReportWhatsApp = (options: ShareReportOptions) => {
