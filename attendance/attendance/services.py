@@ -39,6 +39,26 @@ def calculate_distance(emp_lat, emp_lon, branch_lat, branch_lon):
     )
 
 
+def is_field_or_marketing_employee(employee):
+    """
+    Check if an employee is exempt from office geofencing restrictions:
+    1. Employee work_type is 'FIELD' or 'MARKETING'
+    2. Employee department contains 'MARKETING', 'FIELD', 'SALES', or 'TOUR'
+    3. Employee designation contains 'FIELD', 'MARKETING', 'SALES', or 'TOUR'
+    """
+    if not employee:
+        return False
+    wt = str(getattr(employee, 'work_type', '') or '').strip().upper()
+    if wt in ('FIELD', 'MARKETING'):
+        return True
+    dept = str(getattr(employee, 'department', '') or '').strip().upper()
+    desig = str(getattr(employee, 'designation', '') or '').strip().upper()
+    for keyword in ('FIELD', 'MARKETING', 'TOUR', 'SALES'):
+        if keyword in dept or keyword in desig:
+            return True
+    return False
+
+
 def reverse_geocode(latitude, longitude):
     """
     Convert GPS coordinates to a readable location name.

@@ -429,7 +429,10 @@ export default function ManagerDashboardScreen({ navigation }: any) {
         <View style={styles.photoPreviewImageContainer}>
           <Image
             source={{ uri: capturedPhotoUri }}
-            style={styles.photoPreviewImage}
+            style={[
+              styles.photoPreviewImage,
+              cameraFacing === 'front' && styles.photoPreviewImageFront,
+            ]}
             resizeMode="contain"
           />
         </View>
@@ -1452,6 +1455,9 @@ const styles = StyleSheet.create({
   photoPreviewImage: {
     width: '100%',
     height: '100%',
+  },
+  photoPreviewImageFront: {
+    transform: [{ scaleX: -1 }],
   },
   photoLocationCard: {
     marginTop: 12,

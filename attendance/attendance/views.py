@@ -25,7 +25,7 @@ from .serializers import (
     HolidaySerializer,
     EmployeePersonalAlarmSerializer,
 )
-from .services import calculate_distance, reverse_geocode
+from .services import calculate_distance, reverse_geocode, is_field_or_marketing_employee
 from django.db.models import Sum, Count, Q
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError, PermissionDenied
@@ -2015,7 +2015,7 @@ class CheckInView(views.APIView):
 
         # For FIELD / Marketing employees, do not reject check-in on low GPS accuracy
         max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
-        is_field = employee.work_type in ('FIELD', 'MARKETING')
+        is_field = is_field_or_marketing_employee(employee)
         if not is_field and acc > max_accuracy:
             return Response({
                 "code": "GPS_ACCURACY_TOO_LOW",
@@ -2037,7 +2037,7 @@ class CheckInView(views.APIView):
             status='APPROVED',
         ).exists()
 
-        if employee.work_type == 'OFFICE' and not approved_wfh and not is_field:
+        if not approved_wfh and not is_field:
             if not branch:
                 return Response({"error": "No branch assigned to your profile."}, status=status.HTTP_400_BAD_REQUEST)
             branch_lat = branch.latitude
@@ -2236,7 +2236,7 @@ class CheckOutView(views.APIView):
         
         # For FIELD / Marketing employees, do not reject check-in on low GPS accuracy
         max_accuracy = getattr(settings, 'ATTENDANCE_MAX_GPS_ACCURACY_METERS', 100)
-        is_field = employee.work_type in ('FIELD', 'MARKETING')
+        is_field = is_field_or_marketing_employee(employee)
         if not is_field and acc > max_accuracy:
             return Response({
                 "code": "GPS_ACCURACY_TOO_LOW",
@@ -2252,7 +2252,7 @@ class CheckOutView(views.APIView):
         policy = getattr(branch, 'attendance_policy', None) if branch else None
         allowed_radius = policy.allowed_radius if policy else ((branch.allowed_radius if branch else 100) or 100)
 
-        if employee.work_type == 'OFFICE' and attendance.attendance_mode != 'WFH' and not is_field:
+        if attendance.attendance_mode != 'WFH' and not is_field:
             if not branch:
                 return Response({"error": "No branch assigned to your profile."}, status=status.HTTP_400_BAD_REQUEST)
             branch_lat = branch.latitude

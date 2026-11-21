@@ -276,7 +276,11 @@ export default function DashboardScreen({ navigation }: any) {
       }
 
       // For Field/Marketing employees, allow check-in without strict GPS block if fallback exists
-      const isFieldEmp = ['FIELD', 'MARKETING'].includes(((employee as any)?.work_type || '').toUpperCase());
+      const empWorkType = String(((employee as any)?.work_type || '')).toUpperCase();
+      const empDept = String(((employee as any)?.department || '')).toUpperCase();
+      const empDesig = String(((employee as any)?.designation || '')).toUpperCase();
+      const isFieldEmp = ['FIELD', 'MARKETING'].includes(empWorkType) ||
+        ['FIELD', 'MARKETING', 'TOUR', 'SALES'].some(k => empDept.includes(k) || empDesig.includes(k));
       if (isFieldEmp) {
         const fallbackLocation = {
           coords: {
@@ -300,7 +304,11 @@ export default function DashboardScreen({ navigation }: any) {
         return currentLocation;
       }
 
-      const isFieldEmp = ['FIELD', 'MARKETING'].includes(((employee as any)?.work_type || '').toUpperCase());
+      const empWorkType = String(((employee as any)?.work_type || '')).toUpperCase();
+      const empDept = String(((employee as any)?.department || '')).toUpperCase();
+      const empDesig = String(((employee as any)?.designation || '')).toUpperCase();
+      const isFieldEmp = ['FIELD', 'MARKETING'].includes(empWorkType) ||
+        ['FIELD', 'MARKETING', 'TOUR', 'SALES'].some(k => empDept.includes(k) || empDesig.includes(k));
       if (isFieldEmp) {
         const fallbackLocation = {
           coords: {
@@ -736,7 +744,10 @@ export default function DashboardScreen({ navigation }: any) {
         <View style={styles.photoPreviewImageContainer}>
           <Image
             source={{ uri: capturedPhotoUri }}
-            style={styles.photoPreviewImage}
+            style={[
+              styles.photoPreviewImage,
+              capturedPhotoFacing === 'front' && styles.photoPreviewImageFront,
+            ]}
             resizeMode="contain"
           />
         </View>
