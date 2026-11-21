@@ -125,18 +125,67 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
   const recordingTimerRef = useRef<any>(null);
 
   // Speech-to-text / Audio voice note recording
-  const [isRecordingVoiceNote, setIsRecordingVoiceNote] = useState(false);
+  const [voiceTarget, setVoiceTarget] = useState<'title' | 'description' | null>(null);
   const [voiceNoteBlob, setVoiceNoteBlob] = useState<Blob | null>(null);
   const [voiceNoteUrl, setVoiceNoteUrl] = useState<string | null>(null);
   const fieldMediaRecorderRef = useRef<MediaRecorder | null>(null);
   const fieldAudioChunksRef = useRef<Blob[]>([]);
+  const speechRecognizerRef = useRef<any>(null);
 
-  const startVoiceInput = async () => {
-    if (isRecordingVoiceNote) {
+  const startVoiceInput = async (target: 'title' | 'description') => {
+    if (voiceTarget === target) {
       stopVoiceInput();
       return;
     }
+    if (voiceTarget) {
+      stopVoiceInput();
+    }
 
+    setVoiceTarget(target);
+
+    // 1. If target is 'title': use SpeechRecognition to transcribe speech directly into task title input
+    if (target === 'title') {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+      if (SpeechRecognition) {
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          recognition.lang = 'en-US';
+
+          const initialTitle = title;
+          recognition.onresult = (event: any) => {
+            let transcript = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+              transcript += event.results[i][0].transcript;
+            }
+            setTitle((initialTitle ? initialTitle.trim() + ' ' : '') + transcript.trim());
+          };
+
+          recognition.onerror = (event: any) => {
+            console.warn('Speech recognition error on title:', event.error);
+            if (event.error === 'not-allowed') {
+              alert('Microphone permission denied. Please allow microphone access to use voice.');
+            }
+            setVoiceTarget(null);
+          };
+
+          recognition.onend = () => {
+            setVoiceTarget((curr) => (curr === 'title' ? null : curr));
+          };
+
+          speechRecognizerRef.current = recognition;
+          recognition.start();
+          return;
+        } catch (err: any) {
+          console.error('Failed to start speech recognition for title:', err);
+        }
+      }
+    }
+
+    // 2. If target is 'description': record voice note audio blob + transcribe into description
     try {
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -159,32 +208,65 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
         recorder.onstop = () => {
           const blob = new Blob(fieldAudioChunksRef.current, { type: mimeType || 'audio/webm' });
           const url = URL.createObjectURL(blob);
-          setVoiceNoteBlob(blob);
-          setVoiceNoteUrl(url);
+          if (target === 'description') {
+            setVoiceNoteBlob(blob);
+            setVoiceNoteUrl(url);
+          }
           stream.getTracks().forEach((track) => track.stop());
-          setIsRecordingVoiceNote(false);
+          setVoiceTarget(null);
         };
 
         recorder.start(100);
-        setIsRecordingVoiceNote(true);
+
+        // Also transcribe speech into description text if browser supports SpeechRecognition
+        const SpeechRecognition =
+          (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRecognition) {
+          try {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            const initialDesc = description;
+            recognition.onresult = (event: any) => {
+              let transcript = '';
+              for (let i = event.resultIndex; i < event.results.length; i++) {
+                transcript += event.results[i][0].transcript;
+              }
+              if (target === 'description') {
+                setDescription((initialDesc ? initialDesc.trim() + '\n' : '') + transcript.trim());
+              }
+            };
+
+            speechRecognizerRef.current = recognition;
+            recognition.start();
+          } catch (e) {
+            // Optional speech recognition
+          }
+        }
       }
     } catch (micErr) {
       console.warn('Audio recorder stream could not be started:', micErr);
       alert('Could not access microphone.');
-      setIsRecordingVoiceNote(false);
+      setVoiceTarget(null);
     }
   };
 
   const stopVoiceInput = () => {
+    if (speechRecognizerRef.current) {
+      try {
+        speechRecognizerRef.current.stop();
+      } catch (e) {}
+      speechRecognizerRef.current = null;
+    }
     if (fieldMediaRecorderRef.current && fieldMediaRecorderRef.current.state !== 'inactive') {
       try {
         fieldMediaRecorderRef.current.stop();
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
       fieldMediaRecorderRef.current = null;
     }
-    setIsRecordingVoiceNote(false);
+    setVoiceTarget(null);
   };
 
   // Time log entry state
@@ -765,14 +847,6 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                   <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: '#0f172a', lineHeight: 1.4 }}>
                     {title || 'Untitled Task'}
                   </h3>
-                  {(taskData?.voice_note_url || voiceNoteUrl) && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', border: '1px solid #bbf7d0', marginTop: '12px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#166534', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        🎙️ Voice Note from Manager:
-                      </span>
-                      <audio controls src={taskData?.voice_note_url || voiceNoteUrl || undefined} style={{ height: '32px', flex: 1 }} />
-                    </div>
-                  )}
                 </div>
 
                 {/* 2. DESCRIPTION */}
@@ -987,19 +1061,19 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                       {!isEmployee && (
                         <button
                           type="button"
-                          className={`task-voice-btn ${isRecordingVoiceNote ? 'recording' : ''}`}
-                          onClick={startVoiceInput}
-                          title="Record Voice Note"
+                          className={`task-voice-btn ${voiceTarget === 'title' ? 'recording' : ''}`}
+                          onClick={() => startVoiceInput('title')}
+                          title={voiceTarget === 'title' ? "Click to Stop Voice" : "Voice Typing for Title"}
                         >
-                          {isRecordingVoiceNote ? (
+                          {voiceTarget === 'title' ? (
                             <>
                               <span className="task-voice-dot" />
-                              <span>Recording Voice Note... (Click to stop)</span>
+                              <span>Listening... (Click to stop)</span>
                             </>
                           ) : (
                             <>
                               <Mic size={12} />
-                              <span>Record Voice Note</span>
+                              <span>Voice</span>
                             </>
                           )}
                         </button>
@@ -1008,31 +1082,11 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                     <input
                       type="text"
                       className="task-input-title-modern"
-                      placeholder="Enter task title..."
+                      placeholder="Enter task title (or tap Voice)..."
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       required
                     />
-                    {(voiceNoteUrl || taskData?.voice_note_url) && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0fdf4', padding: '8px 12px', borderRadius: '8px', border: '1px solid #bbf7d0', marginTop: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: '#166534' }}>🎙️ Voice Note:</span>
-                          <audio controls src={voiceNoteUrl || taskData?.voice_note_url} style={{ height: '30px', flex: 1 }} />
-                        </div>
-                        <button
-                          type="button"
-                          className="task-tool-btn"
-                          title="Remove Voice Note"
-                          style={{ marginLeft: '10px' }}
-                          onClick={() => {
-                            setVoiceNoteBlob(null);
-                            setVoiceNoteUrl(null);
-                          }}
-                        >
-                          <X size={14} color="#ef4444" />
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   <div className="task-field-group">
@@ -1040,11 +1094,11 @@ export const TaskWorkspaceModal: React.FC<TaskWorkspaceModalProps> = ({
                       <label className="task-field-label">Description</label>
                       <button
                         type="button"
-                        className={`task-voice-btn ${isRecordingVoiceNote ? 'recording' : ''}`}
-                        onClick={startVoiceInput}
-                        title={isRecordingVoiceNote ? "Click to Stop Voice Note" : "Record Voice Note"}
+                        className={`task-voice-btn ${voiceTarget === 'description' ? 'recording' : ''}`}
+                        onClick={() => startVoiceInput('description')}
+                        title={voiceTarget === 'description' ? "Click to Stop Voice Note" : "Record Voice Note"}
                       >
-                        {isRecordingVoiceNote ? (
+                        {voiceTarget === 'description' ? (
                           <>
                             <span className="task-voice-dot" />
                             <span>Recording Voice Note... (Click to stop)</span>
