@@ -14,6 +14,8 @@ import {
   XCircle,
   BriefcaseBusiness,
   BarChart3,
+  Download,
+  Loader2,
 } from 'lucide-react';
 
 import api from '../../api';
@@ -98,6 +100,31 @@ const Reports: React.FC = () => {
 
   const [monthMenuOpen, setMonthMenuOpen] =
     useState(false);
+
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    try {
+      setDownloadingPdf(true);
+      const res = await api.get('/employees/my-attendance-report-pdf/', {
+        params: {
+          month: selectedMonth,
+          year: selectedYear,
+        },
+      });
+
+      if (res.data?.pdf_url) {
+        window.open(res.data.pdf_url, '_blank', 'noopener,noreferrer');
+      } else {
+        alert('Unable to load PDF report URL.');
+      }
+    } catch (err: any) {
+      console.error('Error fetching employee PDF report:', err);
+      alert(err?.response?.data?.detail || err?.response?.data?.message || 'Failed to download monthly attendance report PDF.');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const months = [
     'January',
@@ -1445,7 +1472,42 @@ const Reports: React.FC = () => {
               </p>
             </div>
 
-            <div className="reports-month-wrapper">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                onClick={handleDownloadPdf}
+                disabled={downloadingPdf}
+                style={{
+                  height: '48px',
+                  padding: '0 20px',
+                  borderRadius: '14px',
+                  border: '1.5px solid rgba(255, 255, 255, 0.85)',
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  color: '#FFFFFF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  cursor: downloadingPdf ? 'not-allowed' : 'pointer',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                {downloadingPdf ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download size={18} />
+                    Download Attendance PDF
+                  </>
+                )}
+              </button>
+
+              <div className="reports-month-wrapper">
 
               <button
                 type="button"
@@ -1519,7 +1581,9 @@ const Reports: React.FC = () => {
 
           </div>
 
-        </section>
+        </div>
+
+      </section>
 
         <div className="reports-content">
 

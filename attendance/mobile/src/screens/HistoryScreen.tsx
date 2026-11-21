@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useContext, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Modal, ScrollView, Platform, Image, Linking, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { getReports } from '../services/attendanceService';
-import { AuthContext } from '../context/AuthContext';
-import { Calendar as CalendarIcon, ChevronDown, Check, Clock, X, Sparkles, ChevronRight, PartyPopper, Image as ImageIcon, Briefcase, FileText, MapPin } from 'lucide-react-native';
+import { AuthContext, api } from '../context/AuthContext';
+import { Calendar as CalendarIcon, ChevronDown, Check, Clock, X, Sparkles, ChevronRight, PartyPopper, Image as ImageIcon, Briefcase, FileText, MapPin, Download } from 'lucide-react-native';
 import { formatAttendanceTime, formatWorkingHours } from '../utils/dateUtils';
 import { resolveMediaUrl } from '../utils/imageUtils';
 import { COLORS } from '../constants/theme';
@@ -24,6 +24,33 @@ export default function HistoryScreen({ navigation }: any) {
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [selectedDateStr, setSelectedDateStr] = useState<string | null>(new Date().toLocaleDateString('en-CA'));
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+
+  const handleDownloadPdf = async () => {
+    try {
+      setDownloadingPdf(true);
+      const res = await api.get('/employees/my-attendance-report-pdf/', {
+        params: {
+          month: cycleInfo.month,
+          year: cycleInfo.year,
+        },
+      });
+
+      if (res.data?.pdf_url) {
+        await Linking.openURL(res.data.pdf_url);
+      } else {
+        Alert.alert('Error', 'Unable to retrieve PDF URL.');
+      }
+    } catch (err: any) {
+      console.error('Error fetching employee PDF:', err);
+      Alert.alert(
+        'Download Failed',
+        err?.response?.data?.detail || err?.response?.data?.message || 'Failed to download monthly attendance PDF report.'
+      );
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   // Calculate the 26th to 25th cycle date range
   const cycleInfo = useMemo(() => {
@@ -246,10 +273,36 @@ export default function HistoryScreen({ navigation }: any) {
               <Text style={styles.headerTitle}>Attendance</Text>
               <Text style={styles.headerSubtitle}>Pay Cycle: {cycleInfo.cycleLabel}</Text>
             </View>
-            <TouchableOpacity style={styles.monthSelectorBtn} onPress={() => setShowMonthPicker(true)} activeOpacity={0.8}>
-              <Text style={styles.monthSelectorText}>{MONTHS[currentDate.getMonth()].substring(0, 3)} {currentDate.getFullYear()}</Text>
-              <ChevronDown size={14} color={COLORS.navy} style={{ marginLeft: 4 }} />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: COLORS.primary,
+                  paddingHorizontal: 10,
+                  paddingVertical: 7,
+                  borderRadius: 10,
+                  gap: 4,
+                }}
+                onPress={handleDownloadPdf}
+                disabled={downloadingPdf}
+                activeOpacity={0.8}
+              >
+                {downloadingPdf ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Download size={13} color="#FFFFFF" />
+                    <Text style={{ color: '#FFFFFF', fontSize: 11, fontFamily: 'Comfortaa_700Bold' }}>PDF</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.monthSelectorBtn} onPress={() => setShowMonthPicker(true)} activeOpacity={0.8}>
+                <Text style={styles.monthSelectorText}>{MONTHS[currentDate.getMonth()].substring(0, 3)} {currentDate.getFullYear()}</Text>
+                <ChevronDown size={14} color={COLORS.navy} style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 

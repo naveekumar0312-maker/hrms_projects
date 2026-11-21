@@ -129,23 +129,20 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['get'],
         url_path='monthly-attendance',
-        permission_classes=[IsAdminUser]
+        permission_classes=[permissions.IsAuthenticated]
     )
     def monthly_attendance(self, request, pk=None):
         """
         Return employee monthly attendance calendar data.
-
-        Rules:
-        - Future dates -> UPCOMING
-        - Approved leave -> leave status
-        - Completed attendance -> PRESENT
-        - Current day checked-in without checkout -> WORKING
-        - Previous working day with incomplete/no attendance -> ABSENT
-        - Weekends -> WEEKEND
-        - Late/early/overtime/working minutes come from Attendance
+        Accessible by Admins/HR, or by the employee themselves for their own record.
         """
-
         employee = self.get_object()
+
+        # Check permission: Admin, HR, or the employee himself/herself
+        is_admin_or_hr = request.user.is_staff or request.user.is_superuser or request.user.role in ['ADMIN', 'HR', 'SUPER_ADMIN']
+        is_self = hasattr(request.user, 'employee_profile') and request.user.employee_profile.id == employee.id
+        if not (is_admin_or_hr or is_self):
+            return Response({"detail": "You do not have permission to access this attendance data."}, status=status.HTTP_403_FORBIDDEN)
 
         # Month / year validation
         try:
@@ -521,13 +518,22 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['get', 'post'],
         url_path='attendance-report-pdf',
-        permission_classes=[IsAdminUser]
+        permission_classes=[permissions.IsAuthenticated]
     )
     def attendance_report_pdf(self, request, pk=None):
         """
         Generate and return a downloadable / shareable PDF file for the employee's monthly attendance report.
         Also returns a public media URL that can be directly shared via WhatsApp!
+        Accessible by Admins/HR, or by the employee themselves for their own record.
         """
+        employee = self.get_object()
+
+        # Check permission: Admin, HR, or the employee himself/herself
+        is_admin_or_hr = request.user.is_staff or request.user.is_superuser or request.user.role in ['ADMIN', 'HR', 'SUPER_ADMIN']
+        is_self = hasattr(request.user, 'employee_profile') and request.user.employee_profile.id == employee.id
+        if not (is_admin_or_hr or is_self):
+            return Response({"detail": "You do not have permission to access this attendance report."}, status=status.HTTP_403_FORBIDDEN)
+
         import os
         from django.conf import settings
         from django.utils import timezone
@@ -596,6 +602,23 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             "year": year,
             "summary": data.get('summary', {}),
         }, status=status.HTTP_200_OK)
+
+    @action(
+        detail=False,
+        methods=['get', 'post'],
+        url_path='my-attendance-report-pdf',
+        permission_classes=[permissions.IsAuthenticated]
+    )
+    def my_attendance_report_pdf(self, request):
+        """
+        Allows an employee to download / generate their own monthly attendance PDF report.
+        """
+        try:
+            employee = request.user.employee_profile
+        except AttributeError:
+            return Response({"detail": "User is not associated with an employee profile."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return self.attendance_report_pdf(request, pk=employee.id)
 
     @action(detail=False, methods=['post'], url_path='change-password', permission_classes=[permissions.IsAuthenticated])
     def change_password(self, request):
