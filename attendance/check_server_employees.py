@@ -9,29 +9,12 @@ ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 ssh.connect(HOST, username=USER, password=PASS)
 
 cmd = """
-source /var/www/hrms_Yaazh360/venv/bin/activate
-cd /var/www/hrms_Yaazh360
-python3 -c "
-import os, django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
-try:
-    import dotenv
-except ImportError:
-    import sys
-    from types import ModuleType
-    m = ModuleType('dotenv')
-    m.load_dotenv = lambda *args, **kwargs: None
-    sys.modules['dotenv'] = m
-
-django.setup()
-from employees.models import Employee
-print('Branches for all employees:')
-for e in Employee.objects.all():
-    print(e.employee_id, e.full_name, 'Branch:', e.branch.branch_name if e.branch else None, 'lat/lon:', (e.branch.latitude, e.branch.longitude) if e.branch else None)
-"
+echo "Test file" > /var/www/hrms_Yaazh360/media/test_media.txt
+curl -s -o /dev/null -w "%{http_code}" https://hrms.yaazh360digitech.in/media/test_media.txt
+rm /var/www/hrms_Yaazh360/media/test_media.txt
 """
 
 stdin, stdout, stderr = ssh.exec_command(cmd)
-print("STDOUT:\n", stdout.read().decode())
+print("HTTP CODE:\n", stdout.read().decode())
 print("STDERR:\n", stderr.read().decode())
 ssh.close()
