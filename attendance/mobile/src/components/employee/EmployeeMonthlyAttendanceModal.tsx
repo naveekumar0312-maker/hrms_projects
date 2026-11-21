@@ -138,7 +138,7 @@ export const EmployeeMonthlyAttendanceModal = ({
       case 'HOLIDAY':
         return { color: '#0E7490', bg: '#CFFAFE', label: 'Holiday' };
       case 'WEEKEND':
-        return { color: '#475569', bg: '#F1F5F9', label: 'Weekend' };
+        return { color: '#D97706', bg: '#FEF3C7', label: 'Weekend' };
       case 'UPCOMING':
         return { color: '#64748B', bg: '#F8FAFC', label: 'Upcoming' };
       default:
@@ -382,6 +382,10 @@ export const EmployeeMonthlyAttendanceModal = ({
                   <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: '#0D9488' }]} />
                     <Text style={styles.legendLabel}>Holiday</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#D97706' }]} />
+                    <Text style={styles.legendLabel}>Weekend</Text>
                   </View>
                 </View>
               </View>

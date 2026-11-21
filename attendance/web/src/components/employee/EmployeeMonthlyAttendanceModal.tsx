@@ -211,9 +211,9 @@ const getStatusInfo = (status?: string) => {
     case 'WEEKEND':
       return {
         label: 'Weekend',
-        color: '#334155', // Dark Slate Gray
-        background: '#F1F5F9',
-        border: '#CBD5E1',
+        color: '#D97706', // Warm Amber/Orange
+        background: '#FEF3C7', // Soft warm yellow/amber
+        border: '#FDE68A',
         icon: CalendarDays,
       };
 
@@ -1111,7 +1111,7 @@ const EmployeeMonthlyAttendanceModal = ({
                         ['#0F766E', 'Other Leave'],
                         ['#BE185D', 'Half Day'],
                         ['#0E7490', 'Holiday'],
-                        ['#334155', 'Weekend'],
+                        ['#D97706', 'Weekend'],
                         ['#64748B', 'Upcoming'],
                       ].map(([color, label]) => (
                         <div
