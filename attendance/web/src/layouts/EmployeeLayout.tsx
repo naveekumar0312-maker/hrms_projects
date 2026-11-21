@@ -25,6 +25,9 @@ import {
   ListTodo,
   ChevronDown,
   ChevronRight,
+  CalendarCheck,
+  Building2,
+  Clock,
 } from 'lucide-react';
 
 import { AuthContext } from '../context/AuthContext';
@@ -262,6 +265,47 @@ const EmployeeSidebar = ({
           )}
 
           {/* Balance / Remaining Items */}
+          {/* TEAM LEADER SECTION */}
+          {(employee?.assigned_team_members?.length > 0 || employee?.role === 'TEAM_LEADER' || employee?.user?.role === 'TEAM_LEADER' || employee?.designation?.toLowerCase().includes('team leader')) && (
+            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(226, 232, 240, 0.6)' }}>
+              <div style={{ padding: '0.25rem 0.75rem', fontSize: '0.7rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Team Leader
+              </div>
+              <Link
+                to="/team-attendance"
+                onClick={handleNavigation}
+                className={`nav-link ${location.pathname.startsWith('/team-attendance') ? 'active' : ''}`}
+              >
+                <CalendarCheck size={18} />
+                <span>Team Attendance</span>
+              </Link>
+              <Link
+                to="/team-leaves"
+                onClick={handleNavigation}
+                className={`nav-link ${location.pathname.startsWith('/team-leaves') ? 'active' : ''}`}
+              >
+                <Calendar size={18} />
+                <span>Team Leaves</span>
+              </Link>
+              <Link
+                to="/team-permissions"
+                onClick={handleNavigation}
+                className={`nav-link ${location.pathname.startsWith('/team-permissions') ? 'active' : ''}`}
+              >
+                <Clock size={18} />
+                <span>Team Permissions</span>
+              </Link>
+              <Link
+                to="/team-wfh"
+                onClick={handleNavigation}
+                className={`nav-link ${location.pathname.startsWith('/team-wfh') ? 'active' : ''}`}
+              >
+                <Building2 size={18} />
+                <span>Team WFH</span>
+              </Link>
+            </div>
+          )}
+
           {/* My Tasks */}
           <Link
             to="/tasks"

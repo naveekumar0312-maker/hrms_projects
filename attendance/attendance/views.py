@@ -37,7 +37,8 @@ from notifications.services import (
 
 def get_manager_scope_employee_ids(emp):
     """
-    Returns queryset or list of Employee IDs that strictly fall under this manager:
+    Returns queryset or list of Employee IDs that strictly fall under this manager or Team Leader:
+    0. If Team Leader or employee has assigned team members: strictly returns assigned team members!
     1. If manager has managed_branches: only employees in those branches
     2. Else if manager has a branch assigned: only employees in that branch
     3. Else if manager has managed_companies: only employees in those companies
@@ -46,6 +47,14 @@ def get_manager_scope_employee_ids(emp):
     """
     if not emp:
         return []
+    
+    # Team Leader scope: assigned team members only
+    if emp.user and emp.user.role == 'TEAM_LEADER':
+        return emp.team_members.values_list('id', flat=True)
+    if emp.team_members.exists():
+        # Employee designated as Team Leader
+        return emp.team_members.values_list('id', flat=True)
+
     managed_branches = emp.managed_branches.all()
     if managed_branches.exists():
         return Employee.objects.filter(branch__in=managed_branches).values_list('id', flat=True)
@@ -65,7 +74,7 @@ class IsAdminUser(permissions.BasePermission):
             user
             and user.is_authenticated
             and (
-                user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER')
+                user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER', 'TEAM_LEADER')
                 or (user.role == 'HR' and user.company_id is not None)
             )
         )
@@ -2521,7 +2530,7 @@ class PermissionRequestViewSet(viewsets.ModelViewSet):
                 request.user
                 and request.user.is_authenticated
                 and (
-                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER')
+                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER', 'TEAM_LEADER')
                     or (request.user.role == 'HR' and request.user.company_id is not None)
                 )
             ):
@@ -2857,7 +2866,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                 request.user
                 and request.user.is_authenticated
                 and (
-                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER')
+                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER', 'TEAM_LEADER')
                     or (request.user.role == 'HR' and request.user.company_id is not None)
                 )
             ):
@@ -3223,7 +3232,7 @@ class WFHRequestViewSet(viewsets.ModelViewSet):
                 request.user
                 and request.user.is_authenticated
                 and (
-                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER')
+                    request.user.role in ('SUPER_ADMIN', 'ADMIN', 'REPORTING_MANAGER', 'TEAM_LEADER')
                     or (request.user.role == 'HR' and request.user.company_id is not None)
                 )
             ):

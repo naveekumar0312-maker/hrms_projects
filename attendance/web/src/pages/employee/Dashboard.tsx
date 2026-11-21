@@ -32,6 +32,10 @@ import {
   ListTodo,
   Users,
   Shield,
+  CalendarCheck,
+  Calendar,
+  Building2,
+  Clock,
 } from 'lucide-react';
 
 import { Link, useNavigate } from 'react-router-dom';
@@ -1077,6 +1081,89 @@ const EmployeeDashboard = () => {
           PERSONAL DAILY ALARM CARD
       ===================================================== */}
       <PersonalAlarmCard />
+
+      {/* =====================================================
+          TEAM LEADER MANAGEMENT QUICK ACTIONS HUB
+      ===================================================== */}
+      {(employee?.assigned_team_members?.length > 0 || employee?.role === 'TEAM_LEADER' || employee?.user?.role === 'TEAM_LEADER' || employee?.designation?.toLowerCase().includes('team leader')) && (
+        <section style={{ marginBottom: '1.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <div style={{ width: 28, height: 28, borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+                <Users size={16} />
+              </div>
+              <h2 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                Team Leader Portal
+              </h2>
+            </div>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '3px 10px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
+              Direct Team Approvals & Attendance
+            </span>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.85rem' }}>
+            <button
+              type="button"
+              className="quick-action-card"
+              style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', background: '#ffffff', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
+              onClick={() => navigate('/team-attendance')}
+            >
+              <div style={{ width: 42, height: 42, borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CalendarCheck size={22} />
+              </div>
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.9rem', color: '#0f172a' }}>Team Attendance</strong>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Daily live status</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className="quick-action-card"
+              style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', background: '#ffffff', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
+              onClick={() => navigate('/team-leaves')}
+            >
+              <div style={{ width: 42, height: 42, borderRadius: '10px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Calendar size={22} />
+              </div>
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.9rem', color: '#0f172a' }}>Team Leaves</strong>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Approve / Review</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className="quick-action-card"
+              style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', background: '#ffffff', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
+              onClick={() => navigate('/team-permissions')}
+            >
+              <div style={{ width: 42, height: 42, borderRadius: '10px', background: '#fef3c7', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Clock size={22} />
+              </div>
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.9rem', color: '#0f172a' }}>Team Permissions</strong>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Approve / Review</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className="quick-action-card"
+              style={{ padding: '1rem', border: '1px solid #e2e8f0', borderRadius: '12px', background: '#ffffff', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '0.85rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
+              onClick={() => navigate('/team-wfh')}
+            >
+              <div style={{ width: 42, height: 42, borderRadius: '10px', background: '#f3e8ff', color: '#9333ea', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Building2 size={22} />
+              </div>
+              <div>
+                <strong style={{ display: 'block', fontSize: '0.9rem', color: '#0f172a' }}>Team WFH</strong>
+                <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Approve / Review</span>
+              </div>
+            </button>
+          </div>
+        </section>
+      )}
 
       {/* =====================================================
           QUICK ACTIONS

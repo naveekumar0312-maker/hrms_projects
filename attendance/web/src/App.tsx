@@ -337,6 +337,10 @@ const AppRoutes = () => {
           <Route path="/leave" element={<EmployeeLeave />} />
           <Route path="/wfh" element={<EmployeeWFH />} />
           <Route path="/holidays" element={<EmployeeHolidays />} />
+          <Route path="/team-attendance" element={<Attendance />} />
+          <Route path="/team-leaves" element={<AdminLeaves />} />
+          <Route path="/team-permissions" element={<AdminPermissions />} />
+          <Route path="/team-wfh" element={<WFHManagement />} />
         </Route>
 
         {/* ==================================================

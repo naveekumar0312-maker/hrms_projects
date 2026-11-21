@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { Camera, CameraView, CameraType } from 'expo-camera';
 import { AuthContext, api } from '../context/AuthContext';
-import { MapPin, Target, Clock, Calendar, BarChart, User, LogIn, LogOut, ChevronRight, CheckCircle, XCircle, House, Bell, SwitchCamera, RefreshCw, CalendarDays, SlidersHorizontal, Search, FileText, Palmtree, AlertCircle, Building2, Shield, Users } from 'lucide-react-native';
+import { MapPin, Target, Clock, Calendar, BarChart, User, LogIn, LogOut, ChevronRight, CheckCircle, XCircle, House, Bell, SwitchCamera, RefreshCw, CalendarDays, SlidersHorizontal, Search, FileText, Palmtree, AlertCircle, Building2, Shield, Users, CalendarCheck } from 'lucide-react-native';
 import { resolveMediaUrl } from '../utils/imageUtils';
 import { AppSearchBar } from '../components/AppSearchBar';
 import { CategoryBubblesRow } from '../components/CategoryBubblesRow';
@@ -1229,6 +1229,41 @@ export default function DashboardScreen({ navigation }: any) {
                 );
               })}
             </ScrollView>
+
+            {/* TEAM LEADER QUICK LINKS FOR APPROVALS & ATTENDANCE */}
+            <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#E2E8F0', flexDirection: 'row', justifyContent: 'space-between', gap: 6 }}>
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: '#FFFFFF', paddingVertical: 8, paddingHorizontal: 6, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#D1FAE5' }}
+                onPress={() => navigation.navigate('ManagerAttendance' as any)}
+              >
+                <CalendarCheck size={18} color="#059669" />
+                <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#065F46', marginTop: 4 }}>Attendance</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: '#FFFFFF', paddingVertical: 8, paddingHorizontal: 6, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#DBEAFE' }}
+                onPress={() => navigation.navigate('AdminLeaves' as any)}
+              >
+                <Calendar size={18} color="#2563EB" />
+                <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#1E40AF', marginTop: 4 }}>Leaves</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: '#FFFFFF', paddingVertical: 8, paddingHorizontal: 6, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#FEF3C7' }}
+                onPress={() => navigation.navigate('AdminPermissions' as any)}
+              >
+                <Clock size={18} color="#D97706" />
+                <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#92400E', marginTop: 4 }}>Permission</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={{ flex: 1, backgroundColor: '#FFFFFF', paddingVertical: 8, paddingHorizontal: 6, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#F3E8FF' }}
+                onPress={() => navigation.navigate('AdminWFH' as any)}
+              >
+                <Building2 size={18} color="#9333EA" />
+                <Text style={{ fontSize: 10, fontFamily: 'Comfortaa_700Bold', color: '#6B21A8', marginTop: 4 }}>WFH</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 

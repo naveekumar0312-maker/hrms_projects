@@ -311,7 +311,9 @@ class ManagerPortalBaseView(views.APIView):
 
     def get_manager_team_queryset(self, manager, status_filter=None):
         """
-        Returns employees assigned to this manager according to the strict scope:
+        Returns employees assigned to this manager or Team Leader according to the strict scope:
+        0. If user is TEAM_LEADER or employee has assigned team members:
+           Strictly returns team members assigned directly under this Team Leader!
         1. If manager is assigned multiple managed_branches:
            Strictly returns employees belonging to those managed branches!
         2. Else if manager has managed_companies:
@@ -323,6 +325,14 @@ class ManagerPortalBaseView(views.APIView):
         5. Else (Global Access Manager - All Companies / no branch & no company):
            Returns employees across all companies/branches!
         """
+        if (manager.user and manager.user.role == 'TEAM_LEADER') or manager.team_members.exists():
+            qs = manager.team_members.exclude(pk=manager.pk).order_by('employee_id')
+            if status_filter is True:
+                qs = qs.filter(status=True)
+            elif status_filter is False:
+                qs = qs.filter(status=False)
+            return qs
+
         managed_companies = manager.managed_companies.all()
         managed_branches = manager.managed_branches.all()
         if managed_branches.exists():
