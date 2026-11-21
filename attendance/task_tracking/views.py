@@ -304,15 +304,36 @@ class TaskViewSet(viewsets.ModelViewSet):
         else:
             assignee_name = 'team'
 
-        # Determine task company
+        # Determine task company reliably
         task_company_id = user.company_id
-        if not task_company_id:
-            if assigned_to and assigned_to.branch and assigned_to.branch.company_id:
+        if not task_company_id and assigned_to:
+            if assigned_to.branch and assigned_to.branch.company_id:
                 task_company_id = assigned_to.branch.company_id
-            elif assigned_emps and assigned_emps[0].branch and assigned_emps[0].branch.company_id:
-                task_company_id = assigned_emps[0].branch.company_id
-            elif emp_creator and emp_creator.branch and emp_creator.branch.company_id:
+            elif getattr(assigned_to, 'user', None) and assigned_to.user.company_id:
+                task_company_id = assigned_to.user.company_id
+        if not task_company_id and assigned_emps:
+            first_emp = assigned_emps[0]
+            if first_emp.branch and first_emp.branch.company_id:
+                task_company_id = first_emp.branch.company_id
+            elif getattr(first_emp, 'user', None) and first_emp.user.company_id:
+                task_company_id = first_emp.user.company_id
+        if not task_company_id and emp_creator:
+            if emp_creator.branch and emp_creator.branch.company_id:
                 task_company_id = emp_creator.branch.company_id
+            elif getattr(emp_creator, 'user', None) and emp_creator.user.company_id:
+                task_company_id = emp_creator.user.company_id
+        if not task_company_id:
+            req_company = self.request.data.get('company') or self.request.query_params.get('company')
+            if req_company:
+                try:
+                    task_company_id = int(req_company)
+                except (ValueError, TypeError):
+                    task_company_id = None
+        if not task_company_id:
+            from companies.models import Company
+            first_comp = Company.objects.first()
+            if first_comp:
+                task_company_id = first_comp.id
 
         task = serializer.save(
             company_id=task_company_id,
