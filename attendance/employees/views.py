@@ -30,7 +30,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get_permissions(self):
-        if self.action in ['me', 'change_password', 'next_employee_id']:
+        if self.action in ['me', 'change_password', 'next_employee_id', 'monthly_attendance', 'attendance_report_pdf', 'my_attendance_report_pdf']:
             return [permissions.IsAuthenticated()]
         return [IsAdminUser()]
 
@@ -43,7 +43,11 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if user.role == 'HR':
             queryset = queryset.filter(branch__company_id=user.company_id)
         elif user.role not in ('SUPER_ADMIN', 'ADMIN'):
-            return queryset.none()
+            # Allow employee to access their own employee record
+            if hasattr(user, 'employee_profile'):
+                queryset = queryset.filter(id=user.employee_profile.id)
+            else:
+                return queryset.none()
 
         company_id = self.request.query_params.get('company')
         branch_id = self.request.query_params.get('branch')
@@ -136,7 +140,14 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         Return employee monthly attendance calendar data.
         Accessible by Admins/HR, or by the employee themselves for their own record.
         """
-        employee = self.get_object()
+        lookup_id = pk or (self.kwargs.get('pk') if hasattr(self, 'kwargs') else None)
+        if lookup_id:
+            try:
+                employee = Employee.objects.select_related('user', 'branch', 'branch__company', 'shift').get(id=lookup_id)
+            except Employee.DoesNotExist:
+                return Response({"detail": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            employee = self.get_object()
 
         # Check permission: Admin, HR, or the employee himself/herself
         is_admin_or_hr = request.user.is_staff or request.user.is_superuser or request.user.role in ['ADMIN', 'HR', 'SUPER_ADMIN']
@@ -526,7 +537,14 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         Also returns a public media URL that can be directly shared via WhatsApp!
         Accessible by Admins/HR, or by the employee themselves for their own record.
         """
-        employee = self.get_object()
+        lookup_id = pk or (self.kwargs.get('pk') if hasattr(self, 'kwargs') else None)
+        if lookup_id:
+            try:
+                employee = Employee.objects.select_related('user', 'branch', 'branch__company', 'shift').get(id=lookup_id)
+            except Employee.DoesNotExist:
+                return Response({"detail": "Employee not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            employee = self.get_object()
 
         # Check permission: Admin, HR, or the employee himself/herself
         is_admin_or_hr = request.user.is_staff or request.user.is_superuser or request.user.role in ['ADMIN', 'HR', 'SUPER_ADMIN']
@@ -541,12 +559,11 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         from attendance.pdf_service import generate_attendance_pdf_bytes
 
         # Call existing monthly_attendance logic
-        monthly_res = self.monthly_attendance(request, pk=pk)
+        monthly_res = self.monthly_attendance(request, pk=employee.id)
         if monthly_res.status_code != 200:
             return monthly_res
 
         data = monthly_res.data
-        employee = self.get_object()
         company_name = (
             employee.branch.company.name
             if (employee.branch and employee.branch.company)
