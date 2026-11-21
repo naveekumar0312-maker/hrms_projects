@@ -683,36 +683,40 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
                 <View style={styles.emailRow}>
                   <Mail size={13} color="#888888" />
                   <Text style={styles.emailText} numberOfLines={1}>
-                    {item.email}
+                    {item.email || 'No email registered'}
                   </Text>
                 </View>
-                <View style={styles.footerActions}>
-                  <TouchableOpacity
-                    style={[styles.monthlyBtn, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
-                    onPress={() => handleShareReportPdf(item)}
-                    disabled={sharingReportId === item.id}
-                  >
-                    <Share2 size={12} color="#16A34A" />
-                    <Text style={[styles.monthlyBtnText, { color: '#16A34A' }]}>
-                      {sharingReportId === item.id ? 'PDF...' : 'Share'}
-                    </Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    style={styles.monthlyBtn}
-                    onPress={() => {
-                      setMonthlyEmployee(item);
-                      setMonthlyModalVisible(true);
-                    }}
-                  >
-                    <CalendarDays size={12} color="#EA580C" />
-                    <Text style={styles.monthlyBtnText}>Attendance</Text>
-                  </TouchableOpacity>
-                  <View style={styles.viewLink}>
-                    <Text style={styles.viewLinkText}>Details</Text>
-                    <ChevronRight size={14} color="#000000" />
-                  </View>
+                <View style={styles.viewLink}>
+                  <Text style={styles.viewLinkText}>Details</Text>
+                  <ChevronRight size={14} color="#000000" />
                 </View>
+              </View>
+
+              {/* Dedicated Action Buttons Row so buttons never overlap email text */}
+              <View style={styles.cardActionRow}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.shareActionBtn]}
+                  onPress={() => handleShareReportPdf(item)}
+                  disabled={sharingReportId === item.id}
+                  activeOpacity={0.7}
+                >
+                  <Share2 size={13} color="#16A34A" />
+                  <Text style={styles.shareActionBtnText}>
+                    {sharingReportId === item.id ? 'Preparing PDF...' : 'Share PDF'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.attendanceActionBtn]}
+                  onPress={() => {
+                    setMonthlyEmployee(item);
+                    setMonthlyModalVisible(true);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <CalendarDays size={13} color="#EA580C" />
+                  <Text style={styles.attendanceActionBtnText}>Attendance</Text>
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           )}
@@ -1699,29 +1703,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     flex: 1,
+    marginRight: 10,
   },
   emailText: {
     fontSize: 12,
     color: '#666666',
+    flexShrink: 1,
   },
-  footerActions: {
+  cardActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F8FAFC',
   },
-  monthlyBtn: {
+  actionBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
   },
-  monthlyBtnText: {
-    fontSize: 11,
+  shareActionBtn: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  shareActionBtnText: {
+    fontSize: 11.5,
+    fontFamily: 'Comfortaa_700Bold',
+    color: '#16A34A',
+  },
+  attendanceActionBtn: {
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FED7AA',
+  },
+  attendanceActionBtnText: {
+    fontSize: 11.5,
     fontFamily: 'Comfortaa_700Bold',
     color: '#EA580C',
   },
@@ -1729,6 +1752,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+    flexShrink: 0,
   },
   viewLinkText: {
     fontSize: 12,
