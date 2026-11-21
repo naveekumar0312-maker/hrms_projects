@@ -14,6 +14,7 @@ import {
   Building2,
   MapPin,
   CalendarDays,
+  Share2,
 } from 'lucide-react';
 
 import { CustomSelect } from '../components/CustomSelect';
@@ -25,6 +26,7 @@ import api from '../services/api';
 import { employeeService } from '../services/employeeService';
 import EmployeeMonthlyAttendanceModal from '../components/employee/EmployeeMonthlyAttendanceModal';
 import { resolveMediaUrl } from '../utils/imageUtils';
+import { shareAttendanceReportWhatsApp } from '../utils/whatsappReportUtils';
 
 export interface Employee {
   id: number;
@@ -90,6 +92,36 @@ const Employees = () => {
   const [activeDropdown, setActiveDropdown] = useState<number | null>(null);
   const [monthlyAttendanceEmployee, setMonthlyAttendanceEmployee] = useState<Employee | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [sharingReportId, setSharingReportId] = useState<number | null>(null);
+
+  const handleShareReportPdf = async (emp: Employee) => {
+    try {
+      setSharingReportId(emp.id);
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+
+      const res = await api.get(`/employees/${emp.id}/attendance-report-pdf/?month=${month}&year=${year}`);
+      if (res.data?.pdf_url) {
+        shareAttendanceReportWhatsApp({
+          employeeName: emp.full_name,
+          employeeId: emp.employee_id,
+          phoneNumber: emp.phone_number || res.data?.phone_number,
+          monthName: res.data?.month_name || 'This Month',
+          year: res.data?.year || year,
+          pdfUrl: res.data?.pdf_url,
+          summary: res.data?.summary,
+        });
+      } else {
+        alert('Could not generate PDF report URL. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Failed to share attendance report:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to generate attendance report PDF.');
+    } finally {
+      setSharingReportId(null);
+    }
+  };
 
   // ============================================================
   // INITIAL DATA
@@ -775,6 +807,22 @@ const Employees = () => {
                             <CalendarDays size={16} />
                           </button>
 
+                          {/* Share Attendance PDF to WhatsApp */}
+                          <button
+                            type="button"
+                            className="btn-icon"
+                            style={{
+                              color: '#16A34A',
+                              background: '#F0FDF4',
+                              borderColor: '#DCFCE7',
+                            }}
+                            disabled={sharingReportId === employee.id}
+                            onClick={() => handleShareReportPdf(employee)}
+                            title="Share Attendance PDF via WhatsApp"
+                          >
+                            <Share2 size={16} />
+                          </button>
+
                           {/* Edit */}
                           <button
                             type="button"
@@ -1147,6 +1195,22 @@ const Employees = () => {
     onClick={() => setMonthlyAttendanceEmployee(employee)}
   >
     <CalendarDays size={16} />
+  </button>
+
+  <button
+    type="button"
+    className="btn-icon"
+    style={{
+      color: '#16A34A',
+      background: '#F0FDF4',
+      borderColor: '#DCFCE7',
+    }}
+    disabled={sharingReportId === employee.id}
+    title="Share Attendance PDF via WhatsApp"
+    aria-label="Share Attendance PDF via WhatsApp"
+    onClick={() => handleShareReportPdf(employee)}
+  >
+    <Share2 size={16} />
   </button>
 
   <button

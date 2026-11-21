@@ -20,9 +20,11 @@ import {
   AlertCircle,
   Coffee,
   CalendarOff,
+  Share2,
 } from 'lucide-react-native';
 import { api } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
+import { shareAttendanceReportWhatsApp } from '../../utils/whatsappReportUtils';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -67,6 +69,32 @@ export const EmployeeMonthlyAttendanceModal = ({
   const [summary, setSummary] = useState<any>({});
   const [days, setDays] = useState<AttendanceDay[]>([]);
   const [selectedDay, setSelectedDay] = useState<AttendanceDay | null>(null);
+  const [sharingLoading, setSharingLoading] = useState(false);
+
+  const handleShareReport = async () => {
+    if (!employee?.id) return;
+    try {
+      setSharingLoading(true);
+      const res = await api.get(
+        `/employees/${employee.id}/attendance-report-pdf/?month=${currentMonth + 1}&year=${currentYear}`
+      );
+      if (res.data?.pdf_url) {
+        await shareAttendanceReportWhatsApp({
+          employeeName: employee.full_name || employee.name,
+          employeeId: employee.employee_id,
+          phoneNumber: employee.phone_number || res.data?.phone_number,
+          monthName: res.data?.month_name || new Date(currentYear, currentMonth, 1).toLocaleDateString('en-US', { month: 'long' }),
+          year: currentYear,
+          pdfUrl: res.data?.pdf_url,
+          summary: res.data?.summary || summary,
+        });
+      }
+    } catch (err: any) {
+      console.warn('Failed to share report:', err?.message);
+    } finally {
+      setSharingLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!visible || !employee?.id) return;
@@ -218,9 +246,31 @@ export const EmployeeMonthlyAttendanceModal = ({
                 </Text>
               </View>
             </View>
-            <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-              <X size={20} color="#64748B" />
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  backgroundColor: '#F0FDF4',
+                  borderWidth: 1,
+                  borderColor: '#BBF7D0',
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 8,
+                }}
+                disabled={sharingLoading}
+                onPress={handleShareReport}
+              >
+                <Share2 size={13} color="#15803D" />
+                <Text style={{ fontSize: 11, color: '#15803D', fontWeight: 'bold' }}>
+                  {sharingLoading ? 'PDF...' : 'Share PDF'}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+                <X size={20} color="#64748B" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {loading ? (

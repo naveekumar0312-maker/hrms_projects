@@ -496,6 +496,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     "department": employee.department,
                     "designation": employee.designation,
                     "work_type": employee.work_type,
+                    "phone_number": employee.user.phone_number if employee.user else None,
                     "branch": (
                         employee.branch.branch_name
                         if employee.branch
@@ -515,6 +516,74 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK
         )
+
+    @action(
+        detail=True,
+        methods=['get', 'post'],
+        url_path='attendance-report-pdf',
+        permission_classes=[IsAdminUser]
+    )
+    def attendance_report_pdf(self, request, pk=None):
+        """
+        Generate and return a downloadable / shareable PDF file for the employee's monthly attendance report.
+        Also returns a public media URL that can be directly shared via WhatsApp!
+        """
+        import os
+        from django.http import HttpResponse
+        from attendance.pdf_service import generate_attendance_pdf_bytes
+
+        # Call existing monthly_attendance logic
+        monthly_res = self.monthly_attendance(request, pk=pk)
+        if monthly_res.status_code != 200:
+            return monthly_res
+
+        data = monthly_res.data
+        employee = self.get_object()
+        company_name = (
+            employee.branch.company.name
+            if (employee.branch and employee.branch.company)
+            else "HRMS Yaazh360"
+        )
+        data['company_name'] = company_name
+
+        pdf_bytes = generate_attendance_pdf_bytes(data)
+
+        # Save to media/attendance_reports/ so it has a permanent shareable URL for WhatsApp
+        reports_dir = os.path.join(settings.MEDIA_ROOT, 'attendance_reports')
+        os.makedirs(reports_dir, exist_ok=True)
+        
+        month = data.get('month', timezone.localdate().month)
+        year = data.get('year', timezone.localdate().year)
+        filename = f"Attendance_{employee.employee_id}_{month}_{year}.pdf"
+        file_path = os.path.join(reports_dir, filename)
+
+        with open(file_path, 'wb') as f:
+            f.write(pdf_bytes)
+
+        # Build absolute shareable URL
+        share_url = request.build_absolute_uri(f"{settings.MEDIA_URL}attendance_reports/{filename}")
+        # Always enforce https if reverse proxied
+        if 'http://' in share_url and not 'localhost' in share_url and not '127.0.0.1' in share_url:
+            share_url = share_url.replace('http://', 'https://')
+
+        emp_phone = employee.user.phone_number if employee.user else None
+
+        if request.query_params.get('download') == 'true':
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+
+        return Response({
+            "success": True,
+            "filename": filename,
+            "pdf_url": share_url,
+            "employee_name": employee.full_name,
+            "employee_id": employee.employee_id,
+            "phone_number": emp_phone,
+            "month_name": data.get('month_name'),
+            "year": year,
+            "summary": data.get('summary', {}),
+        }, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='change-password', permission_classes=[permissions.IsAuthenticated])
     def change_password(self, request):

@@ -39,6 +39,7 @@ import {
   MapPin,
   ChevronRight,
   CalendarDays,
+  Share2,
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { AuthContext, api } from '../../context/AuthContext';
@@ -46,6 +47,7 @@ import { AdminHRHeader } from '../../components/AdminHRHeader';
 import { DropdownPicker, DatePicker } from '../../components/pickers';
 import { EmployeeMonthlyAttendanceModal } from '../../components/employee/EmployeeMonthlyAttendanceModal';
 import { formatAttendanceTime } from '../../utils/dateUtils';
+import { shareAttendanceReportWhatsApp } from '../../utils/whatsappReportUtils';
 import {
   fetchEmployees,
   fetchBranches,
@@ -102,6 +104,36 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
   // Monthly Attendance Modal
   const [monthlyModalVisible, setMonthlyModalVisible] = useState(false);
   const [monthlyEmployee, setMonthlyEmployee] = useState<any | null>(null);
+  const [sharingReportId, setSharingReportId] = useState<number | null>(null);
+
+  const handleShareReportPdf = async (emp: any) => {
+    try {
+      setSharingReportId(emp.id);
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+
+      const res = await api.get(`/employees/${emp.id}/attendance-report-pdf/?month=${month}&year=${year}`);
+      if (res.data?.pdf_url) {
+        await shareAttendanceReportWhatsApp({
+          employeeName: emp.full_name || emp.name,
+          employeeId: emp.employee_id,
+          phoneNumber: emp.phone_number || emp.user?.phone_number || res.data?.phone_number,
+          monthName: res.data?.month_name || 'This Month',
+          year: res.data?.year || year,
+          pdfUrl: res.data?.pdf_url,
+          summary: res.data?.summary,
+        });
+      } else {
+        Alert.alert('Error', 'Could not generate PDF report URL.');
+      }
+    } catch (err: any) {
+      console.error('Failed to share attendance report:', err);
+      Alert.alert('Error', err?.response?.data?.message || err?.message || 'Failed to generate attendance report PDF.');
+    } finally {
+      setSharingReportId(null);
+    }
+  };
 
   // Add / Edit Employee Modal
   const [formModalVisible, setFormModalVisible] = useState(false);
@@ -610,6 +642,17 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
                 </View>
                 <View style={styles.footerActions}>
                   <TouchableOpacity
+                    style={[styles.monthlyBtn, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}
+                    onPress={() => handleShareReportPdf(item)}
+                    disabled={sharingReportId === item.id}
+                  >
+                    <Share2 size={12} color="#16A34A" />
+                    <Text style={[styles.monthlyBtnText, { color: '#16A34A' }]}>
+                      {sharingReportId === item.id ? 'PDF...' : 'Share'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
                     style={styles.monthlyBtn}
                     onPress={() => {
                       setMonthlyEmployee(item);
@@ -846,7 +889,18 @@ export const AdminEmployeesScreen = ({ navigation, route }: any) => {
                   </View>
                 </View>
 
-                {/* Action Buttons: Monthly Attendance, Edit and Toggle Status */}
+                {/* Action Buttons: Monthly Attendance, Share PDF, Edit and Toggle Status */}
+                <TouchableOpacity
+                  style={[styles.monthlyFullBtn, { backgroundColor: '#15803D', marginBottom: 10 }]}
+                  onPress={() => handleShareReportPdf(selectedEmployee)}
+                  disabled={sharingReportId === selectedEmployee.id}
+                >
+                  <Share2 size={16} color="#FFFFFF" />
+                  <Text style={styles.monthlyFullBtnText}>
+                    {sharingReportId === selectedEmployee.id ? 'Generating PDF...' : 'Share Attendance PDF via WhatsApp'}
+                  </Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   style={styles.monthlyFullBtn}
                   onPress={() => {

@@ -11,8 +11,10 @@ import {
   HeartPulse,
   Sun,
   CalendarOff,
+  Share2,
 } from 'lucide-react';
 import api from '../../services/api';
+import { shareAttendanceReportWhatsApp } from '../../utils/whatsappReportUtils';
 
 interface EmployeeMonthlyAttendanceModalProps {
   isOpen: boolean;
@@ -261,6 +263,37 @@ const EmployeeMonthlyAttendanceModal = ({
 
   const [selectedDay, setSelectedDay] =
     useState<AttendanceDay | null>(null);
+  const [sharingLoading, setSharingLoading] = useState(false);
+
+  const handleShareReport = async () => {
+    if (!employee?.id) return;
+    try {
+      setSharingLoading(true);
+      const res = await api.get(
+        `/employees/${employee.id}/attendance-report-pdf/?month=${
+          currentMonth + 1
+        }&year=${currentYear}`
+      );
+      if (res.data?.pdf_url) {
+        shareAttendanceReportWhatsApp({
+          employeeName: employee.full_name || employee.name,
+          employeeId: employee.employee_id,
+          phoneNumber: employee.phone_number || res.data?.phone_number,
+          monthName: res.data?.month_name || new Date(currentYear, currentMonth, 1).toLocaleDateString('en-US', { month: 'long' }),
+          year: currentYear,
+          pdfUrl: res.data?.pdf_url,
+          summary: res.data?.summary || data.summary,
+        });
+      } else {
+        alert('Could not generate PDF report URL.');
+      }
+    } catch (err: any) {
+      console.error('Failed to share report:', err);
+      alert(err?.response?.data?.message || err?.message || 'Failed to generate attendance report PDF.');
+    } finally {
+      setSharingLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen || !employee?.id) return;
@@ -965,13 +998,39 @@ const EmployeeMonthlyAttendanceModal = ({
               </div>
             </div>
 
-            <button
-              type="button"
-              className="employee-calendar-close"
-              onClick={onClose}
-            >
-              <X size={20} />
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                type="button"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #BBF7D0',
+                  background: '#F0FDF4',
+                  color: '#15803D',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: sharingLoading ? 'not-allowed' : 'pointer',
+                  opacity: sharingLoading ? 0.7 : 1,
+                }}
+                disabled={sharingLoading}
+                onClick={handleShareReport}
+                title="Share Attendance PDF Report via WhatsApp"
+              >
+                <Share2 size={15} color="#15803D" />
+                {sharingLoading ? 'Preparing PDF...' : 'Share PDF'}
+              </button>
+
+              <button
+                type="button"
+                className="employee-calendar-close"
+                onClick={onClose}
+              >
+                <X size={20} />
+              </button>
+            </div>
           </div>
 
           <div className="employee-calendar-body">
