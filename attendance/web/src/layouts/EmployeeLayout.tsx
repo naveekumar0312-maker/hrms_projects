@@ -78,6 +78,14 @@ const EmployeeSidebar = ({
 
   const [attendanceOpen, setAttendanceOpen] = useState(isAttendanceRelated);
 
+  const isTeamLeaderRelated =
+    location.pathname.startsWith('/team-attendance') ||
+    location.pathname.startsWith('/team-leaves') ||
+    location.pathname.startsWith('/team-permissions') ||
+    location.pathname.startsWith('/team-wfh');
+
+  const [teamLeaderOpen, setTeamLeaderOpen] = useState(true);
+
   const handleLogout = () => {
     closeSidebar();
     logout();
@@ -265,44 +273,68 @@ const EmployeeSidebar = ({
           )}
 
           {/* Balance / Remaining Items */}
-          {/* TEAM LEADER SECTION */}
+          {/* TEAM LEADER DROPDOWN */}
           {(employee?.assigned_team_members?.length > 0 || employee?.role === 'TEAM_LEADER' || employee?.user?.role === 'TEAM_LEADER' || employee?.designation?.toLowerCase().includes('team leader')) && (
-            <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(226, 232, 240, 0.6)' }}>
-              <div style={{ padding: '0.25rem 0.75rem', fontSize: '0.7rem', fontWeight: 800, color: '#059669', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Team Leader
-              </div>
-              <Link
-                to="/team-attendance"
-                onClick={handleNavigation}
-                className={`nav-link ${location.pathname.startsWith('/team-attendance') ? 'active' : ''}`}
+            <div style={{ marginTop: '0.25rem' }}>
+              <button
+                type="button"
+                className={`nav-link nav-dropdown-trigger ${isTeamLeaderRelated ? 'active' : ''}`}
+                onClick={() => setTeamLeaderOpen((open) => !open)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  color: 'inherit',
+                  font: 'inherit',
+                }}
               >
                 <CalendarCheck size={18} />
-                <span>Team Attendance</span>
-              </Link>
-              <Link
-                to="/team-leaves"
-                onClick={handleNavigation}
-                className={`nav-link ${location.pathname.startsWith('/team-leaves') ? 'active' : ''}`}
-              >
-                <Calendar size={18} />
-                <span>Team Leaves</span>
-              </Link>
-              <Link
-                to="/team-permissions"
-                onClick={handleNavigation}
-                className={`nav-link ${location.pathname.startsWith('/team-permissions') ? 'active' : ''}`}
-              >
-                <Clock size={18} />
-                <span>Team Permissions</span>
-              </Link>
-              <Link
-                to="/team-wfh"
-                onClick={handleNavigation}
-                className={`nav-link ${location.pathname.startsWith('/team-wfh') ? 'active' : ''}`}
-              >
-                <Building2 size={18} />
-                <span>Team WFH</span>
-              </Link>
+                <span>Team Leader</span>
+                {teamLeaderOpen
+                  ? <ChevronDown className="nav-dropdown-arrow" size={16} />
+                  : <ChevronRight className="nav-dropdown-arrow" size={16} />}
+              </button>
+
+              {teamLeaderOpen && (
+                <div className="nav-submenu">
+                  <Link
+                    to="/team-attendance"
+                    onClick={handleNavigation}
+                    className={`nav-link nav-sub-link ${location.pathname.startsWith('/team-attendance') ? 'active' : ''}`}
+                  >
+                    <CalendarCheck size={16} />
+                    <span>Team Attendance</span>
+                  </Link>
+                  <Link
+                    to="/team-leaves"
+                    onClick={handleNavigation}
+                    className={`nav-link nav-sub-link ${location.pathname.startsWith('/team-leaves') ? 'active' : ''}`}
+                  >
+                    <Calendar size={16} />
+                    <span>Leaves</span>
+                  </Link>
+                  <Link
+                    to="/team-permissions"
+                    onClick={handleNavigation}
+                    className={`nav-link nav-sub-link ${location.pathname.startsWith('/team-permissions') ? 'active' : ''}`}
+                  >
+                    <Clock size={16} />
+                    <span>Permission</span>
+                  </Link>
+                  <Link
+                    to="/team-wfh"
+                    onClick={handleNavigation}
+                    className={`nav-link nav-sub-link ${location.pathname.startsWith('/team-wfh') ? 'active' : ''}`}
+                  >
+                    <Building2 size={16} />
+                    <span>WFH</span>
+                  </Link>
+                </div>
+              )}
             </div>
           )}
 

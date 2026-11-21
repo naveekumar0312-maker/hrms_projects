@@ -43,17 +43,22 @@ import {
   ArrowRight,
   Plus,
   RefreshCw,
+  Building,
+  CalendarPlus,
+  ClockPlus,
+  Home,
 } from 'lucide-react';
 
 import { Link, useNavigate } from 'react-router-dom';
 import './Dashboard.css';
+import '../manager/ManagerDashboard.css';
 import { TaskDailyReminderModal } from '../../components/TaskDailyReminderModal';
 import type { DailyReminderTask } from '../../components/TaskDailyReminderModal';
 import { TaskWorkspaceModal } from '../../components/TaskWorkspaceModal';
 
 
 const EmployeeDashboard = () => {
-  const { employee } = useContext(AuthContext);
+  const { employee, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const [todayData, setTodayData] = useState<any>(null);
@@ -763,10 +768,547 @@ const EmployeeDashboard = () => {
 
       <div className="employee-dashboard">
 
-      {/* =====================================================
-          HEADER
-      ===================================================== */}
-      <section className="dashboard-hero">
+      {isTeamLeader ? (
+        <div className="mgr-dashboard-page" style={{ marginBottom: '1.8rem' }}>
+          {/* 1. HERO BANNER */}
+          <div className="mgr-hero-banner">
+            <div className="mgr-hero-left">
+              <div className="mgr-hero-icon">
+                <Building size={28} />
+              </div>
+              <div>
+                <div className="mgr-hero-company">
+                  <span>{companyName || user?.company_name || 'Yaazh 360'}</span>
+                  <span className="mgr-hero-badge">
+                    <Shield size={12} /> Team Leader
+                  </span>
+                </div>
+                <div className="mgr-hero-sub">
+                  <span>Team Leader: <strong>{employeeName}</strong></span>
+                  <span>&bull;</span>
+                  <span>Username: <code>{user?.username || employee?.employee_id}</code></span>
+                  <span>&bull;</span>
+                  <span>Team Size: <strong>{employee?.assigned_team_members?.length ?? tlSummary?.total_employees ?? 0} members</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mgr-hero-actions">
+              <button
+                type="button"
+                className="mgr-hero-btn mgr-hero-btn-primary"
+                onClick={() => setActiveWorkspaceTaskId(-1)}
+              >
+                <Plus size={16} /> Assign Task
+              </button>
+              <Link to="/team-attendance" className="mgr-hero-btn mgr-hero-btn-outline">
+                <Users size={16} /> Manage Team
+              </Link>
+              <button
+                type="button"
+                className="mgr-hero-btn mgr-hero-btn-outline"
+                onClick={() => fetchDashboardData()}
+              >
+                <RefreshCw size={16} /> Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* 2. QUICK ACTIONS HUB */}
+          <div className="mgr-quick-hub">
+            {/* SECTION A: TEAM CONTROLS & APPROVALS */}
+            <div className="mgr-hub-header">
+              <div className="mgr-hub-title">
+                <Zap size={18} color="#22c55e" />
+                <span>Team Approvals & Task Assignment</span>
+                <span className="mgr-hub-badge">Team Leader Controls</span>
+              </div>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                Review team requests & delegate tasks
+              </span>
+            </div>
+
+            <div className="mgr-hub-grid" style={{ marginBottom: '18px' }}>
+              {/* Quick Action: Assign Task */}
+              <div
+                className="mgr-hub-action-card"
+                onClick={() => setActiveWorkspaceTaskId(-1)}
+                style={{ borderLeft: '4px solid #3b82f6', cursor: 'pointer' }}
+              >
+                <div className="mgr-hub-icon-wrap" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                  <Plus size={20} strokeWidth={2.5} />
+                </div>
+                <div className="mgr-hub-info">
+                  <span className="mgr-hub-action-label">Assign New Task</span>
+                  <span className="mgr-hub-action-desc">Delegate task to team members</span>
+                </div>
+                <ArrowRight size={16} color="#94a3b8" />
+              </div>
+
+              {/* Quick Action: Leave Approvals */}
+              <Link
+                to="/team-leaves"
+                className="mgr-hub-action-card"
+                style={{ borderLeft: '4px solid #ea580c' }}
+              >
+                <div className="mgr-hub-icon-wrap" style={{ background: '#fff7ed', color: '#ea580c' }}>
+                  <Calendar size={20} />
+                </div>
+                <div className="mgr-hub-info">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="mgr-hub-action-label">Approve Leaves</span>
+                    {tlPendingCounts.leaves > 0 && (
+                      <span className="mgr-hub-counter" style={{ background: '#ffedd5', color: '#c2410c' }}>
+                        {tlPendingCounts.leaves}
+                      </span>
+                    )}
+                  </div>
+                  <span className="mgr-hub-action-desc">Review pending leave applications</span>
+                </div>
+                <ArrowRight size={16} color="#94a3b8" />
+              </Link>
+
+              {/* Quick Action: Permission Approvals */}
+              <Link
+                to="/team-permissions"
+                className="mgr-hub-action-card"
+                style={{ borderLeft: '4px solid #2563eb' }}
+              >
+                <div className="mgr-hub-icon-wrap" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                  <Clock size={20} />
+                </div>
+                <div className="mgr-hub-info">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="mgr-hub-action-label">Approve Permissions</span>
+                    {tlPendingCounts.permissions > 0 && (
+                      <span className="mgr-hub-counter" style={{ background: '#dbeafe', color: '#1d4ed8' }}>
+                        {tlPendingCounts.permissions}
+                      </span>
+                    )}
+                  </div>
+                  <span className="mgr-hub-action-desc">Short time & early exits</span>
+                </div>
+                <ArrowRight size={16} color="#94a3b8" />
+              </Link>
+
+              {/* Quick Action: WFH Approvals */}
+              <Link
+                to="/team-wfh"
+                className="mgr-hub-action-card"
+                style={{ borderLeft: '4px solid #7c3aed' }}
+              >
+                <div className="mgr-hub-icon-wrap" style={{ background: '#faf5ff', color: '#7c3aed' }}>
+                  <Building2 size={20} />
+                </div>
+                <div className="mgr-hub-info">
+                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                    <span className="mgr-hub-action-label">Approve WFH</span>
+                    {tlPendingCounts.wfh > 0 && (
+                      <span className="mgr-hub-counter" style={{ background: '#f3e8ff', color: '#6b21a8' }}>
+                        {tlPendingCounts.wfh}
+                      </span>
+                    )}
+                  </div>
+                  <span className="mgr-hub-action-desc">Work from home requests</span>
+                </div>
+                <ArrowRight size={16} color="#94a3b8" />
+              </Link>
+            </div>
+
+            {/* SECTION B: TEAM LEADER PERSONAL REQUEST QUICK LINKS */}
+            <div className="mgr-hub-header" style={{ paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+              <div className="mgr-hub-title">
+                <Users size={18} color="#059669" />
+                <span>My Personal Requests & Passes</span>
+                <span className="mgr-hub-badge" style={{ background: '#ecfdf5', color: '#047857' }}>Self Service</span>
+              </div>
+              <span style={{ fontSize: '12px', color: '#64748b' }}>
+                Quick links for your own leave, permission, WFH and punch records
+              </span>
+            </div>
+
+            <div className="mgr-hub-grid">
+              {/* Quick Link: Apply Leave */}
+              <Link
+                to="/leave"
+                className="mgr-hub-action-card"
+                style={{ borderLeft: '4px solid #f97316' }}
+              >
+                <div className="mgr-hub-icon-wrap" style={{ background: '#fff7ed', color: '#ea580c' }}>
+                  <CalendarPlus size={20} />
+                </div>
+                <div className="mgr-hub-info">
+                  <span className="mgr-hub-action-label">Apply Leave</span>
+                  <span className="mgr-hub-action-desc">Casual, sick or annual leave</span>
+                </div>
+                <ArrowRight size={16} color="#94a3b8" />
+              </Link>
+
+              {/* Quick Link: Apply Permission */}
+              <Link
+                to="/permission"
+                className="mgr-hub-action-card"
+                style={{ borderLeft: '4px solid #8b5cf6' }}
+              >
+                <div className="mgr-hub-icon-wrap" style={{ background: '#f5f3ff', color: '#7c3aed' }}>
+                  <ClockPlus size={20} />
+                </div>
+                <div className="mgr-hub-info">
+                  <span className="mgr-hub-action-label">Apply Permission</span>
+                  <span className="mgr-hub-action-desc">30 / 60 mins emergency exit</span>
+                </div>
+                <ArrowRight size={16} color="#94a3b8" />
+              </Link>
+
+              {/* Quick Link: Apply WFH */}
+              <Link
+                to="/wfh"
+                className="mgr-hub-action-card"
+                style={{ borderLeft: '4px solid #0d9488' }}
+              >
+                <div className="mgr-hub-icon-wrap" style={{ background: '#f0fdfa', color: '#0d9488' }}>
+                  <Home size={20} />
+                </div>
+                <div className="mgr-hub-info">
+                  <span className="mgr-hub-action-label">Apply WFH</span>
+                  <span className="mgr-hub-action-desc">Request work from home day</span>
+                </div>
+                <ArrowRight size={16} color="#94a3b8" />
+              </Link>
+
+              {/* Quick Link: My Punch History */}
+              <Link
+                to="/attendance"
+                className="mgr-hub-action-card"
+                style={{ borderLeft: '4px solid #0284c7' }}
+              >
+                <div className="mgr-hub-icon-wrap" style={{ background: '#f0f9ff', color: '#0284c7' }}>
+                  <CalendarCheck size={20} />
+                </div>
+                <div className="mgr-hub-info">
+                  <span className="mgr-hub-action-label">My Punch History</span>
+                  <span className="mgr-hub-action-desc">View monthly personal logs</span>
+                </div>
+                <ArrowRight size={16} color="#94a3b8" />
+              </Link>
+            </div>
+          </div>
+
+          {/* 3. TEAM LEADER PERSONAL ATTENDANCE CARD */}
+          <div className="mgr-self-punch-card" style={{ marginTop: '1.25rem' }}>
+            <div className="mgr-self-punch-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '12px',
+                  background: '#ecfdf5',
+                  color: '#059669',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <Clock size={22} />
+                </div>
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
+                    My Attendance & Self Punch
+                  </h2>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#64748b' }}>
+                    Mark your daily personal check-in / check-out with GPS & photo
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <Link
+                  to="/attendance"
+                  style={{
+                    textDecoration: 'none',
+                    color: '#2563eb',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    background: '#eff6ff',
+                  }}
+                >
+                  <CalendarCheck size={13} /> View Attendance Log
+                </Link>
+              </div>
+            </div>
+
+            <div className="mgr-punch-status-grid">
+              <div className="mgr-punch-stat-box">
+                <span className="mgr-punch-stat-label">PUNCH IN STATUS</span>
+                <div className="mgr-punch-stat-value" style={{ color: todayData?.check_in_time ? '#059669' : '#64748b' }}>
+                  {todayData?.check_in_time ? (
+                    formatTime(todayData.check_in_time)
+                  ) : (
+                    'Not Punched In'
+                  )}
+                </div>
+              </div>
+
+              <div className="mgr-punch-stat-box">
+                <span className="mgr-punch-stat-label">PUNCH OUT STATUS</span>
+                <div className="mgr-punch-stat-value" style={{ color: todayData?.check_out_time ? '#0284c7' : '#64748b' }}>
+                  {todayData?.check_out_time ? (
+                    formatTime(todayData.check_out_time)
+                  ) : (
+                    'Not Punched Out'
+                  )}
+                </div>
+              </div>
+
+              <div className="mgr-punch-stat-box">
+                <span className="mgr-punch-stat-label">TODAY'S DURATION</span>
+                <div className="mgr-punch-stat-value" style={{ color: '#0f172a' }}>
+                  {todayData?.working_hours || (todayData?.check_in_time && !todayData?.check_out_time ? 'In Progress' : '00:00 hrs')}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  onClick={() => handleAction('CHECK_IN')}
+                  disabled={Boolean(todayData?.check_in_time) || loadingAction}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 18px',
+                    borderRadius: '10px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: Boolean(todayData?.check_in_time) || loadingAction ? 'not-allowed' : 'pointer',
+                    background: Boolean(todayData?.check_in_time) ? '#f1f5f9' : '#059669',
+                    color: Boolean(todayData?.check_in_time) ? '#94a3b8' : '#ffffff',
+                    border: 'none',
+                    boxShadow: Boolean(todayData?.check_in_time) ? 'none' : '0 4px 12px rgba(5, 150, 105, 0.3)',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <LogIn size={16} /> Check In
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleAction('CHECK_OUT')}
+                  disabled={!todayData?.check_in_time || Boolean(todayData?.check_out_time) || loadingAction}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '10px 18px',
+                    borderRadius: '10px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: !todayData?.check_in_time || Boolean(todayData?.check_out_time) || loadingAction ? 'not-allowed' : 'pointer',
+                    background: !todayData?.check_in_time || Boolean(todayData?.check_out_time) ? '#f1f5f9' : '#2563eb',
+                    color: !todayData?.check_in_time || Boolean(todayData?.check_out_time) ? '#94a3b8' : '#ffffff',
+                    border: 'none',
+                    boxShadow: !todayData?.check_in_time || Boolean(todayData?.check_out_time) ? 'none' : '0 4px 12px rgba(37, 99, 235, 0.3)',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <LogOut size={16} /> Check Out
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* 4. TEAM METRICS STATS CARDS */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.85rem', marginTop: '1.25rem' }}>
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderLeft: '4px solid #10b981',
+                borderRadius: '12px',
+                padding: '0.9rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              }}
+              onClick={() => navigate('/team-attendance')}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UserCheck size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Present Today</span>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669' }}>{tlSummary?.present_today ?? 0}</span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderLeft: '4px solid #f59e0b',
+                borderRadius: '12px',
+                padding: '0.9rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              }}
+              onClick={() => navigate('/team-attendance')}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#fffbeb', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Clock size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Late Today</span>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>{tlSummary?.late_today ?? 0}</span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderLeft: '4px solid #ef4444',
+                borderRadius: '12px',
+                padding: '0.9rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              }}
+              onClick={() => navigate('/team-attendance')}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UserX size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Absent Today</span>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#dc2626' }}>{tlSummary?.absent_today ?? 0}</span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderLeft: '4px solid #8b5cf6',
+                borderRadius: '12px',
+                padding: '0.9rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              }}
+              onClick={() => navigate('/team-leaves')}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Palmtree size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>On Leave</span>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7c3aed' }}>{tlSummary?.on_leave_today ?? 0}</span>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderLeft: '4px solid #3b82f6',
+                borderRadius: '12px',
+                padding: '0.9rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.85rem',
+                cursor: 'pointer',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+              }}
+              onClick={() => navigate('/tasks')}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ListTodo size={20} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Active Tasks</span>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb' }}>{assignedTasks.length}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 5. ASSIGNED TEAM MEMBERS LIST */}
+          {employee?.assigned_team_members && employee.assigned_team_members.length > 0 && (
+            <div style={{
+              marginTop: '1.25rem',
+              padding: '1.15rem 1.25rem',
+              borderRadius: '14px',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+                    <Users size={17} />
+                  </div>
+                  <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700, color: '#0f172a' }}>
+                    My Assigned Team Members ({employee.assigned_team_members.length})
+                  </h3>
+                </div>
+                <Link
+                  to="/team-attendance"
+                  style={{
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    color: '#059669',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}
+                >
+                  View Live Attendance <ArrowRight size={13} />
+                </Link>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '0.75rem' }}>
+                {employee.assigned_team_members.map((tm: any) => (
+                  <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 0.9rem', borderRadius: '10px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    {tm.profile_photo ? (
+                      <img src={tm.profile_photo} alt={tm.full_name} style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#dbeafe', color: '#1d4ed8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.88rem' }}>
+                        {tm.full_name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {tm.full_name}
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                        <code style={{ background: '#e2e8f0', padding: '1px 4px', borderRadius: '4px', fontSize: '0.72rem' }}>{tm.employee_id}</code> • {tm.designation || tm.department || 'Member'}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* =====================================================
+              HEADER
+          ===================================================== */}
+          <section className="dashboard-hero">
 
         <div className="dashboard-hero-top">
 
@@ -1118,338 +1660,6 @@ const EmployeeDashboard = () => {
       <PersonalAlarmCard />
 
       {/* =====================================================
-          TEAM LEADER MANAGEMENT QUICK ACTIONS HUB (MANAGER DASHBOARD STYLE)
-      ===================================================== */}
-      {isTeamLeader && (
-        <section style={{ marginBottom: '1.8rem' }}>
-          {/* 1. Header with Badge & Counts */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <div style={{ width: 34, height: 34, borderRadius: '10px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
-                <Zap size={18} />
-              </div>
-              <div>
-                <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  Team Approvals & Live Operations
-                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
-                    Team Leader Controls
-                  </span>
-                </h2>
-                <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                  Monitor your assigned team's live punch status, review leave, permission and WFH requests
-                </p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => setActiveWorkspaceTaskId(-1)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#22c55e',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '7px 14px',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(34, 197, 94, 0.25)',
-                }}
-              >
-                <Plus size={15} /> Assign Task
-              </button>
-              <button
-                type="button"
-                onClick={() => fetchDashboardData()}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#ffffff',
-                  color: '#475569',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '8px',
-                  padding: '7px 12px',
-                  fontSize: '0.82rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                <RefreshCw size={14} /> Refresh
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Team Metrics Stats Cards (Exact Manager Dashboard Style) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '0.85rem', marginBottom: '1rem' }}>
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #10b981',
-                borderRadius: '12px',
-                padding: '0.9rem 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/team-attendance')}
-            >
-              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <UserCheck size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Present Today</span>
-                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669' }}>{tlSummary?.present_today ?? 0}</span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #f59e0b',
-                borderRadius: '12px',
-                padding: '0.9rem 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/team-attendance')}
-            >
-              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#fffbeb', color: '#d97706', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Clock size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Late Today</span>
-                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#d97706' }}>{tlSummary?.late_today ?? 0}</span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #ef4444',
-                borderRadius: '12px',
-                padding: '0.9rem 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/team-attendance')}
-            >
-              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#fef2f2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <UserX size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Absent Today</span>
-                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#dc2626' }}>{tlSummary?.absent_today ?? 0}</span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #8b5cf6',
-                borderRadius: '12px',
-                padding: '0.9rem 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/team-leaves')}
-            >
-              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#f5f3ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Palmtree size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>On Leave</span>
-                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#7c3aed' }}>{tlSummary?.on_leave_today ?? 0}</span>
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: '#ffffff',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #3b82f6',
-                borderRadius: '12px',
-                padding: '0.9rem 1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.85rem',
-                cursor: 'pointer',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/tasks')}
-            >
-              <div style={{ width: 40, height: 40, borderRadius: '10px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ListTodo size={20} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span style={{ display: 'block', fontSize: '0.74rem', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Active Tasks</span>
-                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#2563eb' }}>{assignedTasks.length}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Action Cards Hub with Pending Counters (Exact Manager Hub Layout) */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
-            {/* Team Attendance Live Status */}
-            <div
-              style={{
-                padding: '1rem',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #059669',
-                borderRadius: '12px',
-                background: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/team-attendance')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 42, height: 42, borderRadius: '10px', background: '#ecfdf5', color: '#059669', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <CalendarCheck size={22} />
-                </div>
-                <div>
-                  <strong style={{ display: 'block', fontSize: '0.92rem', color: '#0f172a' }}>Team Attendance</strong>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Daily punch status & log</span>
-                </div>
-              </div>
-              <ArrowRight size={16} color="#94a3b8" />
-            </div>
-
-            {/* Team Leaves */}
-            <div
-              style={{
-                padding: '1rem',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #ea580c',
-                borderRadius: '12px',
-                background: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/team-leaves')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 42, height: 42, borderRadius: '10px', background: '#fff7ed', color: '#ea580c', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Calendar size={22} />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>Team Leaves</strong>
-                    {tlPendingCounts.leaves > 0 && (
-                      <span style={{ background: '#ffedd5', color: '#c2410c', fontSize: '0.72rem', fontWeight: 800, padding: '1px 6px', borderRadius: '10px' }}>
-                        {tlPendingCounts.leaves}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Review pending applications</span>
-                </div>
-              </div>
-              <ArrowRight size={16} color="#94a3b8" />
-            </div>
-
-            {/* Team Permissions */}
-            <div
-              style={{
-                padding: '1rem',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #2563eb',
-                borderRadius: '12px',
-                background: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/team-permissions')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 42, height: 42, borderRadius: '10px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Clock size={22} />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>Team Permissions</strong>
-                    {tlPendingCounts.permissions > 0 && (
-                      <span style={{ background: '#dbeafe', color: '#1d4ed8', fontSize: '0.72rem', fontWeight: 800, padding: '1px 6px', borderRadius: '10px' }}>
-                        {tlPendingCounts.permissions}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Approve short exit passes</span>
-                </div>
-              </div>
-              <ArrowRight size={16} color="#94a3b8" />
-            </div>
-
-            {/* Team WFH */}
-            <div
-              style={{
-                padding: '1rem',
-                border: '1px solid #e2e8f0',
-                borderLeft: '4px solid #7c3aed',
-                borderRadius: '12px',
-                background: '#ffffff',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
-              }}
-              onClick={() => navigate('/team-wfh')}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ width: 42, height: 42, borderRadius: '10px', background: '#faf5ff', color: '#7c3aed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <Building2 size={22} />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <strong style={{ fontSize: '0.92rem', color: '#0f172a' }}>Team WFH</strong>
-                    {tlPendingCounts.wfh > 0 && (
-                      <span style={{ background: '#f3e8ff', color: '#6b21a8', fontSize: '0.72rem', fontWeight: 800, padding: '1px 6px', borderRadius: '10px' }}>
-                        {tlPendingCounts.wfh}
-                      </span>
-                    )}
-                  </div>
-                  <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Approve work from home</span>
-                </div>
-              </div>
-              <ArrowRight size={16} color="#94a3b8" />
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* =====================================================
           QUICK ACTIONS
           Notifications intentionally removed
       ===================================================== */}
@@ -1738,6 +1948,8 @@ const EmployeeDashboard = () => {
         )}
 
       </section>
+        </>
+      )}
 
       {/* =====================================================
           CAMERA
