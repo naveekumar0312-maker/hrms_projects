@@ -32,6 +32,10 @@ export default function NotificationBell() {
   const [error, setError] = useState('');
 
   const fetchNotifications = useCallback(async () => {
+    // Skip if offline or not authenticated
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+    if (!localStorage.getItem('access_token')) return;
+
     try {
       // unread_only=true: seen/read notifications disappear from the list
       const response = await api.get('/notifications/?limit=50&unread_only=true');
@@ -48,15 +52,42 @@ export default function NotificationBell() {
         (data as NotificationResponse)?.unread_count ?? unreadList.length
       );
       setError('');
-    } catch {
+    } catch (err: any) {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      if (err?.code === 'ERR_NETWORK' || err?.message?.includes('Network Error')) return;
+      if (err?.response?.status === 401) return;
       setError('Unable to load notifications.');
     }
   }, []);
 
   useEffect(() => {
     void fetchNotifications();
-    const timer = window.setInterval(() => void fetchNotifications(), 10000);
-    return () => window.clearInterval(timer);
+
+    // Poll every 30 seconds only when tab is visible and online
+    const timer = window.setInterval(() => {
+      if (!document.hidden && (!('onLine' in navigator) || navigator.onLine)) {
+        void fetchNotifications();
+      }
+    }, 30000);
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && (!('onLine' in navigator) || navigator.onLine)) {
+        void fetchNotifications();
+      }
+    };
+
+    const handleOnline = () => {
+      void fetchNotifications();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+    };
   }, [fetchNotifications]);
 
   const markRead = async (id: number) => {

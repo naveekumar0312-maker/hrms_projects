@@ -58,17 +58,26 @@ const triggerAlarm = useCallback((event: 'SHIFT_START' | 'SHIFT_END') => {
   useEffect(() => {
     let cancelled = false;
     let intervalId: number | undefined;
+    let cachedShift: any = null;
+    let lastFetched = 0;
 
     const checkShift = async () => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) return;
+      if (!localStorage.getItem('access_token')) return;
+
       try {
-        const response = await api.get('/employees/me/');
-        if (cancelled) return;
+        const nowMs = Date.now();
+        // Only fetch shift profile once every 5 minutes
+        if (!cachedShift || nowMs - lastFetched > 5 * 60 * 1000) {
+          const response = await api.get('/employees/me/');
+          if (cancelled) return;
+          const profile = response.data as EmployeeProfile;
+          cachedShift = profile?.shift;
+          lastFetched = nowMs;
+        }
 
-        const profile = response.data as EmployeeProfile;
-        const shift = profile?.shift;
-
+        const shift = cachedShift;
         if (!shift?.start_time || !shift?.end_time) {
-          console.warn('[ShiftAlarm] No assigned shift times in employee profile.');
           return;
         }
 
@@ -86,7 +95,6 @@ const triggerAlarm = useCallback((event: 'SHIFT_START' | 'SHIFT_END') => {
         const endMinutes = parseTime(shift.end_time);
 
         if (startMinutes === null || endMinutes === null) {
-          console.warn('[ShiftAlarm] Invalid shift time:', shift);
           return;
         }
 
@@ -113,21 +121,17 @@ const triggerAlarm = useCallback((event: 'SHIFT_START' | 'SHIFT_END') => {
           firedRef.current.add(endKey);
           triggerAlarm('SHIFT_END');
         }
-
-        console.log('[ShiftAlarm] Scheduler active:', {
-          shift: shift.name,
-          start: shift.start_time,
-          end: shift.end_time,
-        });
       } catch (error) {
-        if (!cancelled) {
-          console.error('[ShiftAlarm] Shift schedule fetch failed:', error);
-        }
+        // Silently ignore network hiccups
       }
     };
 
     void checkShift();
-    intervalId = window.setInterval(() => void checkShift(), 15000);
+    intervalId = window.setInterval(() => {
+      if (!document.hidden && (!('onLine' in navigator) || navigator.onLine)) {
+        void checkShift();
+      }
+    }, 30000);
 
     return () => {
       cancelled = true;
