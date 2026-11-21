@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import {
   ListTodo,
   Calendar,
-  Clock,
   Plus,
   Eye,
   Edit3,
@@ -169,12 +168,10 @@ const EmployeeTasks: React.FC = () => {
             <thead>
               <tr>
                 <th>Task Title</th>
-                <th>Category</th>
                 <th>Assigned By</th>
-                <th>Priority</th>
+                <th style={{ textAlign: 'center' }}>Status</th>
                 <th>Due Date</th>
-                <th>Time Logged</th>
-                <th>Status</th>
+                <th style={{ textAlign: 'center' }}>Priority</th>
                 <th style={{ minWidth: '200px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
@@ -195,14 +192,9 @@ const EmployeeTasks: React.FC = () => {
                     </div>
                   </td>
                   <td>
-                    <span style={{ fontSize: '12px', color: '#475569', background: '#f8fafc', padding: '3px 8px', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-                      {t.category || 'General'}
-                    </span>
-                  </td>
-                  <td>
                     <div style={{ fontWeight: 500, color: '#334155' }}>{t.assigned_by_name}</div>
                   </td>
-                  <td>{renderPriorityBadge(t.priority)}</td>
+                  <td style={{ textAlign: 'center' }}>{renderStatusBadge(t.status)}</td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
                       <Calendar size={14} color="#64748b" />
@@ -211,13 +203,7 @@ const EmployeeTasks: React.FC = () => {
                       </span>
                     </div>
                   </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#475569' }}>
-                      <Clock size={13} color="#0284c7" />
-                      <span>{t.total_logged_hours || 0}h / {t.estimated_hours || 0}h</span>
-                    </div>
-                  </td>
-                  <td>{renderStatusBadge(t.status)}</td>
+                  <td style={{ textAlign: 'center' }}>{renderPriorityBadge(t.priority)}</td>
                   <td style={{ minWidth: '200px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                     {isTeamLeaderOrManager ? (
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>

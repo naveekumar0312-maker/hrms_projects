@@ -1000,7 +1000,7 @@ export const TasksScreen: React.FC = () => {
 
             return (
               <View style={styles.taskCard}>
-                {/* Row 1: Task Title & Category */}
+                {/* Row 1: Task Title & Actions */}
                 <View style={styles.cardHeaderRow}>
                   <View style={styles.titleCol}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -1013,14 +1013,25 @@ export const TasksScreen: React.FC = () => {
                     </View>
                     <Text style={styles.createdDateText}>{formatCreatedDate(item.created_at)}</Text>
                   </View>
-                  <View style={styles.badgesCol}>
-                    <View style={[styles.badgePill, { backgroundColor: pBadge.bg, borderColor: pBadge.borderColor, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
-                      <Text style={[styles.badgeText, { color: pBadge.color }]}>{item.priority}</Text>
-                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: pBadge.color }} />
-                    </View>
-                    <View style={[styles.badgePill, { backgroundColor: sBadge.bg, borderColor: sBadge.borderColor }]}>
-                      <Text style={[styles.badgeText, { color: sBadge.color }]}>{item.status.replace(/_/g, ' ')}</Text>
-                    </View>
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <TouchableOpacity
+                      style={[styles.actionIconBtn, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]}
+                      onPress={() => openEditModal(item)}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Pencil size={14} color="#22C55E" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionIconBtn, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}
+                      onPress={() => handleDeleteTask(item.id, item.title)}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                      <Trash2 size={14} color="#EF4444" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.openBtn} onPress={() => handleOpenTask(item)}>
+                      <Text style={styles.openBtnText}>Open Task</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
 
@@ -1031,24 +1042,9 @@ export const TasksScreen: React.FC = () => {
                   </Text>
                 ) : null}
 
-                {/* Dates & Hours Bar */}
-                <View style={styles.metaRow}>
-                  <View style={styles.metaItem}>
-                    <Calendar size={13} color="#666666" />
-                    <Text style={styles.metaText}>
-                      {item.start_date || 'No Start'} - {item.due_date || 'No Due'}
-                    </Text>
-                  </View>
-                  <View style={styles.metaItem}>
-                    <Clock size={13} color="#666666" />
-                    <Text style={styles.metaText}>
-                      {loggedH.toFixed(1)}h / {estH.toFixed(1)}h
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Bottom Row: Assignees & Workspace Button */}
+                {/* Sequence: Assigned To -> Status -> Due Date -> Priority */}
                 <View style={styles.cardFooter}>
+                  {/* Assigned to */}
                   <View style={styles.avatarGroup}>
                     {item.assigned_employees && item.assigned_employees.length > 0 ? (
                       item.assigned_employees.slice(0, 3).map((emp, i) => (
@@ -1075,24 +1071,19 @@ export const TasksScreen: React.FC = () => {
                     )}
                   </View>
 
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <TouchableOpacity
-                      style={[styles.actionIconBtn, { backgroundColor: '#F0FDF4', borderColor: '#DCFCE7' }]}
-                      onPress={() => openEditModal(item)}
-                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                    >
-                      <Pencil size={14} color="#22C55E" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionIconBtn, { backgroundColor: '#FEF2F2', borderColor: '#FEE2E2' }]}
-                      onPress={() => handleDeleteTask(item.id, item.title)}
-                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                    >
-                      <Trash2 size={14} color="#EF4444" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.openBtn} onPress={() => handleOpenTask(item)}>
-                      <Text style={styles.openBtnText}>Open Task</Text>
-                    </TouchableOpacity>
+                  {/* Status, Due Date, Priority */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                    <View style={[styles.badgePill, { backgroundColor: sBadge.bg, borderColor: sBadge.borderColor }]}>
+                      <Text style={[styles.badgeText, { color: sBadge.color }]}>{item.status.replace(/_/g, ' ')}</Text>
+                    </View>
+                    <View style={[styles.badgePill, { backgroundColor: '#F8F9FA', borderColor: '#E5E7EB', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                      <Calendar size={11} color="#6B7280" />
+                      <Text style={[styles.badgeText, { color: '#374151' }]}>{item.due_date || 'No Due'}</Text>
+                    </View>
+                    <View style={[styles.badgePill, { backgroundColor: pBadge.bg, borderColor: pBadge.borderColor, flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                      <Text style={[styles.badgeText, { color: pBadge.color }]}>{item.priority}</Text>
+                      <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: pBadge.color }} />
+                    </View>
                   </View>
                 </View>
               </View>

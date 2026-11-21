@@ -4,7 +4,6 @@ import {
   Plus,
   Search,
   Calendar,
-  Clock,
   Eye,
   Edit3,
   Trash2,
@@ -328,12 +327,10 @@ const TaskManager: React.FC = () => {
             <thead>
               <tr>
                 <th style={{ minWidth: '180px' }}>Task</th>
-                <th style={{ whiteSpace: 'nowrap' }}>Category</th>
                 <th style={{ minWidth: '150px' }}>Assigned To</th>
-                <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Priority</th>
-                <th style={{ whiteSpace: 'nowrap' }}>Due Date</th>
-                <th style={{ whiteSpace: 'nowrap' }}>Logged / Est.</th>
                 <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Status</th>
+                <th style={{ whiteSpace: 'nowrap' }}>Due Date</th>
+                <th style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>Priority</th>
                 <th style={{ minWidth: '220px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>
@@ -352,11 +349,6 @@ const TaskManager: React.FC = () => {
                     <div style={{ fontSize: '12px', color: '#64748b' }}>
                       By {t.assigned_by_name} &bull; {new Date(t.created_at).toLocaleDateString()}
                     </div>
-                  </td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: '12px', color: '#475569', background: '#f8fafc', padding: '3px 8px', borderRadius: '4px', border: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>
-                      {t.category || 'General'}
-                    </span>
                   </td>
                   <td>
                     {t.assigned_employees && t.assigned_employees.length > 0 ? (
@@ -440,7 +432,7 @@ const TaskManager: React.FC = () => {
                       <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>Unassigned (Draft)</span>
                     )}
                   </td>
-                  <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{renderPriorityBadge(t.priority)}</td>
+                  <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{renderStatusBadge(t.status, t.is_draft)}</td>
                   <td style={{ whiteSpace: 'nowrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', whiteSpace: 'nowrap' }}>
                       <Calendar size={14} color="#64748b" />
@@ -449,13 +441,7 @@ const TaskManager: React.FC = () => {
                       </span>
                     </div>
                   </td>
-                  <td style={{ whiteSpace: 'nowrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#475569', whiteSpace: 'nowrap' }}>
-                      <Clock size={13} color="#0284c7" />
-                      <span>{t.total_logged_hours || 0}h / {t.estimated_hours || 0}h</span>
-                    </div>
-                  </td>
-                  <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{renderStatusBadge(t.status, t.is_draft)}</td>
+                  <td style={{ whiteSpace: 'nowrap', textAlign: 'center' }}>{renderPriorityBadge(t.priority)}</td>
                   <td style={{ minWidth: '220px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                       <button
